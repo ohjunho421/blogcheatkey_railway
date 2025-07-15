@@ -158,7 +158,7 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
             <Label htmlFor="keyword">블로그 주제 키워드</Label>
             <Input
               id="keyword"
-              value={keyword}
+              value={project ? project.keyword : keyword}
               onChange={(e) => setKeyword(e.target.value)}
               placeholder="예: 엔진오일교체, 자동차수리, 레스토랑창업"
               disabled={!!project}

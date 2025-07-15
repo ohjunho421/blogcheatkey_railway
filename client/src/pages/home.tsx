@@ -70,6 +70,16 @@ export default function Home() {
               <a href="#" className="text-muted-foreground hover:text-primary transition-colors">설정</a>
             </nav>
             <div className="flex items-center space-x-3">
+              {project && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate('/')}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  새 프로젝트
+                </Button>
+              )}
               <div className="w-8 h-8 bg-muted rounded-full"></div>
               <span className="text-sm text-muted-foreground">김자영님</span>
             </div>
