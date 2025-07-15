@@ -1,4 +1,4 @@
-// Perplexity API service using sonar-pro (llama-3.1-sonar-huge-128k-online) as explicitly requested by user
+// Perplexity API service using sonar-pro as explicitly requested by user
 
 interface PerplexityResponse {
   id: string;
@@ -39,7 +39,7 @@ export async function searchResearch(keyword: string, subtitles: string[]): Prom
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "llama-3.1-sonar-huge-128k-online",
+      model: "sonar-pro",
       messages: [
         {
           role: "user",
@@ -87,7 +87,7 @@ export async function getDetailedResearch(keyword: string, subtitle: string): Pr
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "llama-3.1-sonar-huge-128k-online",
+      model: "sonar-pro",
       messages: [
         {
           role: "user",
