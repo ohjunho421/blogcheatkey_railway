@@ -133,9 +133,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const businessInfo = businessInfoSchema.parse(req.body);
       
+      // Only save business info, don't change status to prevent auto-generation
       const updatedProject = await storage.updateBlogProject(id, {
         businessInfo,
-        status: "content_generation",
+        // Keep current status, don't auto-change to content_generation
       });
 
       res.json(updatedProject);
@@ -157,6 +158,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!project || !project.subtitles || !project.researchData || !project.businessInfo) {
         return res.status(400).json({ error: "필요한 정보가 모두 준비되지 않았습니다" });
       }
+
+      // Update status to content_generation when actually starting generation
+      await storage.updateBlogProject(id, {
+        status: "content_generation",
+      });
 
       // Generate content with Claude
       const content = await writeOptimizedBlogPost(

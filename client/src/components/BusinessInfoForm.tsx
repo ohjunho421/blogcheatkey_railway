@@ -418,10 +418,10 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
               </Button>
             )}
             
-            {project.status === 'business_info' && selectedSavedBusiness && (
+            {project.status === 'business_info' && selectedSavedBusiness && !project.generatedContent && (
               <Button 
                 onClick={() => {
-                  // Save to project first, then generate
+                  // Save to project first, then show generate button
                   const finalBusinessType = businessType || customBusinessType;
                   const businessData = {
                     businessName: businessName.trim(),
@@ -432,20 +432,42 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
                   
                   saveBusinessInfo.mutate(businessData, {
                     onSuccess: () => {
-                      // After successful save, start generation
-                      setTimeout(() => {
-                        generateContent.mutate(project.id);
-                      }, 1000);
+                      // Update local state to show generate button
+                      setSelectedSavedBusiness({ ...selectedSavedBusiness, saved: true });
+                      toast({
+                        title: "업체 정보 저장 완료",
+                        description: "이제 블로그 생성 버튼을 눌러주세요.",
+                      });
                     }
                   });
                 }}
-                disabled={saveBusinessInfo.isPending || generateContent.isPending}
-                className="bg-accent hover:bg-accent/90"
+                disabled={saveBusinessInfo.isPending}
               >
-                {saveBusinessInfo.isPending || generateContent.isPending ? (
+                {saveBusinessInfo.isPending ? (
                   <>
                     <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    {saveBusinessInfo.isPending ? "저장 중..." : "블로그 생성 중..."}
+                    저장 중...
+                  </>
+                ) : (
+                  <>
+                    <ArrowRight className="h-4 w-4 mr-2" />
+                    정보 저장
+                  </>
+                )}
+              </Button>
+            )}
+
+            {((project.status === 'business_info' && selectedSavedBusiness?.saved) || 
+              project.businessInfo) && !project.generatedContent && (
+              <Button 
+                onClick={handleGenerate}
+                disabled={generateContent.isPending}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                {generateContent.isPending ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    블로그 생성 중...
                   </>
                 ) : (
                   <>
@@ -460,7 +482,7 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
               <Button 
                 onClick={handleGenerate}
                 disabled={generateContent.isPending}
-                className="bg-accent hover:bg-accent/90"
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
                 {generateContent.isPending ? (
                   <>
