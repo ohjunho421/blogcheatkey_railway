@@ -37,7 +37,7 @@ export async function searchResearch(keyword: string, subtitles: string[]): Prom
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "llama-3.1-sonar-small-128k-online",
+      model: "llama-3.1-sonar-large-128k-online",
       messages: [
         {
           role: "user",
@@ -85,7 +85,7 @@ export async function getDetailedResearch(keyword: string, subtitle: string): Pr
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "llama-3.1-sonar-small-128k-online",
+      model: "llama-3.1-sonar-large-128k-online",
       messages: [
         {
           role: "user",
