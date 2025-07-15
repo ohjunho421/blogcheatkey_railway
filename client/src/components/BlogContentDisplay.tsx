@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { FileText, Copy, Smartphone, CheckCircle2, AlertCircle, Download, Image } from "lucide-react";
+import { FileText, Copy, Smartphone, CheckCircle2, AlertCircle, Download, ImageIcon, Camera, RefreshCw } from "lucide-react";
 
 interface BlogContentDisplayProps {
   project: any;
@@ -15,6 +15,8 @@ interface BlogContentDisplayProps {
 
 export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayProps) {
   const [copyFormat, setCopyFormat] = useState<'normal' | 'mobile'>('normal');
+  const [generatedImages, setGeneratedImages] = useState<{[key: string]: string}>({});
+  const [generatingImages, setGeneratingImages] = useState<{[key: string]: boolean}>({});
   const { toast } = useToast();
 
   const copyContent = useMutation({
@@ -38,31 +40,57 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
     },
   });
 
+  const generateImage = useMutation({
+    mutationFn: async ({ subtitle, type }: { subtitle: string; type: 'infographic' | 'photo' }) => {
+      const response = await apiRequest("POST", `/api/projects/${project.id}/generate-image`, { subtitle, type });
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      const key = `${variables.subtitle}-${variables.type}`;
+      setGeneratedImages(prev => ({ ...prev, [key]: data.imageUrl }));
+      setGeneratingImages(prev => ({ ...prev, [key]: false }));
+      toast({
+        title: "이미지 생성 완료",
+        description: `${variables.type === 'infographic' ? '인포그래픽' : '사진'}이 생성되었습니다.`,
+      });
+    },
+    onError: (error, variables) => {
+      const key = `${variables.subtitle}-${variables.type}`;
+      setGeneratingImages(prev => ({ ...prev, [key]: false }));
+      toast({
+        title: "이미지 생성 실패",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleCopy = (format: 'normal' | 'mobile') => {
     setCopyFormat(format);
     copyContent.mutate(format);
   };
 
-  const handleImageDownload = async (imageIndex: number) => {
+  const handleGenerateImage = (subtitle: string, type: 'infographic' | 'photo') => {
+    const key = `${subtitle}-${type}`;
+    setGeneratingImages(prev => ({ ...prev, [key]: true }));
+    generateImage.mutate({ subtitle, type });
+  };
+
+  const handleImageDownload = async (imageUrl: string, subtitle: string, type: string) => {
     try {
-      const response = await fetch(`/api/projects/${project.id}/images/${imageIndex}`);
-      if (!response.ok) {
-        throw new Error('다운로드에 실패했습니다');
-      }
+      const filename = `${type}-${project.keyword}-${subtitle.replace(/\s+/g, '-')}.png`;
+      const downloadUrl = `/api/projects/${project.id}/download-image?imageUrl=${encodeURIComponent(imageUrl)}&filename=${encodeURIComponent(filename)}`;
       
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = `infographic-${project.keyword}-${imageIndex + 1}.png`;
+      a.href = downloadUrl;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
       
       toast({
         title: "다운로드 완료",
-        description: "인포그래픽이 다운로드되었습니다.",
+        description: "이미지가 다운로드되었습니다.",
       });
     } catch (error) {
       toast({
@@ -73,165 +101,213 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
     }
   };
 
-  const renderSEOStatus = () => {
-    if (!project.seoMetrics) return null;
+  if (!project.generatedContent) {
+    return null;
+  }
 
-    const { isOptimized, keywordFrequency, characterCount } = project.seoMetrics;
-
-    return (
-      <div className={`rounded-lg p-4 mb-4 border-l-4 ${
-        isOptimized 
-          ? 'bg-green-50 dark:bg-green-950 border-accent' 
-          : 'bg-yellow-50 dark:bg-yellow-950 border-yellow-500'
-      }`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            {isOptimized ? (
-              <CheckCircle2 className="h-5 w-5 text-accent" />
-            ) : (
-              <AlertCircle className="h-5 w-5 text-yellow-500" />
-            )}
-            <span className="font-medium text-foreground">
-              {isOptimized ? 'SEO 최적화 완료' : 'SEO 최적화 필요'}
-            </span>
-          </div>
-          <div className="flex space-x-4 text-sm">
-            <Badge variant="secondary">
-              키워드 출현: {keywordFrequency}회
-            </Badge>
-            <Badge variant="secondary">
-              글자수: {characterCount.toLocaleString()}자
-            </Badge>
-            <Badge variant="secondary">
-              구조: 완료
-            </Badge>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderContent = () => {
-    if (!project.generatedContent) return null;
-
-    const sections = project.generatedContent.split('\n\n');
-    
-    return (
-      <div className="prose max-w-none">
-        {sections.map((section, index) => {
-          if (section.startsWith('# ')) {
-            return (
-              <div key={index} className="border-l-4 border-blue-500 pl-4 mb-6">
-                <h3 className="text-lg font-semibold mb-2">{section.replace('# ', '')}</h3>
-              </div>
-            );
-          } else if (section.startsWith('## ')) {
-            return (
-              <div key={index} className="bg-muted rounded-lg p-4 mb-4">
-                <h4 className="font-semibold mb-2">{section.replace('## ', '')}</h4>
-              </div>
-            );
-          } else if (section.trim()) {
-            return (
-              <div key={index} className="bg-muted rounded-lg p-4 mb-4">
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {section}
-                </p>
-              </div>
-            );
-          }
-          return null;
-        })}
-      </div>
-    );
-  };
+  // Extract subtitles from project for image generation
+  const subtitles = project.subtitles || [];
 
   return (
     <div className="space-y-6">
+      {/* 생성된 블로그 콘텐츠 */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center text-lg">
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center">
               <FileText className="h-5 w-5 text-primary mr-2" />
-              생성된 블로그 글
-            </CardTitle>
+              생성된 블로그 콘텐츠
+            </div>
+            <div className="flex items-center space-x-2">
+              {project.seoMetrics && (
+                <Badge variant={project.seoMetrics.isOptimized ? "default" : "secondary"}>
+                  {project.seoMetrics.isOptimized ? (
+                    <>
+                      <CheckCircle2 className="h-3 w-3 mr-1" />
+                      SEO 최적화 완료
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      SEO 개선 필요
+                    </>
+                  )}
+                </Badge>
+              )}
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {/* SEO 분석 결과 */}
+            {project.seoMetrics && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">{project.seoMetrics.keywordFrequency}</div>
+                  <div className="text-sm text-muted-foreground">키워드 출현 횟수</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">{project.seoMetrics.characterCount}</div>
+                  <div className="text-sm text-muted-foreground">글자수 (공백제외)</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-primary">{project.seoMetrics.morphemeCount}</div>
+                  <div className="text-sm text-muted-foreground">형태소 개수</div>
+                </div>
+              </div>
+            )}
+
+            {/* 생성된 콘텐츠 */}
+            <div className="prose max-w-none">
+              <div className="whitespace-pre-wrap bg-background p-6 rounded-lg border">
+                {project.generatedContent}
+              </div>
+            </div>
+
+            {/* 복사 버튼들 */}
             <div className="flex space-x-2">
               <Button 
-                variant="outline" 
-                size="sm"
                 onClick={() => handleCopy('normal')}
                 disabled={copyContent.isPending}
+                variant="outline"
               >
-                <Copy className="h-4 w-4 mr-1" />
-                일반 복사
+                {copyContent.isPending && copyFormat === 'normal' ? (
+                  "복사 중..."
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4 mr-2" />
+                    일반 복사
+                  </>
+                )}
               </Button>
               <Button 
-                variant="outline" 
-                size="sm"
                 onClick={() => handleCopy('mobile')}
                 disabled={copyContent.isPending}
+                variant="outline"
               >
-                <Smartphone className="h-4 w-4 mr-1" />
-                모바일 복사
+                {copyContent.isPending && copyFormat === 'mobile' ? (
+                  "복사 중..."
+                ) : (
+                  <>
+                    <Smartphone className="h-4 w-4 mr-2" />
+                    모바일 복사
+                  </>
+                )}
               </Button>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          {renderSEOStatus()}
-          {renderContent()}
         </CardContent>
       </Card>
 
-      {/* Generated Infographics */}
-      {project.generatedImages && project.generatedImages.length > 0 && (
+      {/* 소제목별 이미지 생성 */}
+      {subtitles.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center text-lg">
-              <Image className="h-5 w-5 text-primary mr-2" />
-              생성된 인포그래픽
+              <ImageIcon className="h-5 w-5 text-primary mr-2" />
+              소제목별 이미지 생성
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {project.generatedImages.map((imageUrl: string, index: number) => (
-                <div key={index} className="border rounded-lg overflow-hidden bg-muted">
-                  <div className="aspect-square relative">
-                    {imageUrl ? (
-                      <img
-                        src={imageUrl}
-                        alt={`인포그래픽 ${index + 1}`}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OTk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuydtOuvuOyngCDsl6nrprw8L3RleHQ+PC9zdmc+';
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-muted">
-                        <span className="text-muted-foreground">이미지 생성 실패</span>
+            <div className="space-y-4">
+              {subtitles.map((subtitle: string, index: number) => {
+                const infographicKey = `${subtitle}-infographic`;
+                const photoKey = `${subtitle}-photo`;
+                const infographicUrl = generatedImages[infographicKey];
+                const photoUrl = generatedImages[photoKey];
+                const isGeneratingInfographic = generatingImages[infographicKey];
+                const isGeneratingPhoto = generatingImages[photoKey];
+
+                return (
+                  <div key={index} className="border rounded-lg p-4">
+                    <h4 className="font-medium mb-3">{index + 1}. {subtitle}</h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* 인포그래픽 섹션 */}
+                      <div className="space-y-2">
+                        <div className="flex space-x-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleGenerateImage(subtitle, 'infographic')}
+                            disabled={isGeneratingInfographic}
+                            variant="outline"
+                          >
+                            {isGeneratingInfographic ? (
+                              <>
+                                <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                                생성 중...
+                              </>
+                            ) : (
+                              <>
+                                <ImageIcon className="h-4 w-4 mr-1" />
+                                인포그래픽 생성
+                              </>
+                            )}
+                          </Button>
+                          {infographicUrl && (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => handleImageDownload(infographicUrl, subtitle, 'infographic')}
+                            >
+                              <Download className="h-4 w-4 mr-1" />
+                              다운로드
+                            </Button>
+                          )}
+                        </div>
+                        {infographicUrl && (
+                          <img 
+                            src={infographicUrl} 
+                            alt={`${subtitle} 인포그래픽`}
+                            className="w-full h-32 object-cover rounded border"
+                          />
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <div className="p-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">
-                        {project.subtitles?.[index] || `인포그래픽 ${index + 1}`}
-                      </span>
-                      {imageUrl && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleImageDownload(index)}
-                        >
-                          <Download className="h-4 w-4 mr-1" />
-                          다운로드
-                        </Button>
-                      )}
+
+                      {/* 사진 섹션 */}
+                      <div className="space-y-2">
+                        <div className="flex space-x-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleGenerateImage(subtitle, 'photo')}
+                            disabled={isGeneratingPhoto}
+                            variant="outline"
+                          >
+                            {isGeneratingPhoto ? (
+                              <>
+                                <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                                생성 중...
+                              </>
+                            ) : (
+                              <>
+                                <Camera className="h-4 w-4 mr-1" />
+                                사진 생성
+                              </>
+                            )}
+                          </Button>
+                          {photoUrl && (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => handleImageDownload(photoUrl, subtitle, 'photo')}
+                            >
+                              <Download className="h-4 w-4 mr-1" />
+                              다운로드
+                            </Button>
+                          )}
+                        </div>
+                        {photoUrl && (
+                          <img 
+                            src={photoUrl} 
+                            alt={`${subtitle} 사진`}
+                            className="w-full h-32 object-cover rounded border"
+                          />
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </CardContent>
         </Card>

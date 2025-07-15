@@ -4,6 +4,23 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key"
 });
 
+export async function generateImage(prompt: string, style: string = "infographic"): Promise<string> {
+  try {
+    const response = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: `${style === "photo" ? "Professional photo of" : "Clean infographic about"} ${prompt}`,
+      n: 1,
+      size: "1024x1024",
+      quality: "standard",
+    });
+
+    return response.data[0].url || "";
+  } catch (error) {
+    console.error("Image generation error:", error);
+    throw new Error(`이미지 생성에 실패했습니다: ${error}`);
+  }
+}
+
 export async function generateInfographic(subtitle: string, keyword: string): Promise<string> {
   if (!process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY_ENV_VAR) {
     throw new Error("OpenAI API key is not configured");

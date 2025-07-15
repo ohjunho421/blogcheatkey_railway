@@ -206,13 +206,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       }
 
-      // Generate images for each subtitle
-      const images = await generateMultipleImages(project.subtitles as string[], project.keyword);
-
+      // Don't auto-generate images, only generate content
       const updatedProject = await storage.updateBlogProject(id, {
         generatedContent: finalContent,
         seoMetrics: seoAnalysis,
-        generatedImages: images,
         status: "completed",
       });
 
@@ -388,6 +385,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Save business info error:", error);
       res.status(500).json({ error: "업체 정보 저장에 실패했습니다" });
+    }
+  });
+
+  // Generate individual image for subtitle
+  app.post("/api/projects/:id/generate-image", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { subtitle, type } = req.body; // type: 'infographic' or 'photo'
+      
+      const project = await storage.getBlogProject(id);
+      if (!project) {
+        return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
+      }
+
+      let imageUrl;
+      if (type === 'infographic') {
+        const { generateInfographic } = await import("./services/imageGeneration.js");
+        imageUrl = await generateInfographic(subtitle, project.keyword);
+      } else {
+        // Generate photo-style image
+        const { generateImage } = await import("./services/imageGeneration.js");
+        imageUrl = await generateImage(`${subtitle} 관련 ${project.keyword} 사진`, "photo");
+      }
+
+      res.json({ imageUrl, subtitle, type });
+    } catch (error) {
+      console.error("Individual image generation error:", error);
+      res.status(500).json({ error: "이미지 생성에 실패했습니다" });
+    }
+  });
+
+  // Download individual image
+  app.get("/api/projects/:id/download-image", async (req, res) => {
+    try {
+      const { imageUrl, filename } = req.query;
+      
+      if (!imageUrl || !filename) {
+        return res.status(400).json({ error: "이미지 URL과 파일명이 필요합니다" });
+      }
+
+      const response = await fetch(imageUrl as string);
+      if (!response.ok) {
+        throw new Error("이미지 다운로드 실패");
+      }
+
+      const buffer = await response.arrayBuffer();
+      
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(Buffer.from(buffer));
+    } catch (error) {
+      console.error("Image download error:", error);
+      res.status(500).json({ error: "이미지 다운로드에 실패했습니다" });
     }
   });
 
