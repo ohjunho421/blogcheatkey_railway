@@ -3,8 +3,8 @@ import type { KeywordAnalysis } from "@shared/schema";
 
 // DON'T DELETE THIS COMMENT
 // Follow these instructions when using this blueprint:
-// - Note that the newest Gemini model series is "gemini-2.5-flash" or gemini-2.5-pro"
-//   - do not change this unless explicitly requested by the user
+// - Note that the newest Gemini model series is "gemini-2.5-pro" which is explicitly requested by the user
+//   - all functions use gemini-2.5-pro as specified
 
 const ai = new GoogleGenAI({ 
   apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || "default_key"
@@ -159,7 +159,7 @@ ${content}
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.5-pro",
       config: {
         responseMimeType: "application/json",
         responseSchema: {
