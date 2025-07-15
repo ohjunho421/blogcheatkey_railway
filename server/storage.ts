@@ -1,4 +1,6 @@
 import { users, blogProjects, chatMessages, type User, type InsertUser, type BlogProject, type InsertBlogProject, type ChatMessage, type InsertChatMessage } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -19,120 +21,85 @@ export interface IStorage {
   deleteChatMessages(projectId: number): Promise<boolean>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private blogProjects: Map<number, BlogProject>;
-  private chatMessages: Map<number, ChatMessage>;
-  private currentUserId: number;
-  private currentProjectId: number;
-  private currentMessageId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.blogProjects = new Map();
-    this.chatMessages = new Map();
-    this.currentUserId = 1;
-    this.currentProjectId = 1;
-    this.currentMessageId = 1;
-  }
-
+export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
     return user;
   }
 
   async createBlogProject(insertProject: InsertBlogProject): Promise<BlogProject> {
-    const id = this.currentProjectId++;
-    const now = new Date();
-    const project: BlogProject = {
-      ...insertProject,
-      id,
-      userId: 1, // Default user for demo
-      status: insertProject.status || 'keyword_analysis',
-      keywordAnalysis: insertProject.keywordAnalysis || null,
-      subtitles: insertProject.subtitles || null,
-      researchData: insertProject.researchData || null,
-      businessInfo: insertProject.businessInfo || null,
-      generatedContent: insertProject.generatedContent || null,
-      seoMetrics: insertProject.seoMetrics || null,
-      referenceLinks: insertProject.referenceLinks || null,
-      generatedImages: insertProject.generatedImages || null,
-      createdAt: now,
-      updatedAt: now,
-    };
-    this.blogProjects.set(id, project);
+    const [project] = await db
+      .insert(blogProjects)
+      .values({
+        ...insertProject,
+        userId: 1, // Default user for demo
+        status: insertProject.status || 'keyword_analysis',
+      })
+      .returning();
     return project;
   }
 
   async getBlogProject(id: number): Promise<BlogProject | undefined> {
-    return this.blogProjects.get(id);
+    const [project] = await db.select().from(blogProjects).where(eq(blogProjects.id, id));
+    return project || undefined;
   }
 
   async updateBlogProject(id: number, updates: Partial<InsertBlogProject>): Promise<BlogProject> {
-    const existing = this.blogProjects.get(id);
-    if (!existing) {
+    const [updated] = await db
+      .update(blogProjects)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(blogProjects.id, id))
+      .returning();
+    
+    if (!updated) {
       throw new Error(`Blog project with id ${id} not found`);
     }
-
-    const updated: BlogProject = {
-      ...existing,
-      ...updates,
-      updatedAt: new Date(),
-    };
-    this.blogProjects.set(id, updated);
+    
     return updated;
   }
 
   async getBlogProjectsByUser(userId: number): Promise<BlogProject[]> {
-    return Array.from(this.blogProjects.values()).filter(
-      (project) => project.userId === userId,
-    );
+    return await db.select().from(blogProjects).where(eq(blogProjects.userId, userId));
   }
 
   async deleteBlogProject(id: number): Promise<boolean> {
-    return this.blogProjects.delete(id);
+    const result = await db.delete(blogProjects).where(eq(blogProjects.id, id));
+    return (result.rowCount || 0) > 0;
   }
 
   async createChatMessage(insertMessage: InsertChatMessage): Promise<ChatMessage> {
-    const id = this.currentMessageId++;
-    const message: ChatMessage = {
-      ...insertMessage,
-      id,
-      projectId: insertMessage.projectId || null,
-      createdAt: new Date(),
-    };
-    this.chatMessages.set(id, message);
+    const [message] = await db
+      .insert(chatMessages)
+      .values(insertMessage)
+      .returning();
     return message;
   }
 
   async getChatMessages(projectId: number): Promise<ChatMessage[]> {
-    return Array.from(this.chatMessages.values())
-      .filter((message) => message.projectId === projectId)
-      .sort((a, b) => a.createdAt!.getTime() - b.createdAt!.getTime());
+    return await db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.projectId, projectId))
+      .orderBy(chatMessages.createdAt);
   }
 
   async deleteChatMessages(projectId: number): Promise<boolean> {
-    const messages = Array.from(this.chatMessages.values())
-      .filter((message) => message.projectId === projectId);
-    
-    messages.forEach((message) => {
-      this.chatMessages.delete(message.id);
-    });
-    
-    return true;
+    const result = await db.delete(chatMessages).where(eq(chatMessages.projectId, projectId));
+    return (result.rowCount || 0) > 0;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

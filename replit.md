@@ -66,7 +66,8 @@ Preferred communication style: Simple, everyday language.
 - **OpenAI API**: DALL-E 3 for image generation
 
 ### Database & Infrastructure
-- **Neon Database**: PostgreSQL hosting with serverless scaling
+- **PostgreSQL Database**: Local PostgreSQL instance for persistent storage
+- **Drizzle ORM**: Type-safe database operations with @neondatabase/serverless driver
 - **Drizzle Kit**: Database migrations and schema management
 
 ### Frontend Libraries
