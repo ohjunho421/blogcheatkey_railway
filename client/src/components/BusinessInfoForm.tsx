@@ -84,6 +84,7 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
   const [businessType, setBusinessType] = useState("");
   const [customBusinessType, setCustomBusinessType] = useState("");
   const [open, setOpen] = useState(false);
+  const [businessNameOpen, setBusinessNameOpen] = useState(false);
   const [expertise, setExpertise] = useState("");
   const [differentiators, setDifferentiators] = useState("");
   const { toast } = useToast();
@@ -91,6 +92,12 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
   // Get saved business info from user profile
   const { data: savedBusinessInfo, isLoading: loadingBusinessInfo } = useQuery({
     queryKey: ["/api/user/business-info"],
+    retry: false,
+  });
+
+  // Get all saved business infos for selection dropdown
+  const { data: savedBusinessInfos, isLoading: loadingSavedInfos } = useQuery({
+    queryKey: ["/api/user/business-infos"],
     retry: false,
   });
 
@@ -218,6 +225,20 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
     generateContent.mutate(project.id);
   };
 
+  // Handle selecting a saved business info
+  const handleSelectSavedBusiness = (selectedInfo: any) => {
+    setBusinessName(selectedInfo.businessName || "");
+    setBusinessType(selectedInfo.businessType || "");
+    setExpertise(selectedInfo.expertise || "");
+    setDifferentiators(selectedInfo.differentiators || "");
+    setBusinessNameOpen(false);
+    
+    toast({
+      title: "업체 정보 불러오기 완료",
+      description: `${selectedInfo.businessName}의 정보를 불러왔습니다.`,
+    });
+  };
+
   const isGenerating = generateContent.isPending;
 
   return (
@@ -240,12 +261,66 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="businessName">업체명</Label>
-            <Input
-              id="businessName"
-              value={businessName}
-              onChange={(e) => setBusinessName(e.target.value)}
-              placeholder="예: 김자영 자동차 정비소"
-            />
+            <Popover open={businessNameOpen} onOpenChange={setBusinessNameOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={businessNameOpen}
+                  className="w-full justify-between"
+                  disabled={loadingBusinessInfo || loadingSavedInfos}
+                >
+                  {businessName || "업체명을 입력하거나 선택하세요..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0">
+                <Command>
+                  <CommandInput 
+                    placeholder="업체명 검색 또는 입력..." 
+                    value={businessName}
+                    onValueChange={setBusinessName}
+                  />
+                  <CommandList>
+                    {savedBusinessInfos && savedBusinessInfos.length > 0 && (
+                      <CommandGroup heading="저장된 업체">
+                        {savedBusinessInfos.map((info: any) => (
+                          <CommandItem
+                            key={info.id}
+                            value={info.businessName}
+                            onSelect={() => handleSelectSavedBusiness(info)}
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-medium">{info.businessName}</span>
+                              <span className="text-sm text-muted-foreground">{info.businessType}</span>
+                            </div>
+                            <Check
+                              className={cn(
+                                "ml-auto h-4 w-4",
+                                businessName === info.businessName ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    )}
+                    <CommandEmpty>
+                      <div className="p-2">
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start"
+                          onClick={() => {
+                            setBusinessNameOpen(false);
+                          }}
+                        >
+                          "{businessName}" 새로 추가
+                        </Button>
+                      </div>
+                    </CommandEmpty>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
           <div>
             <Label htmlFor="businessType">업종</Label>

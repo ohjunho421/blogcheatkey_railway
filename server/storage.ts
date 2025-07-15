@@ -12,6 +12,7 @@ export interface IStorage {
   getUserBusinessInfo(userId: number): Promise<UserBusinessInfo | undefined>;
   createUserBusinessInfo(businessInfo: InsertUserBusinessInfo): Promise<UserBusinessInfo>;
   updateUserBusinessInfo(userId: number, updates: Partial<InsertUserBusinessInfo>): Promise<UserBusinessInfo>;
+  getAllUserBusinessInfos(userId: number): Promise<UserBusinessInfo[]>;
   
   // Blog project methods
   createBlogProject(project: InsertBlogProject): Promise<BlogProject>;
@@ -140,6 +141,14 @@ export class DatabaseStorage implements IStorage {
   async deleteChatMessages(projectId: number): Promise<boolean> {
     const result = await db.delete(chatMessages).where(eq(chatMessages.projectId, projectId));
     return (result.rowCount || 0) > 0;
+  }
+
+  async getAllUserBusinessInfos(userId: number): Promise<UserBusinessInfo[]> {
+    return await db
+      .select()
+      .from(userBusinessInfo)
+      .where(eq(userBusinessInfo.userId, userId))
+      .orderBy(userBusinessInfo.updatedAt);
   }
 }
 

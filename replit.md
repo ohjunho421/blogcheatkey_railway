@@ -100,6 +100,8 @@ Preferred communication style: Simple, everyday language.
 - **Enhanced Business Info Management**: Added user-specific business information storage with `userBusinessInfo` table
 - **Improved Industry Selection**: Upgraded business type selector to combobox with 50+ predefined options and custom input capability
 - **Persistent User Profiles**: Business information now saves to user profile and auto-loads for future projects
+- **Business Info Auto-Fill**: Added dropdown selection for saved businesses - selecting a business name automatically fills expertise and differentiators
+- **Smart UI Flow**: Business info form now remains visible during content generation with clear progress indicators
 - **Model Updates**: Updated Perplexity API to use simplified `sonar-pro` model name
 - **UI Improvements**: Fixed business info form UI with proper button placement and persistent form visibility
 
