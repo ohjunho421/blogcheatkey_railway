@@ -166,19 +166,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         project.businessInfo as any
       );
 
-      // Analyze SEO optimization
-      const seoAnalysis = await analyzeSEOOptimization(content, project.keyword);
-
-      // If not optimized, try once more
+      // Analyze SEO optimization (with fallback)
+      let seoAnalysis;
       let finalContent = content;
-      if (!seoAnalysis.isOptimized) {
-        finalContent = await writeOptimizedBlogPost(
-          project.keyword,
-          project.subtitles as string[],
-          project.researchData as any,
-          project.businessInfo as any,
-          seoAnalysis.suggestions
-        );
+      
+      try {
+        seoAnalysis = await analyzeSEOOptimization(content, project.keyword);
+        
+        // If not optimized, try once more
+        if (!seoAnalysis.isOptimized) {
+          finalContent = await writeOptimizedBlogPost(
+            project.keyword,
+            project.subtitles as string[],
+            project.researchData as any,
+            project.businessInfo as any,
+            seoAnalysis.suggestions
+          );
+        }
+      } catch (seoError) {
+        console.error("SEO analysis failed, proceeding without optimization:", seoError);
+        
+        // Create basic SEO analysis if Gemini fails
+        const characterCount = content.replace(/\s/g, '').length;
+        const keywordCount = (content.match(new RegExp(project.keyword, 'gi')) || []).length;
+        
+        seoAnalysis = {
+          keywordFrequency: keywordCount,
+          characterCount: characterCount,
+          morphemeCount: keywordCount,
+          isOptimized: keywordCount >= 17 && keywordCount <= 20 && characterCount >= 1700 && characterCount <= 2000,
+          issues: ["SEO 분석 서비스 일시 중단"],
+          suggestions: ["수동으로 키워드 빈도와 글자수를 확인해주세요"]
+        };
       }
 
       // Generate images for each subtitle

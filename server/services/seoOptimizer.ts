@@ -69,7 +69,19 @@ ${content}
     return JSON.parse(rawJson);
   } catch (error) {
     console.error("SEO analysis error:", error);
-    throw new Error("Failed to analyze SEO optimization");
+    
+    // Return default analysis if Gemini is unavailable
+    const characterCount = content.replace(/\s/g, '').length;
+    const keywordCount = (content.match(new RegExp(keyword, 'gi')) || []).length;
+    
+    return {
+      keywordFrequency: keywordCount,
+      characterCount: characterCount,
+      morphemeCount: keywordCount,
+      isOptimized: keywordCount >= 17 && keywordCount <= 20 && characterCount >= 1700 && characterCount <= 2000,
+      issues: ["Gemini API 일시적 오류로 정확한 분석 불가"],
+      suggestions: ["키워드 빈도와 글자수를 수동으로 확인해주세요"]
+    };
   }
 }
 
