@@ -35,6 +35,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Database Schema
 - **users**: User authentication and management
+- **userBusinessInfo**: User-specific business information storage (reusable across projects)
 - **blogProjects**: Main project entity with workflow status tracking
 - **chatMessages**: Chat-based content editing system
 
@@ -92,5 +93,14 @@ Preferred communication style: Simple, everyday language.
 - **Database**: `DATABASE_URL` for PostgreSQL connection
 - **AI APIs**: Separate API keys for each service
 - **Session Management**: PostgreSQL session store with connect-pg-simple
+
+## Recent Changes
+
+### January 15, 2025
+- **Enhanced Business Info Management**: Added user-specific business information storage with `userBusinessInfo` table
+- **Improved Industry Selection**: Upgraded business type selector to combobox with 50+ predefined options and custom input capability
+- **Persistent User Profiles**: Business information now saves to user profile and auto-loads for future projects
+- **Model Updates**: Updated Perplexity API to use simplified `sonar-pro` model name
+- **UI Improvements**: Fixed business info form UI with proper button placement and persistent form visibility
 
 The application follows a modern TypeScript stack with strong typing throughout, efficient state management, and a clean separation between frontend and backend concerns. The AI integration is modular and extensible, allowing for easy addition of new AI services or modification of existing workflows.

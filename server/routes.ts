@@ -314,6 +314,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get user business info
+  app.get("/api/user/business-info", async (req, res) => {
+    try {
+      const userId = 1; // Default user for demo
+      const businessInfo = await storage.getUserBusinessInfo(userId);
+      res.json(businessInfo);
+    } catch (error) {
+      console.error("Get business info error:", error);
+      res.status(500).json({ error: "업체 정보 조회에 실패했습니다" });
+    }
+  });
+
+  // Create or update user business info
+  app.post("/api/user/business-info", async (req, res) => {
+    try {
+      const userId = 1; // Default user for demo
+      const businessInfoData = businessInfoSchema.parse(req.body);
+      
+      const existingInfo = await storage.getUserBusinessInfo(userId);
+      
+      let businessInfo;
+      if (existingInfo) {
+        businessInfo = await storage.updateUserBusinessInfo(userId, {
+          ...businessInfoData,
+          userId,
+        });
+      } else {
+        businessInfo = await storage.createUserBusinessInfo({
+          ...businessInfoData,
+          userId,
+        });
+      }
+      
+      res.json(businessInfo);
+    } catch (error) {
+      console.error("Save business info error:", error);
+      res.status(500).json({ error: "업체 정보 저장에 실패했습니다" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

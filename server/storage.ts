@@ -1,4 +1,4 @@
-import { users, blogProjects, chatMessages, type User, type InsertUser, type BlogProject, type InsertBlogProject, type ChatMessage, type InsertChatMessage } from "@shared/schema";
+import { users, userBusinessInfo, blogProjects, chatMessages, type User, type InsertUser, type UserBusinessInfo, type InsertUserBusinessInfo, type BlogProject, type InsertBlogProject, type ChatMessage, type InsertChatMessage } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 
@@ -7,6 +7,11 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  
+  // User business info methods
+  getUserBusinessInfo(userId: number): Promise<UserBusinessInfo | undefined>;
+  createUserBusinessInfo(businessInfo: InsertUserBusinessInfo): Promise<UserBusinessInfo>;
+  updateUserBusinessInfo(userId: number, updates: Partial<InsertUserBusinessInfo>): Promise<UserBusinessInfo>;
   
   // Blog project methods
   createBlogProject(project: InsertBlogProject): Promise<BlogProject>;
@@ -38,6 +43,33 @@ export class DatabaseStorage implements IStorage {
       .values(insertUser)
       .returning();
     return user;
+  }
+
+  async getUserBusinessInfo(userId: number): Promise<UserBusinessInfo | undefined> {
+    const [businessInfo] = await db.select().from(userBusinessInfo).where(eq(userBusinessInfo.userId, userId));
+    return businessInfo || undefined;
+  }
+
+  async createUserBusinessInfo(insertBusinessInfo: InsertUserBusinessInfo): Promise<UserBusinessInfo> {
+    const [businessInfo] = await db
+      .insert(userBusinessInfo)
+      .values(insertBusinessInfo)
+      .returning();
+    return businessInfo;
+  }
+
+  async updateUserBusinessInfo(userId: number, updates: Partial<InsertUserBusinessInfo>): Promise<UserBusinessInfo> {
+    const [updated] = await db
+      .update(userBusinessInfo)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(userBusinessInfo.userId, userId))
+      .returning();
+    
+    if (!updated) {
+      throw new Error(`Business info for user ${userId} not found`);
+    }
+    
+    return updated;
   }
 
   async createBlogProject(insertProject: InsertBlogProject): Promise<BlogProject> {

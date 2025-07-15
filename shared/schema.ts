@@ -8,6 +8,17 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
 });
 
+export const userBusinessInfo = pgTable("user_business_info", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  businessName: text("business_name").notNull(),
+  businessType: text("business_type").notNull(),
+  expertise: text("expertise").notNull(),
+  differentiators: text("differentiators").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const blogProjects = pgTable("blog_projects", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id),
@@ -57,6 +68,14 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).pick({
   content: true,
 });
 
+export const insertUserBusinessInfoSchema = createInsertSchema(userBusinessInfo).pick({
+  userId: true,
+  businessName: true,
+  businessType: true,
+  expertise: true,
+  differentiators: true,
+});
+
 export const businessInfoSchema = z.object({
   businessName: z.string().min(1, "업체명을 입력해주세요"),
   businessType: z.string().min(1, "업종을 선택해주세요"),
@@ -79,6 +98,8 @@ export const seoMetricsSchema = z.object({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+export type InsertUserBusinessInfo = z.infer<typeof insertUserBusinessInfoSchema>;
+export type UserBusinessInfo = typeof userBusinessInfo.$inferSelect;
 export type InsertBlogProject = z.infer<typeof insertBlogProjectSchema>;
 export type BlogProject = typeof blogProjects.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;

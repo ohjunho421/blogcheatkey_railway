@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Building2, ArrowRight, Check, ChevronsUpDown } from "lucide-react";
+import { Building2, ArrowRight, Check, ChevronsUpDown, Save, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BusinessInfoFormProps {
@@ -88,6 +88,44 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
   const [differentiators, setDifferentiators] = useState("");
   const { toast } = useToast();
 
+  // Get saved business info from user profile
+  const { data: savedBusinessInfo, isLoading: loadingBusinessInfo } = useQuery({
+    queryKey: ["/api/user/business-info"],
+    retry: false,
+  });
+
+  // Load saved business info when component mounts
+  useEffect(() => {
+    if (savedBusinessInfo) {
+      setBusinessName(savedBusinessInfo.businessName || "");
+      setBusinessType(savedBusinessInfo.businessType || "");
+      setExpertise(savedBusinessInfo.expertise || "");
+      setDifferentiators(savedBusinessInfo.differentiators || "");
+    }
+  }, [savedBusinessInfo]);
+
+  // Save to user profile (reusable across projects)
+  const saveToProfile = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", "/api/user/business-info", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "업체 정보 저장 완료",
+        description: "업체 정보가 프로필에 저장되었습니다.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "저장 실패",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Save to current project
   const saveBusinessInfo = useMutation({
     mutationFn: async (data: any) => {
       const response = await apiRequest("POST", `/api/projects/${project.id}/business`, data);
@@ -96,7 +134,7 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
     onSuccess: () => {
       onRefresh();
       toast({
-        title: "업체 정보 저장 완료",
+        title: "프로젝트 업체 정보 저장 완료",
         description: "블로그 생성을 시작하세요.",
       });
     },
@@ -130,6 +168,25 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
     },
   });
 
+  const handleSaveToProfile = () => {
+    const finalBusinessType = businessType || customBusinessType;
+    if (!businessName.trim() || !finalBusinessType.trim() || !expertise.trim() || !differentiators.trim()) {
+      toast({
+        title: "정보 입력 필요",
+        description: "모든 필드를 입력해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    saveToProfile.mutate({
+      businessName: businessName.trim(),
+      businessType: finalBusinessType.trim(),
+      expertise: expertise.trim(),
+      differentiators: differentiators.trim(),
+    });
+  };
+
   const handleSave = () => {
     const finalBusinessType = businessType || customBusinessType;
     if (!businessName.trim() || !finalBusinessType.trim() || !expertise.trim() || !differentiators.trim()) {
@@ -140,6 +197,14 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
       });
       return;
     }
+
+    // Save to both profile and project
+    saveToProfile.mutate({
+      businessName: businessName.trim(),
+      businessType: finalBusinessType.trim(),
+      expertise: expertise.trim(),
+      differentiators: differentiators.trim(),
+    });
 
     saveBusinessInfo.mutate({
       businessName: businessName.trim(),
@@ -243,32 +308,54 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
           </div>
         </div>
         
-        <div className="flex justify-end space-x-4 mt-6">
-          {project.status === 'business_info' && (
+        <div className="flex justify-between items-center mt-6">
+          <div className="flex space-x-2">
             <Button 
-              onClick={handleSave}
-              disabled={saveBusinessInfo.isPending}
+              variant="outline"
+              onClick={handleSaveToProfile}
+              disabled={saveToProfile.isPending || loadingBusinessInfo}
             >
-              {saveBusinessInfo.isPending ? "저장 중..." : "정보 저장"}
-            </Button>
-          )}
-          
-          {project.status === 'content_generation' && (
-            <Button 
-              onClick={handleGenerate}
-              disabled={generateContent.isPending}
-              className="bg-accent hover:bg-accent/90"
-            >
-              {generateContent.isPending ? (
-                <>Claude로 생성 중...</>
+              {saveToProfile.isPending ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  저장 중...
+                </>
               ) : (
                 <>
-                  <ArrowRight className="h-4 w-4 mr-2" />
-                  블로그 생성
+                  <Save className="h-4 w-4 mr-2" />
+                  프로필에 저장
                 </>
               )}
             </Button>
-          )}
+          </div>
+
+          <div className="flex space-x-2">
+            {project.status === 'business_info' && (
+              <Button 
+                onClick={handleSave}
+                disabled={saveBusinessInfo.isPending || loadingBusinessInfo}
+              >
+                {saveBusinessInfo.isPending ? "저장 중..." : "정보 저장"}
+              </Button>
+            )}
+            
+            {project.status === 'content_generation' && (
+              <Button 
+                onClick={handleGenerate}
+                disabled={generateContent.isPending}
+                className="bg-accent hover:bg-accent/90"
+              >
+                {generateContent.isPending ? (
+                  <>Claude로 생성 중...</>
+                ) : (
+                  <>
+                    <ArrowRight className="h-4 w-4 mr-2" />
+                    블로그 생성
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
