@@ -28,56 +28,33 @@ export async function writeOptimizedBlogPost(
     throw new Error("Anthropic API key is not configured");
   }
 
-  const systemPrompt = `당신은 자영업자를 위한 전문 SEO 블로그 작성자입니다. 다음 조건을 반드시 준수하여 블로그 글을 작성해주세요:
+  const systemPrompt = `전문 SEO 블로그 작성자로서 다음을 준수하여 작성:
 
-SEO 최적화 필수 조건:
-1. 키워드 "${keyword}"의 형태소가 글 전체에서 17-20회 자연스럽게 출현해야 함
-2. 글자수는 공백 제외 1700-2000자 범위여야 함
-3. 구조: 서론 → 본론(4개 소주제) → 결론
+필수 조건:
+- 키워드 "${keyword}" 형태소 17-20회 자연스럽게 포함
+- 공백제외 1700-2000자
+- 구조: 서론→본론(4개소주제)→결론
 
-글 작성 가이드라인:
-- 전문적이면서도 이해하기 쉬운 문체 사용
-- 실용적인 정보와 구체적인 예시 포함
-- 근거 있는 정보 제공 (제공된 연구 자료 활용)
-- 서론에서는 독자의 기대감과 문제 해결 의지 자극
-- 결론에서는 자연스럽게 업체 연락 유도
+작성 방식:
+- 실용적 정보와 구체적 예시
+- 연구자료 근거 활용
+- 서론에서 문제제기, 결론에서 업체연락 자연스럽게 유도`;
 
-업체 정보 활용:
-- 서론과 결론에서 전문성 어필
-- 차별점을 자연스럽게 언급
-- 신뢰감 조성`;
+  const userPrompt = `키워드: "${keyword}"
 
-  const userPrompt = `다음 정보를 바탕으로 SEO 최적화된 블로그 글을 작성해주세요:
+소제목: ${subtitles.map((s, i) => `${i + 1}.${s}`).join(' | ')}
 
-키워드: "${keyword}"
+연구자료: ${researchData.content}
 
-소제목:
-${subtitles.map((subtitle, index) => `${index + 1}. ${subtitle}`).join('\n')}
+업체: ${businessInfo.businessName}(${businessInfo.businessType}) 
+전문성: ${businessInfo.expertise}
+차별점: ${businessInfo.differentiators}
 
-연구 자료:
-${researchData.content}
-
-업체 정보:
-- 업체명: ${businessInfo.businessName}
-- 업종: ${businessInfo.businessType}
-- 전문성: ${businessInfo.expertise}
-- 차별점: ${businessInfo.differentiators}
-
-${seoSuggestions && seoSuggestions.length > 0 ? `
-추가 SEO 개선사항:
-${seoSuggestions.join('\n')}
-` : ''}
-
-글 구조:
-1. 서론: 독자의 고민 공감 + 전문성 어필 + 기대감 조성
-2. 본론: 4개 소주제별 상세 설명 (연구 자료 근거 포함)
-3. 결론: 요약 + 자연스러운 업체 연락 유도
-
-반드시 키워드 밀도와 글자수 조건을 준수하여 작성해주세요.`;
+즉시 1700-2000자 블로그를 작성하세요. 키워드 17-20회 포함.`;
 
   try {
     const message = await anthropic.messages.create({
-      max_tokens: 4000,
+      max_tokens: 8000,
       messages: [
         { 
           role: 'user', 
@@ -87,6 +64,7 @@ ${seoSuggestions.join('\n')}
       // "claude-sonnet-4-20250514"
       model: DEFAULT_MODEL_STR,
       system: systemPrompt,
+      temperature: 0.3,
     });
 
     const content = message.content[0];

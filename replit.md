@@ -103,6 +103,9 @@ Preferred communication style: Simple, everyday language.
 - **Business Info Auto-Fill**: Added dropdown selection for saved businesses - selecting a business name automatically fills expertise and differentiators
 - **Smart UI Flow**: Business info form now remains visible during content generation with clear progress indicators
 - **Robust Error Handling**: Added fallback SEO analysis when Gemini API is overloaded, ensuring Claude-generated content is always delivered
+- **Korean Morpheme Analysis**: Replaced Gemini API with custom Korean morpheme analyzer for reliable keyword counting
+- **Business Info UX**: Form starts empty, saved business selection changes button to "블로그 생성"
+- **Content Generation Speed**: Optimized Claude prompts and increased max_tokens to 8000 for faster generation
 - **Model Updates**: Updated Perplexity API to use simplified `sonar-pro` model name
 - **UI Improvements**: Fixed business info form UI with proper button placement and persistent form visibility
 

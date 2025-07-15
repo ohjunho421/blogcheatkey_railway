@@ -87,6 +87,7 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
   const [businessNameOpen, setBusinessNameOpen] = useState(false);
   const [expertise, setExpertise] = useState("");
   const [differentiators, setDifferentiators] = useState("");
+  const [selectedSavedBusiness, setSelectedSavedBusiness] = useState<any>(null);
   const { toast } = useToast();
 
   // Get saved business info from user profile
@@ -101,15 +102,7 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
     retry: false,
   });
 
-  // Load saved business info when component mounts
-  useEffect(() => {
-    if (savedBusinessInfo) {
-      setBusinessName(savedBusinessInfo.businessName || "");
-      setBusinessType(savedBusinessInfo.businessType || "");
-      setExpertise(savedBusinessInfo.expertise || "");
-      setDifferentiators(savedBusinessInfo.differentiators || "");
-    }
-  }, [savedBusinessInfo]);
+  // Keep form initially empty - don't auto-load saved business info
 
   // Save to user profile (reusable across projects)
   const saveToProfile = useMutation({
@@ -231,23 +224,12 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
     setBusinessType(selectedInfo.businessType || "");
     setExpertise(selectedInfo.expertise || "");
     setDifferentiators(selectedInfo.differentiators || "");
+    setSelectedSavedBusiness(selectedInfo);
     setBusinessNameOpen(false);
-    
-    // Auto-save to project when selecting existing business
-    if (project.status === 'business_info') {
-      const businessData = {
-        businessName: selectedInfo.businessName || "",
-        businessType: selectedInfo.businessType || "",
-        expertise: selectedInfo.expertise || "",
-        differentiators: selectedInfo.differentiators || "",
-      };
-      
-      saveBusinessInfo.mutate(businessData);
-    }
     
     toast({
       title: "업체 정보 불러오기 완료",
-      description: `${selectedInfo.businessName}의 정보를 불러왔습니다.`,
+      description: `${selectedInfo.businessName}의 정보를 불러왔습니다. 수정 후 블로그를 생성하세요.`,
     });
   };
 
@@ -427,12 +409,50 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
           </div>
 
           <div className="flex space-x-2">
-            {project.status === 'business_info' && (
+            {project.status === 'business_info' && !selectedSavedBusiness && (
               <Button 
                 onClick={handleSave}
                 disabled={saveBusinessInfo.isPending || loadingBusinessInfo}
               >
                 {saveBusinessInfo.isPending ? "저장 중..." : "정보 저장"}
+              </Button>
+            )}
+            
+            {project.status === 'business_info' && selectedSavedBusiness && (
+              <Button 
+                onClick={() => {
+                  // Save to project first, then generate
+                  const finalBusinessType = businessType || customBusinessType;
+                  const businessData = {
+                    businessName: businessName.trim(),
+                    businessType: finalBusinessType.trim(),
+                    expertise: expertise.trim(),
+                    differentiators: differentiators.trim(),
+                  };
+                  
+                  saveBusinessInfo.mutate(businessData, {
+                    onSuccess: () => {
+                      // After successful save, start generation
+                      setTimeout(() => {
+                        generateContent.mutate(project.id);
+                      }, 1000);
+                    }
+                  });
+                }}
+                disabled={saveBusinessInfo.isPending || generateContent.isPending}
+                className="bg-accent hover:bg-accent/90"
+              >
+                {saveBusinessInfo.isPending || generateContent.isPending ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    {saveBusinessInfo.isPending ? "저장 중..." : "블로그 생성 중..."}
+                  </>
+                ) : (
+                  <>
+                    <ArrowRight className="h-4 w-4 mr-2" />
+                    블로그 생성
+                  </>
+                )}
               </Button>
             )}
             
