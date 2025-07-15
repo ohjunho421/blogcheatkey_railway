@@ -233,6 +233,18 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
     setDifferentiators(selectedInfo.differentiators || "");
     setBusinessNameOpen(false);
     
+    // Auto-save to project when selecting existing business
+    if (project.status === 'business_info') {
+      const businessData = {
+        businessName: selectedInfo.businessName || "",
+        businessType: selectedInfo.businessType || "",
+        expertise: selectedInfo.expertise || "",
+        differentiators: selectedInfo.differentiators || "",
+      };
+      
+      saveBusinessInfo.mutate(businessData);
+    }
+    
     toast({
       title: "업체 정보 불러오기 완료",
       description: `${selectedInfo.businessName}의 정보를 불러왔습니다.`,
