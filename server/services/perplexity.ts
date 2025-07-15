@@ -37,12 +37,8 @@ export async function searchResearch(keyword: string, subtitles: string[]): Prom
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "llama-3.1-sonar-large-128k-online",
+      model: "llama-3.1-sonar-small-128k-online",
       messages: [
-        {
-          role: "system",
-          content: "당신은 신뢰할 수 있는 정보 수집 전문가입니다. 정확한 통계, 연구 자료, 공식 문서를 우선적으로 찾아주세요. 각 정보의 출처를 명확히 제시해주세요."
-        },
         {
           role: "user",
           content: searchQuery
@@ -51,7 +47,6 @@ export async function searchResearch(keyword: string, subtitles: string[]): Prom
       max_tokens: 2000,
       temperature: 0.2,
       top_p: 0.9,
-      search_recency_filter: "month",
       return_images: false,
       return_related_questions: false,
       stream: false
@@ -59,7 +54,9 @@ export async function searchResearch(keyword: string, subtitles: string[]): Prom
   });
 
   if (!response.ok) {
-    throw new Error(`Perplexity API error: ${response.status} ${response.statusText}`);
+    const errorText = await response.text();
+    console.error("Perplexity API error details:", errorText);
+    throw new Error(`Perplexity API error: ${response.status} ${response.statusText} - ${errorText}`);
   }
 
   const data: PerplexityResponse = await response.json();
@@ -88,12 +85,8 @@ export async function getDetailedResearch(keyword: string, subtitle: string): Pr
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "llama-3.1-sonar-large-128k-online",
+      model: "llama-3.1-sonar-small-128k-online",
       messages: [
-        {
-          role: "system",
-          content: "정확하고 신뢰할 수 있는 정보를 수집하는 전문가입니다. 공식 기관, 연구 논문, 전문 매체의 정보를 우선적으로 찾아주세요."
-        },
         {
           role: "user",
           content: searchQuery
@@ -102,7 +95,6 @@ export async function getDetailedResearch(keyword: string, subtitle: string): Pr
       max_tokens: 1500,
       temperature: 0.1,
       top_p: 0.8,
-      search_recency_filter: "month",
       return_images: false,
       return_related_questions: false,
       stream: false
@@ -110,7 +102,9 @@ export async function getDetailedResearch(keyword: string, subtitle: string): Pr
   });
 
   if (!response.ok) {
-    throw new Error(`Perplexity API error: ${response.status} ${response.statusText}`);
+    const errorText = await response.text();
+    console.error("Perplexity API error details:", errorText);
+    throw new Error(`Perplexity API error: ${response.status} ${response.statusText} - ${errorText}`);
   }
 
   const data: PerplexityResponse = await response.json();
