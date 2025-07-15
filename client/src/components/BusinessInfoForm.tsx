@@ -218,12 +218,22 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
     generateContent.mutate(project.id);
   };
 
+  const isGenerating = generateContent.isPending;
+
   return (
-    <Card>
+    <Card className={isGenerating ? "border-accent" : ""}>
       <CardHeader>
-        <CardTitle className="flex items-center text-lg">
-          <Building2 className="h-5 w-5 text-primary mr-2" />
-          업체 정보 입력
+        <CardTitle className="flex items-center justify-between text-lg">
+          <div className="flex items-center">
+            <Building2 className="h-5 w-5 text-primary mr-2" />
+            업체 정보 입력
+          </div>
+          {isGenerating && (
+            <div className="flex items-center text-accent text-sm">
+              <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+              블로그 생성 중...
+            </div>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -339,18 +349,21 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
               </Button>
             )}
             
-            {project.status === 'content_generation' && (
+            {(project.status === 'content_generation' || project.status === 'completed') && (
               <Button 
                 onClick={handleGenerate}
                 disabled={generateContent.isPending}
                 className="bg-accent hover:bg-accent/90"
               >
                 {generateContent.isPending ? (
-                  <>Claude로 생성 중...</>
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Claude로 생성 중...
+                  </>
                 ) : (
                   <>
                     <ArrowRight className="h-4 w-4 mr-2" />
-                    블로그 생성
+                    {project.status === 'completed' ? '블로그 재생성' : '블로그 생성'}
                   </>
                 )}
               </Button>

@@ -14,7 +14,7 @@ import { BlogContentDisplay } from "@/components/BlogContentDisplay";
 import { EditingChat } from "@/components/EditingChat";
 import { ReferenceLinks } from "@/components/ReferenceLinks";
 import { InfographicGallery } from "@/components/InfographicGallery";
-import { MessageSquare, FileText, Search, Building2, Sparkles } from "lucide-react";
+import { MessageSquare, FileText, Search, Building2, Sparkles, RotateCw } from "lucide-react";
 
 export default function Home() {
   const [location, navigate] = useLocation();
@@ -145,12 +145,46 @@ export default function Home() {
 
           {/* Right Column - Results */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Business Info Form */}
-            {project && project.status === 'business_info' && (
+            {/* Business Info Form - Show after data collection */}
+            {project && (project.status === 'business_info' || project.status === 'content_generation' || project.status === 'completed') && (
               <BusinessInfoForm 
                 project={project} 
                 onRefresh={refetch}
               />
+            )}
+
+            {/* Content Generation Status */}
+            {project && project.status === 'content_generation' && !project.generatedContent && (
+              <Card className="border-accent">
+                <CardContent className="py-8">
+                  <div className="text-center space-y-4">
+                    <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto">
+                      <RotateCw className="h-8 w-8 text-accent animate-spin" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-accent">블로그 생성 중...</h3>
+                      <p className="text-muted-foreground mt-2">
+                        Claude가 SEO 최적화된 블로그 포스트를 작성하고 있습니다.
+                        <br />잠시만 기다려주세요. (약 30-60초 소요)
+                      </p>
+                    </div>
+                    <div className="flex justify-center space-x-2 text-sm text-muted-foreground">
+                      <span className="flex items-center">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                        키워드 분석 완료
+                      </span>
+                      <span className="flex items-center">
+                        <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                        자료 수집 완료
+                      </span>
+                      <span className="flex items-center">
+                        <div className="w-2 h-2 bg-accent rounded-full mr-2 animate-pulse"></div>
+                        콘텐츠 생성 중
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
             {/* Blog Content Display */}
