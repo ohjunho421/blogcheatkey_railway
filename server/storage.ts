@@ -41,11 +41,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createBlogProject(insertProject: InsertBlogProject): Promise<BlogProject> {
+    // Ensure default user exists
+    let defaultUser = await this.getUser(1);
+    if (!defaultUser) {
+      defaultUser = await this.createUser({
+        username: 'demo_user',
+        password: 'demo_password'
+      });
+    }
+
     const [project] = await db
       .insert(blogProjects)
       .values({
         ...insertProject,
-        userId: 1, // Default user for demo
+        userId: defaultUser.id,
         status: insertProject.status || 'keyword_analysis',
       })
       .returning();
