@@ -33,47 +33,80 @@ export async function analyzeKeyword(keyword: string): Promise<KeywordAnalysis> 
 
 각 소제목은 구체적이고 실용적이며, SEO에 최적화된 형태로 작성해주세요.`;
 
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-pro",
-      config: {
-        systemInstruction: "당신은 SEO 전문가이자 블로그 작성 전문가입니다. 사용자의 검색 의도를 정확히 파악하고, 실용적이고 도움이 되는 블로그 구조를 제안해주세요.",
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: "object",
-          properties: {
-            searchIntent: { type: "string" },
-            userConcerns: { type: "string" },
-            suggestedSubtitles: { 
-              type: "array", 
-              items: { type: "string" },
-              minItems: 4,
-              maxItems: 4
-            }
-          },
-          required: ["searchIntent", "userConcerns", "suggestedSubtitles"]
+  // Retry logic for API overload
+  const maxRetries = 3;
+  const retryDelay = 2000; // 2 seconds
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-pro",
+        config: {
+          systemInstruction: "당신은 SEO 전문가이자 블로그 작성 전문가입니다. 사용자의 검색 의도를 정확히 파악하고, 실용적이고 도움이 되는 블로그 구조를 제안해주세요.",
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "object",
+            properties: {
+              searchIntent: { type: "string" },
+              userConcerns: { type: "string" },
+              suggestedSubtitles: { 
+                type: "array", 
+                items: { type: "string" },
+                minItems: 4,
+                maxItems: 4
+              }
+            },
+            required: ["searchIntent", "userConcerns", "suggestedSubtitles"]
+          }
+        },
+        contents: prompt,
+      });
+
+      const rawJson = response.text;
+      if (!rawJson) {
+        throw new Error("Empty response from Gemini");
+      }
+
+      const analysis: KeywordAnalysis = JSON.parse(rawJson);
+      
+      // Validate the response
+      if (!analysis.searchIntent || !analysis.userConcerns || !analysis.suggestedSubtitles || analysis.suggestedSubtitles.length !== 4) {
+        throw new Error("Invalid analysis format received from Gemini");
+      }
+
+      return analysis;
+    } catch (error: any) {
+      console.error(`Keyword analysis attempt ${attempt} error:`, error);
+      
+      // Check if it's an API overload error
+      if (error.status === 503 || (error.message && error.message.includes("overloaded"))) {
+        if (attempt < maxRetries) {
+          console.log(`API overloaded, retrying in ${retryDelay}ms... (attempt ${attempt}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          continue;
+        } else {
+          // Return fallback analysis after all retries
+          console.log("All retries failed, returning fallback analysis");
+          return {
+            searchIntent: `${keyword}에 대한 정보를 찾고 있는 사용자들은 실용적이고 구체적인 가이드를 원합니다. 이들은 단순한 정의보다는 실제 적용 방법, 장단점, 그리고 개인적인 경험이나 전문가 의견을 통해 더 깊이 있는 이해를 얻고자 합니다.`,
+            userConcerns: `${keyword}를 검색하는 사용자들은 어디서부터 시작해야 할지 모르거나, 너무 많은 정보로 인해 혼란스러워합니다. 또한 신뢰할 수 있는 정보원을 찾기 어려워하며, 실제로 적용 가능한 구체적인 방법을 찾고 있습니다.`,
+            suggestedSubtitles: [
+              `${keyword}란 무엇인가? 기본 개념 정리`,
+              `${keyword}의 주요 특징과 장점`,
+              `${keyword} 시작하는 방법: 단계별 가이드`,
+              `${keyword} 관련 주의사항과 전문가 조언`
+            ]
+          };
         }
-      },
-      contents: prompt,
-    });
-
-    const rawJson = response.text;
-    if (!rawJson) {
-      throw new Error("Empty response from Gemini");
+      } else {
+        // For other errors, throw immediately
+        throw new Error(`키워드 분석에 실패했습니다: ${error.message || error}`);
+      }
     }
-
-    const analysis: KeywordAnalysis = JSON.parse(rawJson);
-    
-    // Validate the response
-    if (!analysis.searchIntent || !analysis.userConcerns || !analysis.suggestedSubtitles || analysis.suggestedSubtitles.length !== 4) {
-      throw new Error("Invalid analysis format received from Gemini");
-    }
-
-    return analysis;
-  } catch (error) {
-    console.error("Keyword analysis error:", error);
-    throw new Error(`키워드 분석에 실패했습니다: ${error}`);
   }
+
+  // This should never be reached, but just in case
+  throw new Error("키워드 분석에 실패했습니다: 최대 재시도 횟수 초과");
 }
 
 export async function editContent(

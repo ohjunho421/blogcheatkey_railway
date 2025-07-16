@@ -121,6 +121,37 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
     generateImage.mutate({ subtitle, type });
   };
 
+  const parseContentSections = (content: string) => {
+    if (!content) return [];
+    
+    const sections = content.split('\n\n').filter(section => section.trim());
+    const parsedSections: { type: 'title' | 'subtitle' | 'paragraph', text: string, isMainSubtitle?: boolean }[] = [];
+    
+    sections.forEach(section => {
+      const trimmedSection = section.trim();
+      
+      // Check if it's a main subtitle (from the analysis subtitles)
+      const isMainSubtitle = project.subtitles && 
+        project.subtitles.some((subtitle: string) => 
+          trimmedSection.includes(subtitle) || subtitle.includes(trimmedSection.slice(0, 20))
+        );
+      
+      if (trimmedSection.length < 100 && !trimmedSection.includes('.') && !trimmedSection.includes('?')) {
+        // It's likely a title or subtitle
+        parsedSections.push({ 
+          type: isMainSubtitle ? 'subtitle' : 'title', 
+          text: trimmedSection,
+          isMainSubtitle 
+        });
+      } else {
+        // It's a paragraph
+        parsedSections.push({ type: 'paragraph', text: trimmedSection });
+      }
+    });
+    
+    return parsedSections;
+  };
+
   const handleImageDownload = async (imageUrl: string, subtitle: string, type: string) => {
     try {
       const filename = `${type}-${project.keyword}-${subtitle.replace(/\s+/g, '-')}.png`;
@@ -202,17 +233,102 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
               </div>
             )}
 
-            {/* 생성된 콘텐츠 */}
+            {/* 생성된 콘텐츠 with Interactive Image Generation */}
             <div className="max-w-none">
               <div className="bg-background p-4 md:p-6 rounded-lg border">
                 <div className="text-sm md:text-base leading-relaxed font-normal text-gray-800 dark:text-gray-200" 
                      style={{ lineHeight: '1.8' }}>
-                  {project.generatedContent.split('\n').map((line, index) => (
-                    <div key={index} className={`
-                      ${line.trim() === '' ? 'mb-3 md:mb-4' : 'mb-1 md:mb-2'}
-                      break-words
-                    `}>
-                      {line || '\u00A0'}
+                  {parseContentSections(project.generatedContent).map((section, index) => (
+                    <div key={index} className="relative group">
+                      {section.type === 'subtitle' && section.isMainSubtitle ? (
+                        <div className="mb-4">
+                          <div className="flex items-start justify-between group">
+                            <div className="flex-1 font-semibold text-lg mb-2">
+                              {section.text}
+                            </div>
+                            <div className="flex gap-1 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 hover:bg-blue-100 dark:hover:bg-blue-900"
+                                onClick={() => handleGenerateImage(section.text, 'infographic')}
+                                disabled={generatingImages[`${section.text}-infographic`]}
+                                title="인포그래픽 생성"
+                              >
+                                {generatingImages[`${section.text}-infographic`] ? (
+                                  <RefreshCw className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <ImageIcon className="h-3 w-3" />
+                                )}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 hover:bg-green-100 dark:hover:bg-green-900"
+                                onClick={() => handleGenerateImage(section.text, 'photo')}
+                                disabled={generatingImages[`${section.text}-photo`]}
+                                title="사진 생성"
+                              >
+                                {generatingImages[`${section.text}-photo`] ? (
+                                  <RefreshCw className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Camera className="h-3 w-3" />
+                                )}
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {/* Show generated images for this subtitle */}
+                          <div className="flex gap-2 mb-3">
+                            {generatedImages[`${section.text}-infographic`] && (
+                              <div className="relative">
+                                <img 
+                                  src={generatedImages[`${section.text}-infographic`]} 
+                                  alt={`${section.text} 인포그래픽`}
+                                  className="w-24 h-24 object-cover rounded border cursor-pointer hover:scale-105 transition-transform"
+                                  onClick={() => window.open(generatedImages[`${section.text}-infographic`], '_blank')}
+                                />
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  className="absolute -top-2 -right-2 h-6 w-6 p-0 rounded-full"
+                                  onClick={() => handleImageDownload(generatedImages[`${section.text}-infographic`], section.text, 'infographic')}
+                                  title="다운로드"
+                                >
+                                  <Download className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            )}
+                            {generatedImages[`${section.text}-photo`] && (
+                              <div className="relative">
+                                <img 
+                                  src={generatedImages[`${section.text}-photo`]} 
+                                  alt={`${section.text} 사진`}
+                                  className="w-24 h-24 object-cover rounded border cursor-pointer hover:scale-105 transition-transform"
+                                  onClick={() => window.open(generatedImages[`${section.text}-photo`], '_blank')}
+                                />
+                                <Button
+                                  size="sm"
+                                  variant="secondary"
+                                  className="absolute -top-2 -right-2 h-6 w-6 p-0 rounded-full"
+                                  onClick={() => handleImageDownload(generatedImages[`${section.text}-photo`], section.text, 'photo')}
+                                  title="다운로드"
+                                >
+                                  <Download className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ) : section.type === 'title' ? (
+                        <div className="font-bold text-xl mb-3">
+                          {section.text}
+                        </div>
+                      ) : (
+                        <div className="mb-2 break-words">
+                          {section.text || '\u00A0'}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
