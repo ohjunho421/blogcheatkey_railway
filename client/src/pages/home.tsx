@@ -133,7 +133,7 @@ export default function Home() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">글자수 범위</span>
-                  <span className="text-sm font-medium text-primary">1700-2000자</span>
+                  <span className="text-sm font-medium text-primary">1700-1850자</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">구조</span>

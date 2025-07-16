@@ -144,7 +144,7 @@ export function analyzeMorphemes(content: string, keyword: string): MorphemeAnal
   }
   
   const keywordMorphemeCount = keywordMorphemes.length;
-  const isLengthOptimized = characterCount >= 1700 && characterCount <= 2000;
+  const isLengthOptimized = characterCount >= 1700 && characterCount <= 1850;
   const isOptimized = isKeywordOptimized && isLengthOptimized;
   
   // Generate issues and suggestions
@@ -177,10 +177,10 @@ export function analyzeMorphemes(content: string, keyword: string): MorphemeAnal
   
   if (!isLengthOptimized) {
     if (characterCount < 1700) {
-      issues.push(`글자수가 부족합니다 (${characterCount}/1700-2000자)`);
+      issues.push(`글자수가 부족합니다 (${characterCount}/1700-1850자)`);
       suggestions.push('내용을 더 자세히 설명하여 글자수를 늘려주세요');
-    } else if (characterCount > 2000) {
-      issues.push(`글자수가 과도합니다 (${characterCount}/1700-2000자)`);
+    } else if (characterCount > 1850) {
+      issues.push(`글자수가 과도합니다 (${characterCount}/1700-1850자)`);
       suggestions.push('불필요한 내용을 줄여서 간결하게 만들어주세요');
     }
   }
