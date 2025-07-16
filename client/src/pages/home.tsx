@@ -89,19 +89,19 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Progress Section */}
-        {project && (
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">프로젝트 진행 상황</h2>
+        {/* Progress Section - 프로젝트가 있거나 새로 만들 때 항상 표시 */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold">프로젝트 진행 상황</h2>
+            {project && (
               <Badge variant="secondary">
                 키워드: {project.keyword}
               </Badge>
-            </div>
-            <Progress value={getProgressPercentage()} className="mb-4" />
-            <ProgressStepper currentStep={getCurrentStepIndex()} />
+            )}
           </div>
-        )}
+          <Progress value={project ? getProgressPercentage() : 0} className="mb-4" />
+          <ProgressStepper currentStep={project ? getCurrentStepIndex() : 0} />
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Input Forms */}
