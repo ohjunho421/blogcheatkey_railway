@@ -1,20 +1,77 @@
-import OpenAI from "openai";
+import { google } from 'googleapis';
 
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key"
-});
+// Google Cloud authentication
+const getGoogleAuth = () => {
+  const serviceAccountKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  if (!serviceAccountKey) {
+    throw new Error("Google Service Account Key is not configured");
+  }
+  
+  const credentials = JSON.parse(serviceAccountKey);
+  return new google.auth.GoogleAuth({
+    credentials,
+    scopes: ['https://www.googleapis.com/auth/cloud-platform']
+  });
+};
+
+const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT_ID || "blogcheatkey";
+const LOCATION = "us-central1";
+
+async function getAccessToken(): Promise<string> {
+  try {
+    const auth = getGoogleAuth();
+    const client = await auth.getClient();
+    const accessTokenResponse = await client.getAccessToken();
+    return accessTokenResponse.token || "";
+  } catch (error) {
+    console.error("Failed to get access token:", error);
+    throw new Error("Google authentication failed");
+  }
+}
 
 export async function generateImage(prompt: string, style: string = "infographic"): Promise<string> {
   try {
-    const response = await openai.images.generate({
-      model: "dall-e-3",
-      prompt: `${style === "photo" ? "Professional photo of" : "Clean infographic about"} ${prompt}`,
-      n: 1,
-      size: "1024x1024",
-      quality: "standard",
+    const accessToken = await getAccessToken();
+    const enhancedPrompt = `${style === "photo" ? "Professional photo of" : "Clean infographic about"} ${prompt}`;
+    
+    const endpoint = `https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/imagen-3.0-generate-001:predict`;
+    
+    const requestBody = {
+      instances: [
+        {
+          prompt: enhancedPrompt
+        }
+      ],
+      parameters: {
+        sampleCount: 1,
+        aspectRatio: "1:1",
+        safetyFilterLevel: "block_some",
+        personGeneration: "dont_allow"
+      }
+    };
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
     });
 
-    return response.data[0].url || "";
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.predictions && data.predictions[0] && data.predictions[0].bytesBase64Encoded) {
+      return `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
+    }
+    
+    throw new Error("No image data in response");
   } catch (error) {
     console.error("Image generation error:", error);
     throw new Error(`이미지 생성에 실패했습니다: ${error}`);
@@ -22,8 +79,8 @@ export async function generateImage(prompt: string, style: string = "infographic
 }
 
 export async function generateInfographic(subtitle: string, keyword: string): Promise<string> {
-  if (!process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY_ENV_VAR) {
-    throw new Error("OpenAI API key is not configured");
+  if (!process.env.GOOGLE_SERVICE_ACCOUNT_KEY || !process.env.GOOGLE_CLOUD_PROJECT_ID) {
+    throw new Error("Google Cloud credentials are not configured");
   }
 
   const prompt = `Create a clean, professional infographic about "${subtitle}" related to "${keyword}". 
@@ -32,15 +89,45 @@ export async function generateInfographic(subtitle: string, keyword: string): Pr
   Style should be business-appropriate and professional.`;
 
   try {
-    const response = await openai.images.generate({
-      model: "dall-e-3",
-      prompt: prompt,
-      n: 1,
-      size: "1024x1024",
-      quality: "standard",
+    const accessToken = await getAccessToken();
+    const endpoint = `https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/imagen-3.0-generate-001:predict`;
+    
+    const requestBody = {
+      instances: [
+        {
+          prompt: prompt
+        }
+      ],
+      parameters: {
+        sampleCount: 1,
+        aspectRatio: "1:1",
+        safetyFilterLevel: "block_some",
+        personGeneration: "dont_allow"
+      }
+    };
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
     });
 
-    return response.data[0].url || "";
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.predictions && data.predictions[0] && data.predictions[0].bytesBase64Encoded) {
+      return `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
+    }
+    
+    throw new Error("No image data in response");
   } catch (error) {
     console.error("Image generation error:", error);
     throw new Error("Failed to generate infographic");
