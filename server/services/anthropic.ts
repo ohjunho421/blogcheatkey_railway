@@ -140,20 +140,22 @@ export async function writeOptimizedBlogPost(
 
 🎯 글의 목적: 매력적인 서론으로 독자 관심 유발 → 전문성 기반 신뢰할 수 있는 정보 제공 → 행동 유도하는 결론으로 상담 연결
 
-📖 서론 작성 가이드 (업체 정보 반영):
-- 첫 문장: 독자 공감대 형성 또는 호기심 자극
-- 업체 전문성 어필: "${businessInfo.expertise}" 경험과 "${businessInfo.differentiators}" 차별점 강조
-- 업체명 자연스럽게 언급: "${businessInfo.businessName}" 전문가로서의 신뢰성 구축
-- 글의 가치: 읽으면 얻을 수 있는 구체적 혜택 제시
-- 예시: "BMW 오너라면 누구나 한 번쯤 궁금했을 그 기능들, ${businessInfo.businessName}에서 ${businessInfo.expertise}을 해온 전문가로서 ${businessInfo.differentiators}한 방법들을 알려드릴게요"
+📖 서론 작성 가이드 (독자 어려움 공감형):
+- 독자 어려움 언급: "BMW 기능들이 복잡해서 어디서부터 시작해야 할지 모르겠다", "매뉴얼만 봐서는 이해가 안 된다"
+- 공감과 이해: "저도 처음엔 그랬어요", "많은 분들이 같은 고민을 하시죠"
+- 해결책 제시: "이 글을 통해 그런 불편함을 한 번에 해소할 수 있어요"
+- 업체 전문성 어필: "${businessInfo.businessName}에서 ${businessInfo.expertise}"으로 쌓은 노하우
+- 차별점 강조: "${businessInfo.differentiators}"한 접근 방식
+- 예시: "BMW 기능이 너무 복잡해서 포기하고 계신가요? 저희도 처음엔 그랬어요. ${businessInfo.businessName}에서 ${businessInfo.expertise}하면서 알게 된 ${businessInfo.differentiators}한 방법들로 이런 불편함을 완전히 해소할 수 있답니다"
 
-📝 결론 작성 가이드 (업체 정보 반영):
-- 핵심 내용 간단 요약
-- 독자가 얻은 가치 확인
-- 업체 차별점 재강조: "${businessInfo.differentiators}" 활용한 서비스 언급
-- 업체명과 전문성으로 상담 유도: "${businessInfo.businessName}"의 "${businessInfo.expertise}" 전문가와 상담 권유
-- 다음 행동 단계 명확히 제시
-- 예시: "지금까지 알아본 방법들로 BMW 라이프가 한층 업그레이드될 거예요. 더 고급 기능이나 복잡한 설정은 ${businessInfo.businessName}의 ${businessInfo.expertise} 전문가와 상담받으시는 게 안전하죠. ${businessInfo.differentiators}한 서비스로 도움드릴게요"
+📝 결론 작성 가이드 (강력한 CTA):
+- 핵심 내용 간단 요약: "지금까지 알아본 방법들로 기본적인 부분은 해결하실 수 있을 거예요"
+- 현실적 한계 인정: "하지만 직접 해보려니 복잡하고 시간도 많이 걸리죠"
+- 시간 부족 공감: "바쁜 일상 속에서 일일이 찾아가며 설정하기 어려우실 거예요"
+- 전문가 필요성 강조: "실수하면 차량에 문제가 생길 수도 있고요"
+- 업체 솔루션 제시: "${businessInfo.businessName}에서는 ${businessInfo.differentiators}하게 ${businessInfo.expertise} 서비스를 제공합니다"
+- 강력한 CTA: "시간 아끼고 안전하게 해결하고 싶으시다면 ${businessInfo.businessName}에 문의해보세요. 전문가가 직접 도와드릴게요"
+- 예시: "방법을 알아도 직접 하려니 복잡하고 시간도 부족하시죠? 실수라도 하면 차량에 문제가 생길까 걱정되고요. ${businessInfo.businessName}에서는 ${businessInfo.differentiators}하게 ${businessInfo.expertise} 서비스를 제공합니다. 시간 아끼고 안전하게 해결하고 싶으시다면 지금 바로 문의해보세요"
 
 ❌ 절대 사용 금지 표현들:
 - "안녕하세요", "여러분", "독자님들"
@@ -161,19 +163,22 @@ export async function writeOptimizedBlogPost(
 - "이번 포스팅에서는", "오늘 소개할"
 - "문의하세요", "상담받으세요", "도움드리겠습니다"
 
-✅ 매력적인 서론 작성법 (업체 정보 활용):
-- 호기심 자극하기: "BMW 오너라면 한 번쯤 궁금했을 거예요", "이런 경험 있으신가요?"
-- 업체 전문성 어필: "${businessInfo.businessName}에서 ${businessInfo.expertise}을 해온 전문가로서 말씀드리면"
-- 차별점 강조: "${businessInfo.differentiators}한 노하우로"
-- 문제 제기: "많은 분들이 이런 실수를 하시는데요", "대부분 모르고 계신 사실이 있어요"
-- 혜택 제시: "단 몇 분만 투자하면 차가 완전히 달라질 거예요"
+✅ 매력적인 서론 작성법 (독자 어려움 공감 + 업체 정보):
+- 독자 어려움 공감: "BMW 기능이 너무 복잡해서 포기하셨나요?", "매뉴얼 봐도 이해 안 되시죠?"
+- 공감과 이해: "저희도 처음엔 그랬어요", "많은 분들이 같은 고민하시더라고요"
+- 해결책 제시: "이 글 하나로 그런 불편함을 완전히 해소하실 수 있어요"
+- 업체 전문성 어필: "${businessInfo.businessName}에서 ${businessInfo.expertise}해온 노하우로"
+- 차별점 강조: "${businessInfo.differentiators}한 방법들을 알려드릴게요"
+- 가치 제시: "복잡한 것들을 쉽게 만드는 게 저희 전문분야거든요"
 
-✅ 매력적인 결론 작성법 (업체 정보 활용):
-- 요약과 행동 유도: "지금까지 알아본 방법들을 정리하면"
-- 업체 전문가 상담 유도: "복잡한 설정이나 고급 기능은 ${businessInfo.businessName}의 ${businessInfo.expertise} 전문가와 상담받으시는 게 안전하죠"
-- 차별점 재강조: "${businessInfo.differentiators}한 서비스로 도움드릴게요"
-- 관계 형성: "BMW 라이프를 더 풍요롭게 만들어보세요"
-- 다음 단계 제시: "${businessInfo.businessName}에 궁금한 점이 있으시면 언제든 문의해보세요"
+✅ 매력적인 결론 작성법 (강력한 CTA + 업체 정보):
+- 정보 가치 확인: "이제 기본적인 방법들은 충분히 알아보셨죠"
+- 현실적 한계 인정: "하지만 직접 해보려니 복잡하고 시간도 많이 걸리실 거예요"
+- 시간 부족 공감: "바쁜 일상에서 일일이 찾아가며 설정하기 어려우시죠"
+- 실수 우려 제기: "혹시 잘못 건드려서 차량에 문제라도 생기면 어쩌나 싶고요"
+- 전문가 솔루션: "${businessInfo.businessName}에서는 ${businessInfo.differentiators}하게 ${businessInfo.expertise} 서비스를 제공합니다"
+- 강력한 CTA: "시간 아끼고 안전하게 해결하고 싶으시다면 지금 바로 ${businessInfo.businessName}에 문의해보세요"
+- 즉시 행동 유도: "전문가가 직접 도와드릴게요"
 
 ✅ 자연스러운 표현 방식:
 - "실제 경험을 바탕으로 보면 이 방법이 가장 효과적이죠"
