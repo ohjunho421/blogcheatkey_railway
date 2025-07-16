@@ -138,7 +138,22 @@ export async function writeOptimizedBlogPost(
 - 키워드 형태소가 글에서 가장 많이 출현하는 단어가 되어야 함
 - 공백 제외 1700-1800자 엄수 (1800자 초과시 자동 실패)
 
-🎯 글의 목적: 전문성을 바탕으로 한 신뢰할 수 있는 정보 제공 및 업체 상담 유도
+🎯 글의 목적: 매력적인 서론으로 독자 관심 유발 → 전문성 기반 신뢰할 수 있는 정보 제공 → 행동 유도하는 결론으로 상담 연결
+
+📖 서론 작성 가이드 (업체 정보 반영):
+- 첫 문장: 독자 공감대 형성 또는 호기심 자극
+- 업체 전문성 어필: "${businessInfo.expertise}" 경험과 "${businessInfo.differentiators}" 차별점 강조
+- 업체명 자연스럽게 언급: "${businessInfo.businessName}" 전문가로서의 신뢰성 구축
+- 글의 가치: 읽으면 얻을 수 있는 구체적 혜택 제시
+- 예시: "BMW 오너라면 누구나 한 번쯤 궁금했을 그 기능들, ${businessInfo.businessName}에서 ${businessInfo.expertise}을 해온 전문가로서 ${businessInfo.differentiators}한 방법들을 알려드릴게요"
+
+📝 결론 작성 가이드 (업체 정보 반영):
+- 핵심 내용 간단 요약
+- 독자가 얻은 가치 확인
+- 업체 차별점 재강조: "${businessInfo.differentiators}" 활용한 서비스 언급
+- 업체명과 전문성으로 상담 유도: "${businessInfo.businessName}"의 "${businessInfo.expertise}" 전문가와 상담 권유
+- 다음 행동 단계 명확히 제시
+- 예시: "지금까지 알아본 방법들로 BMW 라이프가 한층 업그레이드될 거예요. 더 고급 기능이나 복잡한 설정은 ${businessInfo.businessName}의 ${businessInfo.expertise} 전문가와 상담받으시는 게 안전하죠. ${businessInfo.differentiators}한 서비스로 도움드릴게요"
 
 ❌ 절대 사용 금지 표현들:
 - "안녕하세요", "여러분", "독자님들"
@@ -146,12 +161,23 @@ export async function writeOptimizedBlogPost(
 - "이번 포스팅에서는", "오늘 소개할"
 - "문의하세요", "상담받으세요", "도움드리겠습니다"
 
-✅ 권장 표현 방식:
-- "BMW 코딩 전문가로서 말씀드리면, 이런 특징들이 있습니다"
+✅ 매력적인 서론 작성법 (업체 정보 활용):
+- 호기심 자극하기: "BMW 오너라면 한 번쯤 궁금했을 거예요", "이런 경험 있으신가요?"
+- 업체 전문성 어필: "${businessInfo.businessName}에서 ${businessInfo.expertise}을 해온 전문가로서 말씀드리면"
+- 차별점 강조: "${businessInfo.differentiators}한 노하우로"
+- 문제 제기: "많은 분들이 이런 실수를 하시는데요", "대부분 모르고 계신 사실이 있어요"
+- 혜택 제시: "단 몇 분만 투자하면 차가 완전히 달라질 거예요"
+
+✅ 매력적인 결론 작성법 (업체 정보 활용):
+- 요약과 행동 유도: "지금까지 알아본 방법들을 정리하면"
+- 업체 전문가 상담 유도: "복잡한 설정이나 고급 기능은 ${businessInfo.businessName}의 ${businessInfo.expertise} 전문가와 상담받으시는 게 안전하죠"
+- 차별점 재강조: "${businessInfo.differentiators}한 서비스로 도움드릴게요"
+- 관계 형성: "BMW 라이프를 더 풍요롭게 만들어보세요"
+- 다음 단계 제시: "${businessInfo.businessName}에 궁금한 점이 있으시면 언제든 문의해보세요"
+
+✅ 자연스러운 표현 방식:
 - "실제 경험을 바탕으로 보면 이 방법이 가장 효과적이죠"
-- "업계에서 검증된 방법들을 소개해드릴게요"
 - "많은 고객분들이 만족해하시는 이유가 바로 이거 때문입니다"
-- "복잡한 부분은 전문가와 상담받으시는 게 좋을 것 같아요"
 - "이런 경험 있으신가요?", "궁금하시죠?", "어떠신가요?"`;
 
   try {
