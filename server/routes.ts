@@ -12,6 +12,9 @@ import { enhancedSEOAnalysis } from "./services/morphemeAnalyzer";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // Health check endpoint should be at the top
+  // Health check and ping endpoints are already handled in server/index.ts
+  
   // Create new blog project
   app.post("/api/projects", async (req, res) => {
     try {
