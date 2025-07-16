@@ -96,6 +96,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### January 16, 2025
+- **Enhanced Morpheme Optimization**: Each keyword morpheme (BMW, 코딩) now requires 17-20 individual occurrences, not combined total
+- **Text Format Output**: Changed from markdown to plain text with optimized line breaks for better readability
+- **Improved Analysis**: Individual morpheme counting with specific suggestions for over/under-occurrence
+- **One-Click Automation**: Single button now handles keyword analysis + research data collection automatically
+- **Progress Visibility**: Project progress stepper visible from the start, not just after project creation
+- **Text Formatting**: Subtitles followed by 2 line breaks, paragraphs by 1 line break for optimal readability
+
 ### January 15, 2025
 - **Enhanced Business Info Management**: Added user-specific business information storage with `userBusinessInfo` table
 - **Improved Industry Selection**: Upgraded business type selector to combobox with 50+ predefined options and custom input capability

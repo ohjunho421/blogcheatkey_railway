@@ -9,6 +9,7 @@ interface MorphemeAnalysis {
   isOptimized: boolean;
   issues: string[];
   suggestions: string[];
+  morphemeCounts: Record<string, number>;
 }
 
 // Simple Korean morpheme extraction using common patterns
@@ -94,9 +95,28 @@ export function analyzeMorphemes(content: string, keyword: string): MorphemeAnal
   // Calculate character count (excluding spaces)
   const characterCount = content.replace(/\s/g, '').length;
   
-  // SEO optimization criteria
+  // Count each unique morpheme separately
+  const morphemeCounts = new Map<string, number>();
+  
+  for (const morpheme of keywordMorphemes) {
+    const key = morpheme.toLowerCase();
+    morphemeCounts.set(key, (morphemeCounts.get(key) || 0) + 1);
+  }
+  
+  // Check if each morpheme appears 17-20 times
+  const keywordMorphemeTypes = extractKoreanMorphemes(keyword.toLowerCase());
+  let isKeywordOptimized = true;
+  const morphemeIssues: string[] = [];
+  
+  for (const morphemeType of keywordMorphemeTypes) {
+    const count = morphemeCounts.get(morphemeType.toLowerCase()) || 0;
+    if (count < 17 || count > 20) {
+      isKeywordOptimized = false;
+      morphemeIssues.push(`"${morphemeType}": ${count}회 (목표: 17-20회)`);
+    }
+  }
+  
   const keywordMorphemeCount = keywordMorphemes.length;
-  const isKeywordOptimized = keywordMorphemeCount >= 17 && keywordMorphemeCount <= 20;
   const isLengthOptimized = characterCount >= 1700 && characterCount <= 2000;
   const isOptimized = isKeywordOptimized && isLengthOptimized;
   
@@ -105,12 +125,18 @@ export function analyzeMorphemes(content: string, keyword: string): MorphemeAnal
   const suggestions: string[] = [];
   
   if (!isKeywordOptimized) {
-    if (keywordMorphemeCount < 17) {
-      issues.push(`키워드 형태소 출현 횟수가 부족합니다 (${keywordMorphemeCount}/17-20)`);
-      suggestions.push('키워드 관련 표현을 더 추가하여 17-20회 범위로 맞춰주세요');
-    } else if (keywordMorphemeCount > 20) {
-      issues.push(`키워드 형태소 출현 횟수가 과도합니다 (${keywordMorphemeCount}/17-20)`);
-      suggestions.push('키워드 사용을 줄여서 자연스러운 글로 만들어주세요');
+    for (const issue of morphemeIssues) {
+      issues.push(`형태소 출현 횟수 불균형: ${issue}`);
+    }
+    
+    // Generate specific suggestions for each morpheme
+    for (const morphemeType of keywordMorphemeTypes) {
+      const count = morphemeCounts.get(morphemeType.toLowerCase()) || 0;
+      if (count < 17) {
+        suggestions.push(`"${morphemeType}" 형태소를 ${17 - count}회 더 추가하세요`);
+      } else if (count > 20) {
+        suggestions.push(`"${morphemeType}" 형태소를 ${count - 20}회 줄이세요 (동의어 대체 또는 문장 제거)`);
+      }
     }
   }
   
@@ -135,7 +161,8 @@ export function analyzeMorphemes(content: string, keyword: string): MorphemeAnal
     characterCount,
     isOptimized,
     issues,
-    suggestions
+    suggestions,
+    morphemeCounts: Object.fromEntries(morphemeCounts)
   };
 }
 

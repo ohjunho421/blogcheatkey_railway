@@ -158,9 +158,15 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
             )}
 
             {/* 생성된 콘텐츠 */}
-            <div className="prose max-w-none">
-              <div className="whitespace-pre-wrap bg-background p-6 rounded-lg border">
-                {project.generatedContent}
+            <div className="max-w-none">
+              <div className="bg-background p-6 rounded-lg border">
+                <div className="text-sm leading-relaxed font-normal text-gray-800 dark:text-gray-200" style={{ lineHeight: '1.8' }}>
+                  {project.generatedContent.split('\n').map((line, index) => (
+                    <div key={index} className={line.trim() === '' ? 'mb-4' : 'mb-2'}>
+                      {line || '\u00A0'}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
