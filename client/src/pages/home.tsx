@@ -129,7 +129,7 @@ export default function Home() {
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">키워드 출현 빈도</span>
-                  <span className="text-sm font-medium text-primary">17-20회</span>
+                  <span className="text-sm font-medium text-primary">15-17회</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">글자수 범위</span>

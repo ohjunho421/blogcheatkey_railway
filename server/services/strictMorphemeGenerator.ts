@@ -31,8 +31,8 @@ export async function generateStrictMorphemeContent(
         businessInfo,
         attempts > 0 ? [
           `이전 시도에서 형태소 조건을 만족하지 못했습니다`,
-          `BMW 형태소: 정확히 17-20회`,
-          `코딩 형태소: 정확히 17-20회`,
+          `BMW 형태소: 정확히 15-17회`,
+          `코딩 형태소: 정확히 15-17회`,
           `키워드 형태소가 가장 많이 출현하는 단어가 되어야 함`,
           `공백 제외 1700-1800자 엄수`
         ] : undefined

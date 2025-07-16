@@ -116,9 +116,9 @@ export function analyzeMorphemes(content: string, keyword: string): MorphemeAnal
   for (const morphemeType of keywordMorphemeTypes) {
     const count = keywordMorphemeCounts.get(morphemeType.toLowerCase()) || 0;
     console.log(`"${morphemeType}" appears ${count} times`);
-    if (count < 17 || count > 20) {
+    if (count < 15 || count > 17) {
       isKeywordOptimized = false;
-      morphemeIssues.push(`"${morphemeType}": ${count}회 (목표: 17-20회)`);
+      morphemeIssues.push(`"${morphemeType}": ${count}회 (목표: 15-17회)`);
     }
   }
   
