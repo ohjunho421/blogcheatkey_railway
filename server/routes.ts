@@ -189,19 +189,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Analyze SEO optimization (with fallback)
       let seoAnalysis;
       let finalContent = enhancedContent;
+      let attempts = 0;
+      const maxAttempts = 3;
       
       try {
         seoAnalysis = await analyzeSEOOptimization(enhancedContent, project.keyword);
         
-        // If not optimized, try once more
-        if (!seoAnalysis.isOptimized) {
-          finalContent = await writeOptimizedBlogPost(
-            project.keyword,
-            project.subtitles as string[],
-            project.researchData as any,
-            project.businessInfo as any,
-            seoAnalysis.suggestions
+        // If keyword morphemes exceed 20, try to regenerate with stricter limits
+        while (!seoAnalysis.isOptimized && attempts < maxAttempts) {
+          const hasOverusage = seoAnalysis.issues.some(issue => 
+            issue.includes('20회 초과') || issue.includes('초과')
           );
+          
+          if (hasOverusage) {
+            console.log(`Attempt ${attempts + 1}: Keyword overusage detected, regenerating with stricter limits`);
+            finalContent = await writeOptimizedBlogPost(
+              project.keyword,
+              project.subtitles as string[],
+              project.researchData as any,
+              project.businessInfo as any,
+              [`키워드 형태소를 절대 20회를 넘지 않도록 주의`, ...seoAnalysis.suggestions]
+            );
+            seoAnalysis = await analyzeSEOOptimization(finalContent, project.keyword);
+            attempts++;
+          } else {
+            break;
+          }
         }
       } catch (seoError) {
         console.error("SEO analysis failed, proceeding without optimization:", seoError);
@@ -261,22 +274,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         enhancedContent = content;
       }
 
-      // Analyze SEO optimization
+      // Analyze SEO optimization with strict keyword limits
       let seoAnalysis;
       let finalContent = enhancedContent;
+      let attempts = 0;
+      const maxAttempts = 3;
       
       try {
         seoAnalysis = await analyzeSEOOptimization(enhancedContent, project.keyword);
         
-        // If not optimized, try once more
-        if (!seoAnalysis.isOptimized) {
-          finalContent = await writeOptimizedBlogPost(
-            project.keyword,
-            project.subtitles as string[],
-            project.researchData as any,
-            project.businessInfo as any,
-            seoAnalysis.suggestions
+        // If keyword morphemes exceed 20, try to regenerate with stricter limits
+        while (!seoAnalysis.isOptimized && attempts < maxAttempts) {
+          const hasOverusage = seoAnalysis.issues.some(issue => 
+            issue.includes('20회 초과') || issue.includes('초과')
           );
+          
+          if (hasOverusage) {
+            console.log(`Regeneration attempt ${attempts + 1}: Keyword overusage detected, regenerating with stricter limits`);
+            finalContent = await writeOptimizedBlogPost(
+              project.keyword,
+              project.subtitles as string[],
+              project.researchData as any,
+              project.businessInfo as any,
+              [`키워드 형태소를 절대 20회를 넘지 않도록 주의`, ...seoAnalysis.suggestions]
+            );
+            seoAnalysis = await analyzeSEOOptimization(finalContent, project.keyword);
+            attempts++;
+          } else {
+            break;
+          }
         }
       } catch (seoError) {
         console.error("SEO analysis failed, proceeding without optimization:", seoError);

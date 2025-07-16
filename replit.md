@@ -114,6 +114,8 @@ Preferred communication style: Simple, everyday language.
 - **Mobile Preview Feature**: Added preview functionality to show how mobile formatting will look before copying
 - **Advanced Morpheme Analysis**: Improved morpheme analyzer to detect over-frequent non-keyword terms and ensure keyword dominance
 - **Mobile Line Break Enhancement**: Improved mobile formatting to respect 30-character limit while maintaining readability
+- **Content Regeneration Feature**: Added "다시 생성" button for users unsatisfied with generated content
+- **Strict Keyword Limits**: Enhanced Claude prompts with absolute 20-count limit warnings and automatic retry logic for overuse detection
 
 ### January 15, 2025
 - **Enhanced Business Info Management**: Added user-specific business information storage with `userBusinessInfo` table
