@@ -41,6 +41,7 @@ export const chatMessages = pgTable("chat_messages", {
   projectId: integer("project_id").references(() => blogProjects.id),
   role: text("role").notNull(), // user, assistant
   content: text("content").notNull(),
+  imageUrl: text("image_url"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -66,6 +67,7 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).pick({
   projectId: true,
   role: true,
   content: true,
+  imageUrl: true,
 });
 
 export const insertUserBusinessInfoSchema = createInsertSchema(userBusinessInfo).pick({

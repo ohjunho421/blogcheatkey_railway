@@ -6,7 +6,7 @@ import { businessInfoSchema, keywordAnalysisSchema, seoMetricsSchema } from "@sh
 import { analyzeKeyword, editContent, enhanceIntroductionAndConclusion } from "./services/gemini";
 import { writeOptimizedBlogPost } from "./services/anthropic";
 import { searchResearch, getDetailedResearch } from "./services/perplexity";
-import { generateMultipleImages } from "./services/imageGeneration";
+import { generateMultipleImages, generateImage } from "./services/imageGeneration";
 import { analyzeSEOOptimization, formatForMobile } from "./services/seoOptimizer";
 import { enhancedSEOAnalysis } from "./services/morphemeAnalyzer";
 
@@ -291,15 +291,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Chat with Gemini for editing
+  // Chat with Gemini for editing and image generation
   app.post("/api/projects/:id/chat", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { message } = req.body;
       
+      if (!message || typeof message !== "string") {
+        return res.status(400).json({ error: "메시지를 입력해주세요" });
+      }
+
       const project = await storage.getBlogProject(id);
-      if (!project || !project.generatedContent) {
-        return res.status(404).json({ error: "수정할 콘텐츠를 찾을 수 없습니다" });
+      if (!project) {
+        return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
       }
 
       // Save user message
@@ -309,28 +313,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: message,
       });
 
-      // Get edited content from Gemini
-      const editedContent = await editContent(
-        project.generatedContent,
-        message,
-        project.keyword
+      // Check if user is requesting image generation
+      const imageKeywords = ['그림', '이미지', '그려', '만들어', '생성', 'image', 'draw', 'create'];
+      const isImageRequest = imageKeywords.some(keyword => 
+        message.toLowerCase().includes(keyword)
       );
 
-      // Save assistant message
-      await storage.createChatMessage({
-        projectId: id,
-        role: "assistant",
-        content: "콘텐츠가 수정되었습니다.",
-      });
+      if (isImageRequest) {
+        try {
+          // Extract image prompt from user message
+          const cleanPrompt = message
+            .replace(/그림을?\s*(그려|만들어|생성해?|해봐?)?(줘|주세요)?/gi, '')
+            .replace(/이미지를?\s*(그려|만들어|생성해?|해봐?)?(줘|주세요)?/gi, '')
+            .replace(/(그려|만들어|생성해?|해봐?)(줘|주세요)/gi, '')
+            .trim() || project.keyword;
 
-      // Update project with edited content
-      const seoAnalysis = await analyzeSEOOptimization(editedContent, project.keyword);
-      const updatedProject = await storage.updateBlogProject(id, {
-        generatedContent: editedContent,
-        seoMetrics: seoAnalysis,
-      });
+          // Determine style based on request
+          const isInfographic = message.includes('인포그래픽') || message.includes('infographic') || message.includes('설명');
+          const style = isInfographic ? 'infographic' : 'photo';
 
-      res.json(updatedProject);
+          const imageUrl = await generateImage(cleanPrompt, style);
+
+          // Save AI response with image
+          await storage.createChatMessage({
+            projectId: id,
+            role: "assistant",
+            content: `${cleanPrompt}에 대한 ${style === 'infographic' ? '인포그래픽' : '이미지'}를 생성했습니다.`,
+            imageUrl: imageUrl,
+          });
+
+          res.json({ 
+            success: true, 
+            type: 'image',
+            imageUrl: imageUrl,
+            prompt: cleanPrompt
+          });
+        } catch (imageError) {
+          console.error("Image generation error:", imageError);
+          await storage.createChatMessage({
+            projectId: id,
+            role: "assistant",
+            content: "죄송합니다. 이미지 생성에 실패했습니다. 다시 시도해주세요.",
+          });
+          res.json({ success: true, type: 'error' });
+        }
+      } else {
+        // Regular content editing
+        if (!project.generatedContent) {
+          return res.status(404).json({ error: "편집할 콘텐츠가 없습니다" });
+        }
+
+        // Get edited content from Gemini
+        const editedContent = await editContent(
+          project.generatedContent,
+          message,
+          project.keyword
+        );
+
+        // Save assistant message
+        await storage.createChatMessage({
+          projectId: id,
+          role: "assistant",
+          content: "콘텐츠가 수정되었습니다.",
+        });
+
+        // Update project with edited content
+        const seoAnalysis = await analyzeSEOOptimization(editedContent, project.keyword);
+        const updatedProject = await storage.updateBlogProject(id, {
+          generatedContent: editedContent,
+          seoMetrics: seoAnalysis,
+        });
+
+        res.json({ success: true, type: 'edit', project: updatedProject });
+      }
     } catch (error) {
       console.error("Chat error:", error);
       res.status(500).json({ error: "채팅 처리에 실패했습니다" });

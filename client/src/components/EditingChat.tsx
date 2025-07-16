@@ -28,18 +28,32 @@ export function EditingChat({ project, onRefresh }: EditingChatProps) {
       const response = await apiRequest("POST", `/api/projects/${project.id}/chat`, data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       setMessage("");
       refetchChat();
-      onRefresh();
-      toast({
-        title: "수정 완료",
-        description: "콘텐츠가 수정되었습니다.",
-      });
+      
+      if (data.type === 'image') {
+        toast({
+          title: "이미지 생성 완료",
+          description: `${data.prompt}에 대한 이미지를 생성했습니다.`,
+        });
+      } else if (data.type === 'edit') {
+        onRefresh();
+        toast({
+          title: "수정 완료",
+          description: "콘텐츠가 수정되었습니다.",
+        });
+      } else if (data.type === 'error') {
+        toast({
+          title: "이미지 생성 실패",
+          description: "이미지 생성에 실패했습니다. 다시 시도해주세요.",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error) => {
       toast({
-        title: "수정 실패",
+        title: "처리 실패",
         description: error.message,
         variant: "destructive",
       });
@@ -90,6 +104,16 @@ export function EditingChat({ project, onRefresh }: EditingChatProps) {
                         </span>
                       </div>
                       <p className="text-sm">{msg.content}</p>
+                      {msg.imageUrl && (
+                        <div className="mt-2">
+                          <img 
+                            src={msg.imageUrl} 
+                            alt="Generated image"
+                            className="max-w-full h-auto rounded-lg border shadow-sm"
+                            style={{ maxHeight: '200px' }}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -98,7 +122,7 @@ export function EditingChat({ project, onRefresh }: EditingChatProps) {
               <div className="text-center py-8">
                 <MessageSquare className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">
-                  수정 요청을 입력하세요. SEO 최적화 조건을 유지하면서 수정됩니다.
+                  수정 요청을 입력하거나 "그림을 그려줘"라고 말하면 이미지를 생성합니다.
                 </p>
               </div>
             )}
@@ -109,7 +133,7 @@ export function EditingChat({ project, onRefresh }: EditingChatProps) {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="예: 두 번째 단락을 더 자세히 설명해주세요"
+              placeholder="예: 두 번째 단락을 더 자세히 설명해주세요 또는 BMW 그림을 그려줘"
               disabled={sendMessage.isPending}
             />
             <Button 
