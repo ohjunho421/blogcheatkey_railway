@@ -48,60 +48,70 @@ export async function analyzeSEOOptimization(content: string, keyword: string): 
 }
 
 export function formatForMobile(content: string): string {
-  // Enhanced mobile formatting with shorter line breaks for better readability
+  // Enhanced mobile formatting with cleaner line breaks for better readability
   return content
     .split('\n')
     .map(line => {
       if (line.trim() === '') return '';
       
-      // For mobile, break lines at 30 characters for optimal readability
-      if (line.length > 30) {
+      // For mobile, break lines at 25-30 characters for optimal readability
+      if (line.length > 28) {
         const segments = [];
         let currentSegment = '';
         
-        // Split by common punctuation marks to maintain meaning
-        const parts = line.split(/([.!?,:;]\s*)/);
+        // First, try to break at natural Korean phrase boundaries
+        const koreanPhrases = line.split(/([,.\s]+)/);
         
-        for (let i = 0; i < parts.length; i++) {
-          const part = parts[i];
-          
-          if ((currentSegment + part).length > 30) {
+        for (const phrase of koreanPhrases) {
+          if ((currentSegment + phrase).length > 28) {
             if (currentSegment.trim()) {
               segments.push(currentSegment.trim());
-              currentSegment = part;
+              currentSegment = phrase;
             } else {
-              // If single part is too long, break by words while preserving Korean spacing
-              const words = part.split(/(\s+)/);
-              let wordLine = '';
+              // If phrase is still too long, break at word boundaries
+              const words = phrase.split(/(\s+)/);
+              let wordSegment = '';
               
               for (const word of words) {
-                if ((wordLine + word).length > 30) {
-                  if (wordLine.trim()) {
-                    segments.push(wordLine.trim());
-                    wordLine = word;
+                if ((wordSegment + word).length > 28) {
+                  if (wordSegment.trim()) {
+                    segments.push(wordSegment.trim());
+                    wordSegment = word;
                   } else {
-                    // If single word is too long, break at Korean syllable boundaries
-                    if (word.length > 30) {
-                      for (let j = 0; j < word.length; j += 30) {
-                        const chunk = word.substring(j, j + 30);
-                        segments.push(chunk);
+                    // For very long words, break at appropriate Korean syllable boundaries
+                    if (word.length > 28) {
+                      const syllables = word.match(/./g) || [];
+                      let syllableGroup = '';
+                      
+                      for (const syllable of syllables) {
+                        if ((syllableGroup + syllable).length > 25) {
+                          if (syllableGroup.trim()) {
+                            segments.push(syllableGroup.trim());
+                            syllableGroup = syllable;
+                          }
+                        } else {
+                          syllableGroup += syllable;
+                        }
                       }
-                      wordLine = '';
+                      
+                      if (syllableGroup.trim()) {
+                        wordSegment = syllableGroup;
+                      }
                     } else {
-                      segments.push(word);
-                      wordLine = '';
+                      wordSegment = word;
                     }
                   }
                 } else {
-                  wordLine += word;
+                  wordSegment += word;
                 }
               }
-              if (wordLine.trim()) {
-                currentSegment = wordLine;
+              
+              if (wordSegment.trim()) {
+                currentSegment = wordSegment;
               }
             }
           } else {
-            currentSegment += part;
+            currentSegment += phrase;
           }
         }
         
@@ -109,10 +119,25 @@ export function formatForMobile(content: string): string {
           segments.push(currentSegment.trim());
         }
         
-        return segments.join('\n');
+        // Join segments with line breaks, ensuring clean spacing
+        return segments.filter(seg => seg.trim()).join('\n');
       }
       
       return line;
     })
-    .join('\n');
+    .filter(line => line !== null)
+    .join('\n')
+    // Clean up multiple consecutive line breaks
+    .replace(/\n{3,}/g, '\n\n')
+    // Ensure proper spacing around punctuation for mobile readability
+    .replace(/([.!?])\s*([가-힣A-Za-z])/g, '$1\n$2')
+    // Optimize spacing for Korean text readability
+    .replace(/([가-힣]{15,})/g, (match) => {
+      // Break long Korean text chunks into readable segments
+      const segments = [];
+      for (let i = 0; i < match.length; i += 20) {
+        segments.push(match.substring(i, i + 20));
+      }
+      return segments.join('\n');
+    });
 }
