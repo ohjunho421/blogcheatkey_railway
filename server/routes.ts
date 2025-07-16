@@ -72,7 +72,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedProject = await storage.updateBlogProject(id, {
         keywordAnalysis: analysis,
         subtitles: analysis.suggestedSubtitles,
-        status: "data_collection",
+        status: "keyword_analysis",
       });
 
       res.json(updatedProject);

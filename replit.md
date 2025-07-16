@@ -100,7 +100,7 @@ Preferred communication style: Simple, everyday language.
 - **Enhanced Morpheme Optimization**: Each keyword morpheme (BMW, 코딩) now requires 17-20 individual occurrences, not combined total
 - **Text Format Output**: Changed from markdown to plain text with optimized line breaks for better readability
 - **Improved Analysis**: Individual morpheme counting with specific suggestions for over/under-occurrence
-- **One-Click Automation**: Single button now handles keyword analysis + research data collection automatically
+- **Manual Research Control**: Changed Perplexity data collection to manual operation - users can modify subtitles before triggering research
 - **Progress Visibility**: Project progress stepper visible from the start, not just after project creation
 - **Text Formatting**: Subtitles followed by 2 line breaks, paragraphs by 1 line break for optimal readability
 - **Mobile Optimization**: Enhanced mobile formatting with 30-character line breaks for better mobile reading

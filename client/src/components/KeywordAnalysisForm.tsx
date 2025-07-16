@@ -28,21 +28,17 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
       const createResponse = await apiRequest("POST", "/api/projects", data);
       const newProject = await createResponse.json();
       
-      // 즉시 키워드 분석 시작
+      // 키워드 분석만 진행 (자료 수집은 수동)
       const analyzeResponse = await apiRequest("POST", `/api/projects/${newProject.id}/analyze`, {});
       const analysisResult = await analyzeResponse.json();
       
-      // 자동으로 데이터 수집도 진행
-      const researchResponse = await apiRequest("POST", `/api/projects/${newProject.id}/research`, {});
-      const researchResult = await researchResponse.json();
-      
-      return researchResult;
+      return analysisResult;
     },
     onSuccess: (data) => {
       onProjectCreated(data);
       toast({
-        title: "분석 완료",
-        description: "업체 정보를 입력해주세요.",
+        title: "키워드 분석 완료",
+        description: "소제목을 확인하고 '자료 수집' 버튼을 클릭해주세요.",
       });
     },
     onError: (error) => {
@@ -56,21 +52,17 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
 
   const analyzeKeyword = useMutation({
     mutationFn: async (id: number) => {
-      // 키워드 분석
+      // 키워드 분석만 진행
       const analyzeResponse = await apiRequest("POST", `/api/projects/${id}/analyze`, {});
       const analysisResult = await analyzeResponse.json();
       
-      // 자동으로 데이터 수집도 진행
-      const researchResponse = await apiRequest("POST", `/api/projects/${id}/research`, {});
-      const researchResult = await researchResponse.json();
-      
-      return researchResult;
+      return analysisResult;
     },
     onSuccess: () => {
       onRefresh();
       toast({
-        title: "분석 및 데이터 수집 완료",
-        description: "업체 정보를 입력해주세요.",
+        title: "키워드 분석 완료",
+        description: "소제목을 확인하고 '자료 수집' 버튼을 클릭해주세요.",
       });
     },
     onError: (error) => {
@@ -189,7 +181,7 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
               className="w-full"
             >
               {createProjectAndAnalyze.isPending ? (
-                <>분석 및 자료 수집 중...</>
+                <>키워드 분석 중...</>
               ) : (
                 <>
                   <Brain className="h-4 w-4 mr-2" />
@@ -205,7 +197,7 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
               className="w-full"
             >
               {analyzeKeyword.isPending ? (
-                <>분석 및 자료 수집 중...</>
+                <>키워드 분석 중...</>
               ) : (
                 <>
                   <Brain className="h-4 w-4 mr-2" />
@@ -285,6 +277,33 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
                 ))}
               </div>
             </div>
+
+            {/* Research Data Collection Button */}
+            {project.status === 'keyword_analysis' && (
+              <div className="mt-6 pt-4 border-t">
+                <Button
+                  onClick={() => researchData.mutate(project.id)}
+                  disabled={researchData.isPending}
+                  className="w-full"
+                  size="default"
+                >
+                  {researchData.isPending ? (
+                    <>
+                      <Search className="h-4 w-4 mr-2 animate-spin" />
+                      자료 수집 중...
+                    </>
+                  ) : (
+                    <>
+                      <Search className="h-4 w-4 mr-2" />
+                      자료 수집 시작
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  Perplexity로 관련 정보를 수집합니다
+                </p>
+              </div>
+            )}
 
             {project.status === 'business_info' && (
               <div className="text-center py-4">
