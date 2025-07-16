@@ -516,7 +516,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ imageUrl, subtitle, type });
     } catch (error) {
       console.error("Individual image generation error:", error);
-      res.status(500).json({ error: "이미지 생성에 실패했습니다" });
+      // Check if it's a permission error
+      if (error instanceof Error && error.message.includes('Permission')) {
+        res.status(503).json({ 
+          error: 'Google Cloud 권한 설정이 필요합니다', 
+          details: 'Vertex AI User 역할을 서비스 계정에 추가해주세요'
+        });
+      } else {
+        res.status(500).json({ error: "이미지 생성에 실패했습니다" });
+      }
     }
   });
 
