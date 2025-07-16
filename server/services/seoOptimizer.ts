@@ -54,38 +54,46 @@ export function formatForMobile(content: string): string {
     .map(line => {
       if (line.trim() === '') return '';
       
-      // For mobile, break lines at 25-30 characters for optimal readability
+      // For mobile, break lines at 30 characters for optimal readability
       if (line.length > 30) {
         const segments = [];
         let currentSegment = '';
         
-        // Split by sentences first to maintain meaning
-        const sentences = line.split(/([.!?]\s+)/);
+        // Split by common punctuation marks to maintain meaning
+        const parts = line.split(/([.!?,:;]\s*)/);
         
-        for (let i = 0; i < sentences.length; i++) {
-          const segment = sentences[i];
+        for (let i = 0; i < parts.length; i++) {
+          const part = parts[i];
           
-          if ((currentSegment + segment).length > 30) {
+          if ((currentSegment + part).length > 30) {
             if (currentSegment.trim()) {
               segments.push(currentSegment.trim());
-              currentSegment = segment;
+              currentSegment = part;
             } else {
-              // If single segment is too long, break by words
-              const words = segment.split(' ');
+              // If single part is too long, break by words while preserving Korean spacing
+              const words = part.split(/(\s+)/);
               let wordLine = '';
               
               for (const word of words) {
                 if ((wordLine + word).length > 30) {
                   if (wordLine.trim()) {
                     segments.push(wordLine.trim());
-                    wordLine = word + ' ';
+                    wordLine = word;
                   } else {
-                    // If single word is too long, just add it
-                    segments.push(word);
-                    wordLine = '';
+                    // If single word is too long, break at Korean syllable boundaries
+                    if (word.length > 30) {
+                      for (let j = 0; j < word.length; j += 30) {
+                        const chunk = word.substring(j, j + 30);
+                        segments.push(chunk);
+                      }
+                      wordLine = '';
+                    } else {
+                      segments.push(word);
+                      wordLine = '';
+                    }
                   }
                 } else {
-                  wordLine += word + ' ';
+                  wordLine += word;
                 }
               }
               if (wordLine.trim()) {
@@ -93,7 +101,7 @@ export function formatForMobile(content: string): string {
               }
             }
           } else {
-            currentSegment += segment;
+            currentSegment += part;
           }
         }
         

@@ -98,6 +98,7 @@ Preferred communication style: Simple, everyday language.
 
 ### January 16, 2025
 - **Enhanced Morpheme Optimization**: Each keyword morpheme (BMW, 코딩) now requires 17-20 individual occurrences, not combined total
+- **Keyword Frequency Dominance**: Keyword morphemes must be the most frequent words in content - no other morpheme can exceed keyword counts
 - **Text Format Output**: Changed from markdown to plain text with optimized line breaks for better readability
 - **Improved Analysis**: Individual morpheme counting with specific suggestions for over/under-occurrence
 - **Manual Research Control**: Changed Perplexity data collection to manual operation - users can modify subtitles before triggering research
@@ -111,6 +112,8 @@ Preferred communication style: Simple, everyday language.
 - **Enhanced Reference Links**: Added meaningful titles to citation links instead of raw URLs
 - **Improved Content Tone**: Updated Claude prompts for more engaging, empathetic introduction and conclusion writing
 - **Mobile Preview Feature**: Added preview functionality to show how mobile formatting will look before copying
+- **Advanced Morpheme Analysis**: Improved morpheme analyzer to detect over-frequent non-keyword terms and ensure keyword dominance
+- **Mobile Line Break Enhancement**: Improved mobile formatting to respect 30-character limit while maintaining readability
 
 ### January 15, 2025
 - **Enhanced Business Info Management**: Added user-specific business information storage with `userBusinessInfo` table

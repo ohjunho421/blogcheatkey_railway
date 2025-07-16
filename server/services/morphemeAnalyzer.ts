@@ -95,24 +95,51 @@ export function analyzeMorphemes(content: string, keyword: string): MorphemeAnal
   // Calculate character count (excluding spaces)
   const characterCount = content.replace(/\s/g, '').length;
   
-  // Count each unique morpheme separately
-  const morphemeCounts = new Map<string, number>();
-  
-  for (const morpheme of keywordMorphemes) {
+  // Count ALL morphemes in the content, not just keyword ones
+  const allMorphemeCounts = new Map<string, number>();
+  for (const morpheme of allMorphemes) {
     const key = morpheme.toLowerCase();
-    morphemeCounts.set(key, (morphemeCounts.get(key) || 0) + 1);
+    allMorphemeCounts.set(key, (allMorphemeCounts.get(key) || 0) + 1);
   }
   
-  // Check if each morpheme appears 17-20 times
+  // Count keyword morphemes separately
+  const keywordMorphemeCounts = new Map<string, number>();
+  for (const morpheme of keywordMorphemes) {
+    const key = morpheme.toLowerCase();
+    keywordMorphemeCounts.set(key, (keywordMorphemeCounts.get(key) || 0) + 1);
+  }
+  
+  // Check if each keyword morpheme appears 17-20 times
   const keywordMorphemeTypes = extractKoreanMorphemes(keyword.toLowerCase());
   let isKeywordOptimized = true;
   const morphemeIssues: string[] = [];
   
   for (const morphemeType of keywordMorphemeTypes) {
-    const count = morphemeCounts.get(morphemeType.toLowerCase()) || 0;
+    const count = keywordMorphemeCounts.get(morphemeType.toLowerCase()) || 0;
     if (count < 17 || count > 20) {
       isKeywordOptimized = false;
       morphemeIssues.push(`"${morphemeType}": ${count}회 (목표: 17-20회)`);
+    }
+  }
+  
+  // Check if keyword morphemes are the most frequent
+  const minKeywordCount = Math.min(...keywordMorphemeTypes.map(type => 
+    keywordMorphemeCounts.get(type.toLowerCase()) || 0
+  ));
+  
+  const problematicMorphemes: string[] = [];
+  const commonParticles = ['이', '가', '을', '를', '의', '에', '는', '은', '로', '과', '와', '도', '만', '부터', '까지', '에서', '으로', '하는', '하고', '하며', '되는', '것', '수', '때', '등', '또한', '그리고', '하지만', '그런데', '따라서', '그래서', '있는', '있다', '한다', '합니다', '입니다', '때문에', '대해', '대한', '같은', '이런', '그런', '어떤', '많은', '다른', '새로운', '좋은', '나은', '더욱', '매우', '정말', '항상', '모든', '각각', '통해', '위해', '위한', '아니라', '아닌', '아니'];
+  
+  for (const [morpheme, count] of allMorphemeCounts) {
+    // Skip if it's a keyword morpheme
+    if (keywordMorphemeTypes.some(type => type.toLowerCase() === morpheme)) continue;
+    
+    // Skip single characters and common particles
+    if (morpheme.length <= 1 || commonParticles.includes(morpheme)) continue;
+    
+    if (count > minKeywordCount) {
+      problematicMorphemes.push(`${morpheme}(${count}회)`);
+      isKeywordOptimized = false;
     }
   }
   
@@ -129,14 +156,22 @@ export function analyzeMorphemes(content: string, keyword: string): MorphemeAnal
       issues.push(`형태소 출현 횟수 불균형: ${issue}`);
     }
     
+    if (problematicMorphemes.length > 0) {
+      issues.push(`키워드 형태소보다 많이 출현하는 단어들: ${problematicMorphemes.join(', ')}`);
+    }
+    
     // Generate specific suggestions for each morpheme
     for (const morphemeType of keywordMorphemeTypes) {
-      const count = morphemeCounts.get(morphemeType.toLowerCase()) || 0;
+      const count = keywordMorphemeCounts.get(morphemeType.toLowerCase()) || 0;
       if (count < 17) {
         suggestions.push(`"${morphemeType}" 형태소를 ${17 - count}회 더 추가하세요`);
       } else if (count > 20) {
         suggestions.push(`"${morphemeType}" 형태소를 ${count - 20}회 줄이세요 (동의어 대체 또는 문장 제거)`);
       }
+    }
+    
+    if (problematicMorphemes.length > 0) {
+      suggestions.push('키워드 형태소가 가장 많이 출현하도록 다른 단어들의 빈도를 줄이고 키워드 형태소를 더 추가하세요');
     }
   }
   
@@ -162,7 +197,7 @@ export function analyzeMorphemes(content: string, keyword: string): MorphemeAnal
     isOptimized,
     issues,
     suggestions,
-    morphemeCounts: Object.fromEntries(morphemeCounts)
+    morphemeCounts: Object.fromEntries(allMorphemeCounts)
   };
 }
 
