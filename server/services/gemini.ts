@@ -187,3 +187,63 @@ ${content}
     throw new Error(`SEO 검증에 실패했습니다: ${error}`);
   }
 }
+
+export async function enhanceIntroductionAndConclusion(
+  content: string,
+  keyword: string,
+  businessInfo: { businessName: string; expertise: string; differentiators: string }
+): Promise<string> {
+  if (!process.env.GEMINI_API_KEY && !process.env.GEMINI_API_KEY_ENV_VAR) {
+    throw new Error("Gemini API key is not configured");
+  }
+
+  const prompt = `다음 블로그 콘텐츠의 서론과 결론을 더욱 강조하고 개선해주세요.
+
+키워드: "${keyword}"
+업체 정보:
+- 업체명: ${businessInfo.businessName}
+- 전문분야: ${businessInfo.expertise}
+- 차별화요소: ${businessInfo.differentiators}
+
+현재 콘텐츠:
+${content}
+
+개선 요구사항:
+1. 서론 강화:
+   - 독자의 고민과 어려움을 더욱 공감하며 시작
+   - 업체의 전문성을 자연스럽게 부각
+   - 독자의 궁금증을 자극하는 질문이나 문제 제기
+   - 이 글을 읽으면 해결책을 얻을 수 있다는 기대감 조성
+
+2. 결론 강화:
+   - 핵심 내용을 명확하게 요약
+   - 독자가 실제 행동할 수 있는 구체적 다음 단계 제시
+   - 업체의 도움이 필요한 경우를 자연스럽게 언급
+   - 전문성을 바탕으로 한 확신 있는 마무리
+
+3. 형태소 개수 유지:
+   - 키워드 형태소 개수를 정확히 유지하면서 강조
+   - 전체 내용의 자연스러운 흐름 보장
+
+원래 콘텐츠의 구조와 내용을 유지하면서, 서론과 결론 부분만 더욱 임팩트 있게 개선해주세요.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-pro",
+      config: {
+        systemInstruction: "당신은 블로그 콘텐츠 최적화 전문가입니다. 서론과 결론을 더욱 매력적이고 효과적으로 만들어 독자의 관심을 끌고 행동을 유도하는 콘텐츠를 작성해주세요.",
+      },
+      contents: prompt,
+    });
+
+    const enhancedContent = response.text;
+    if (!enhancedContent) {
+      throw new Error("Empty response from Gemini");
+    }
+
+    return enhancedContent;
+  } catch (error) {
+    console.error("Introduction and conclusion enhancement error:", error);
+    throw new Error(`서론/결론 강화에 실패했습니다: ${error}`);
+  }
+}

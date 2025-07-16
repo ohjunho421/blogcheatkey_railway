@@ -28,7 +28,7 @@ Preferred communication style: Simple, everyday language.
 ## Key Components
 
 ### AI Service Integration
-- **Gemini 2.5 Pro**: Keyword analysis and content editing
+- **Gemini 2.5 Pro**: Keyword analysis, content editing, and introduction/conclusion enhancement
 - **Claude Sonnet 4**: Blog post generation and optimization
 - **Perplexity Sonar Pro**: Research data collection and fact-checking
 - **DALL-E 3**: Infographic generation for each subtitle/section
@@ -101,6 +101,7 @@ Preferred communication style: Simple, everyday language.
 - **Text Format Output**: Changed from markdown to plain text with optimized line breaks for better readability
 - **Improved Analysis**: Individual morpheme counting with specific suggestions for over/under-occurrence
 - **Manual Research Control**: Changed Perplexity data collection to manual operation - users can modify subtitles before triggering research
+- **Gemini Enhancement Integration**: Added Gemini-powered introduction and conclusion enhancement after Claude generates initial content
 - **Progress Visibility**: Project progress stepper visible from the start, not just after project creation
 - **Text Formatting**: Subtitles followed by 2 line breaks, paragraphs by 1 line break for optimal readability
 - **Mobile Optimization**: Enhanced mobile formatting with 30-character line breaks for better mobile reading

@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
 import { businessInfoSchema, keywordAnalysisSchema, seoMetricsSchema } from "@shared/schema";
-import { analyzeKeyword, editContent } from "./services/gemini";
+import { analyzeKeyword, editContent, enhanceIntroductionAndConclusion } from "./services/gemini";
 import { writeOptimizedBlogPost } from "./services/anthropic";
 import { searchResearch, getDetailedResearch } from "./services/perplexity";
 import { generateMultipleImages } from "./services/imageGeneration";
@@ -173,12 +173,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         project.businessInfo as any
       );
 
+      // Enhance introduction and conclusion with Gemini
+      let enhancedContent = content;
+      try {
+        enhancedContent = await enhanceIntroductionAndConclusion(
+          content,
+          project.keyword,
+          project.businessInfo as any
+        );
+      } catch (enhancementError) {
+        console.error("Introduction/conclusion enhancement failed, using original content:", enhancementError);
+        enhancedContent = content;
+      }
+
       // Analyze SEO optimization (with fallback)
       let seoAnalysis;
-      let finalContent = content;
+      let finalContent = enhancedContent;
       
       try {
-        seoAnalysis = await analyzeSEOOptimization(content, project.keyword);
+        seoAnalysis = await analyzeSEOOptimization(enhancedContent, project.keyword);
         
         // If not optimized, try once more
         if (!seoAnalysis.isOptimized) {
@@ -195,7 +208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Use enhanced morpheme analysis fallback
         console.log("Using enhanced morpheme analysis for SEO optimization");
-        seoAnalysis = enhancedSEOAnalysis(content, project.keyword);
+        seoAnalysis = enhancedSEOAnalysis(enhancedContent, project.keyword);
       }
 
       // Don't auto-generate images, only generate content
