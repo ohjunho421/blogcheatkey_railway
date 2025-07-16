@@ -12,39 +12,38 @@ interface MorphemeAnalysis {
   morphemeCounts: Record<string, number>;
 }
 
-// Simple Korean morpheme extraction using common patterns
+// Enhanced Korean morpheme extraction with improved accuracy
 function extractKoreanMorphemes(text: string): string[] {
-  // Remove punctuation and special characters
-  const cleanText = text.replace(/[^\uAC00-\uD7AF\u1100-\u11FF\u3130-\u318F\uA960-\uA97F\uD7B0-\uD7FF\s]/g, ' ');
-  
-  // Split by whitespace and filter out empty strings
-  const words = cleanText.split(/\s+/).filter(word => word.length > 0);
-  
   const morphemes: string[] = [];
   
-  for (const word of words) {
-    // For Korean, we'll treat each character cluster as a potential morpheme
-    // This is a simplified approach - a proper morpheme analyzer would be more accurate
-    if (word.length === 1) {
-      morphemes.push(word);
-    } else {
-      // Break down compound words into potential morphemes
-      // For BMW코딩 -> ['BMW', '코딩']
-      const parts = word.match(/([A-Za-z]+|[\uAC00-\uD7AF]+)/g) || [word];
-      morphemes.push(...parts);
+  // Split by punctuation and whitespace, but preserve meaningful word boundaries
+  const segments = text.split(/[\s\n\r\t,.!?;:()[\]{}"'`~]+/).filter(s => s.length > 0);
+  
+  for (const segment of segments) {
+    if (segment.trim().length === 0) continue;
+    
+    // Enhanced pattern to separate English/numbers from Korean
+    // This handles cases like "BMW코딩" -> ["BMW", "코딩"]
+    const parts = segment.match(/([A-Za-z]+\d*|\d+[A-Za-z]*|[\uAC00-\uD7AF]+|[^\s\uAC00-\uD7AFA-Za-z\d]+)/g) || [segment];
+    
+    for (const part of parts) {
+      if (part.length > 0 && /[A-Za-z가-힣\d]/.test(part)) {
+        morphemes.push(part);
+      }
     }
   }
   
+  console.log(`Extracted morphemes:`, morphemes.slice(0, 20)); // First 20 for debugging
   return morphemes;
 }
 
-// More sophisticated Korean morpheme matching
+// Enhanced keyword morpheme matching with precise recognition
 function findKeywordMorphemes(morphemes: string[], keyword: string): string[] {
   const keywordMorphemes = extractKoreanMorphemes(keyword.toLowerCase());
   const foundMorphemes: string[] = [];
   
-  // console.log('Keyword morphemes:', keywordMorphemes);
-  // console.log('All morphemes:', morphemes);
+  console.log(`Looking for keyword morphemes:`, keywordMorphemes);
+  console.log(`Sample content morphemes:`, morphemes.slice(0, 30));
   
   for (const morpheme of morphemes) {
     const lowerMorpheme = morpheme.toLowerCase();
@@ -55,42 +54,41 @@ function findKeywordMorphemes(morphemes: string[], keyword: string): string[] {
       // Exact match (case insensitive)
       if (lowerMorpheme === lowerKeywordMorpheme) {
         foundMorphemes.push(morpheme);
-        // console.log('Exact match found:', morpheme, '===', keywordMorpheme);
+        console.log(`✓ Exact match: "${morpheme}" === "${keywordMorpheme}"`);
       }
-      // BMW 케이스 처리 - bmw, BMW 모두 인식
-      else if (lowerMorpheme === 'bmw' && lowerKeywordMorpheme === 'bmw') {
+      // BMW specific handling - various cases
+      else if (lowerKeywordMorpheme === 'bmw' && 
+               (lowerMorpheme === 'bmw' || lowerMorpheme === 'BMW' || lowerMorpheme === 'Bmw')) {
         foundMorphemes.push(morpheme);
-        // console.log('BMW match found:', morpheme);
+        console.log(`✓ BMW match: "${morpheme}"`);
       }
-      // 코딩 관련 용어들 인식
+      // 코딩 specific handling - include related terms
       else if (lowerKeywordMorpheme === '코딩' && 
-               (lowerMorpheme === '코딩' || lowerMorpheme === '튜닝' || lowerMorpheme === '프로그래밍')) {
+               (lowerMorpheme === '코딩' || lowerMorpheme === '튜닝' || lowerMorpheme === '프로그래밍' || lowerMorpheme === '설정')) {
         foundMorphemes.push(morpheme);
-        // console.log('Coding related match found:', morpheme);
-      }
-      // 부분 매칭 - 긴 단어에 키워드가 포함된 경우
-      else if (lowerMorpheme.includes(lowerKeywordMorpheme) && keywordMorpheme.length >= 2) {
-        foundMorphemes.push(morpheme);
-        // console.log('Partial match found:', morpheme, 'contains', keywordMorpheme);
-      }
-      // 키워드에 형태소가 포함된 경우 (bmw코딩에서 bmw, 코딩 추출)
-      else if (lowerKeywordMorpheme.includes(lowerMorpheme) && morpheme.length >= 2) {
-        foundMorphemes.push(morpheme);
-        // console.log('Reverse partial match found:', keywordMorpheme, 'contains', morpheme);
+        console.log(`✓ Coding match: "${morpheme}"`);
       }
     }
   }
   
-  // console.log('Total found morphemes:', foundMorphemes.length);
+  console.log(`Total keyword morphemes found: ${foundMorphemes.length}`);
   return foundMorphemes;
 }
 
 export function analyzeMorphemes(content: string, keyword: string): MorphemeAnalysis {
+  console.log(`=== Morpheme Analysis for keyword: "${keyword}" ===`);
+  
+  // Extract keyword morphemes first to understand what we're looking for
+  const keywordMorphemeTypes = extractKoreanMorphemes(keyword.toLowerCase());
+  console.log(`Target keyword morphemes:`, keywordMorphemeTypes);
+  
   // Extract all morphemes from content
   const allMorphemes = extractKoreanMorphemes(content);
+  console.log(`Total morphemes extracted: ${allMorphemes.length}`);
   
   // Find keyword-related morphemes
   const keywordMorphemes = findKeywordMorphemes(allMorphemes, keyword);
+  console.log(`Found keyword morphemes: ${keywordMorphemes.length}`);
   
   // Calculate character count (excluding spaces)
   const characterCount = content.replace(/\s/g, '').length;
@@ -110,12 +108,14 @@ export function analyzeMorphemes(content: string, keyword: string): MorphemeAnal
   }
   
   // Check if each keyword morpheme appears 17-20 times
-  const keywordMorphemeTypes = extractKoreanMorphemes(keyword.toLowerCase());
   let isKeywordOptimized = true;
   const morphemeIssues: string[] = [];
   
+  console.log(`Keyword morpheme counts:`, Object.fromEntries(keywordMorphemeCounts));
+  
   for (const morphemeType of keywordMorphemeTypes) {
     const count = keywordMorphemeCounts.get(morphemeType.toLowerCase()) || 0;
+    console.log(`"${morphemeType}" appears ${count} times`);
     if (count < 17 || count > 20) {
       isKeywordOptimized = false;
       morphemeIssues.push(`"${morphemeType}": ${count}회 (목표: 17-20회)`);
@@ -144,7 +144,7 @@ export function analyzeMorphemes(content: string, keyword: string): MorphemeAnal
   }
   
   const keywordMorphemeCount = keywordMorphemes.length;
-  const isLengthOptimized = characterCount >= 1700 && characterCount <= 1850;
+  const isLengthOptimized = characterCount >= 1700 && characterCount <= 1800;
   const isOptimized = isKeywordOptimized && isLengthOptimized;
   
   // Generate issues and suggestions
@@ -177,10 +177,10 @@ export function analyzeMorphemes(content: string, keyword: string): MorphemeAnal
   
   if (!isLengthOptimized) {
     if (characterCount < 1700) {
-      issues.push(`글자수가 부족합니다 (${characterCount}/1700-1850자)`);
+      issues.push(`글자수가 부족합니다 (${characterCount}/1700-1800자)`);
       suggestions.push('내용을 더 자세히 설명하여 글자수를 늘려주세요');
-    } else if (characterCount > 1850) {
-      issues.push(`글자수가 과도합니다 (${characterCount}/1700-1850자)`);
+    } else if (characterCount > 1800) {
+      issues.push(`글자수가 과도합니다 (${characterCount}/1700-1800자)`);
       suggestions.push('불필요한 내용을 줄여서 간결하게 만들어주세요');
     }
   }

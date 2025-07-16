@@ -34,7 +34,7 @@ export async function generateStrictMorphemeContent(
           `BMW 형태소: 정확히 17-20회`,
           `코딩 형태소: 정확히 17-20회`,
           `키워드 형태소가 가장 많이 출현하는 단어가 되어야 함`,
-          `공백 제외 1700-1850자 엄수`
+          `공백 제외 1700-1800자 엄수`
         ] : undefined
       );
       
