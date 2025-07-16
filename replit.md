@@ -31,7 +31,7 @@ Preferred communication style: Simple, everyday language.
 - **Gemini 2.5 Pro**: Keyword analysis, content editing, and introduction/conclusion enhancement
 - **Claude Sonnet 4**: Blog post generation and optimization
 - **Perplexity Sonar Pro**: Research data collection and fact-checking
-- **Imagen 3.0**: Infographic generation for each subtitle/section
+- **DALL-E 3**: Infographic generation for each subtitle/section
 
 ### Database Schema
 - **users**: User authentication and management
@@ -53,7 +53,7 @@ Preferred communication style: Simple, everyday language.
 3. **Research Phase**: Perplexity gathers relevant data and citations
 4. **Business Integration**: User provides business information for personalization
 5. **Content Generation**: Claude creates SEO-optimized blog post
-6. **Image Generation**: Imagen 3.0 creates infographics for each subtitle
+6. **Image Generation**: DALL-E 3 creates infographics for each subtitle
 7. **Optimization**: System analyzes SEO metrics and provides suggestions
 8. **Content Export**: Users can copy text separately and download individual images
 9. **Editing**: Chat-based interface allows iterative content refinement
@@ -64,7 +64,7 @@ Preferred communication style: Simple, everyday language.
 - **Anthropic API**: Claude 4 for content generation
 - **Google Gemini API**: Gemini 2.5 Pro for analysis and editing
 - **Perplexity API**: Sonar Pro for research and fact-checking
-- **Google Vertex AI**: Imagen 3.0 for image generation
+- **OpenAI API**: DALL-E 3 for image generation
 
 ### Database & Infrastructure
 - **PostgreSQL Database**: Local PostgreSQL instance for persistent storage
