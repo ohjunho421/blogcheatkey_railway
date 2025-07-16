@@ -48,25 +48,63 @@ export async function analyzeSEOOptimization(content: string, keyword: string): 
 }
 
 export function formatForMobile(content: string): string {
-  // Split content into lines with max 22 characters per line
-  const words = content.split(' ');
-  const lines: string[] = [];
-  let currentLine = '';
-
-  for (const word of words) {
-    if ((currentLine + word).length <= 22) {
-      currentLine = currentLine ? `${currentLine} ${word}` : word;
-    } else {
-      if (currentLine) {
-        lines.push(currentLine);
+  // Enhanced mobile formatting with shorter line breaks for better readability
+  return content
+    .split('\n')
+    .map(line => {
+      if (line.trim() === '') return '';
+      
+      // For mobile, break lines at 25-30 characters for optimal readability
+      if (line.length > 30) {
+        const segments = [];
+        let currentSegment = '';
+        
+        // Split by sentences first to maintain meaning
+        const sentences = line.split(/([.!?]\s+)/);
+        
+        for (let i = 0; i < sentences.length; i++) {
+          const segment = sentences[i];
+          
+          if ((currentSegment + segment).length > 30) {
+            if (currentSegment.trim()) {
+              segments.push(currentSegment.trim());
+              currentSegment = segment;
+            } else {
+              // If single segment is too long, break by words
+              const words = segment.split(' ');
+              let wordLine = '';
+              
+              for (const word of words) {
+                if ((wordLine + word).length > 30) {
+                  if (wordLine.trim()) {
+                    segments.push(wordLine.trim());
+                    wordLine = word + ' ';
+                  } else {
+                    // If single word is too long, just add it
+                    segments.push(word);
+                    wordLine = '';
+                  }
+                } else {
+                  wordLine += word + ' ';
+                }
+              }
+              if (wordLine.trim()) {
+                currentSegment = wordLine;
+              }
+            }
+          } else {
+            currentSegment += segment;
+          }
+        }
+        
+        if (currentSegment.trim()) {
+          segments.push(currentSegment.trim());
+        }
+        
+        return segments.join('\n');
       }
-      currentLine = word;
-    }
-  }
-
-  if (currentLine) {
-    lines.push(currentLine);
-  }
-
-  return lines.join('\n');
+      
+      return line;
+    })
+    .join('\n');
 }

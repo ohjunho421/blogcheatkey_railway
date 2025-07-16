@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { FileText, Copy, Smartphone, CheckCircle2, AlertCircle, Download, ImageIcon, Camera, RefreshCw } from "lucide-react";
+import { FileText, Copy, Smartphone, CheckCircle2, AlertCircle, Download, ImageIcon, Camera, RefreshCw, Eye, EyeOff } from "lucide-react";
 
 interface BlogContentDisplayProps {
   project: any;
@@ -17,6 +17,8 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
   const [copyFormat, setCopyFormat] = useState<'normal' | 'mobile'>('normal');
   const [generatedImages, setGeneratedImages] = useState<{[key: string]: string}>({});
   const [generatingImages, setGeneratingImages] = useState<{[key: string]: boolean}>({});
+  const [showMobilePreview, setShowMobilePreview] = useState(false);
+  const [mobilePreviewContent, setMobilePreviewContent] = useState<string>('');
   const { toast } = useToast();
 
   const copyContent = useMutation({
@@ -68,6 +70,24 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
   const handleCopy = (format: 'normal' | 'mobile') => {
     setCopyFormat(format);
     copyContent.mutate(format);
+  };
+
+  const toggleMobilePreview = async () => {
+    if (!showMobilePreview && !mobilePreviewContent) {
+      try {
+        const response = await apiRequest("POST", `/api/projects/${project.id}/copy`, { format: 'mobile' });
+        const data = await response.json();
+        setMobilePreviewContent(data.content);
+      } catch (error) {
+        toast({
+          title: "미리보기 실패",
+          description: "모바일 미리보기를 불러오는데 실패했습니다.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    setShowMobilePreview(!showMobilePreview);
   };
 
   const handleGenerateImage = (subtitle: string, type: 'infographic' | 'photo') => {
@@ -159,10 +179,14 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
 
             {/* 생성된 콘텐츠 */}
             <div className="max-w-none">
-              <div className="bg-background p-6 rounded-lg border">
-                <div className="text-sm leading-relaxed font-normal text-gray-800 dark:text-gray-200" style={{ lineHeight: '1.8' }}>
+              <div className="bg-background p-4 md:p-6 rounded-lg border">
+                <div className="text-sm md:text-base leading-relaxed font-normal text-gray-800 dark:text-gray-200" 
+                     style={{ lineHeight: '1.8' }}>
                   {project.generatedContent.split('\n').map((line, index) => (
-                    <div key={index} className={line.trim() === '' ? 'mb-4' : 'mb-2'}>
+                    <div key={index} className={`
+                      ${line.trim() === '' ? 'mb-3 md:mb-4' : 'mb-1 md:mb-2'}
+                      break-words
+                    `}>
                       {line || '\u00A0'}
                     </div>
                   ))}
@@ -171,35 +195,79 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
             </div>
 
             {/* 복사 버튼들 */}
-            <div className="flex space-x-2">
-              <Button 
-                onClick={() => handleCopy('normal')}
-                disabled={copyContent.isPending}
-                variant="outline"
-              >
-                {copyContent.isPending && copyFormat === 'normal' ? (
-                  "복사 중..."
-                ) : (
-                  <>
-                    <Copy className="h-4 w-4 mr-2" />
-                    일반 복사
-                  </>
-                )}
-              </Button>
-              <Button 
-                onClick={() => handleCopy('mobile')}
-                disabled={copyContent.isPending}
-                variant="outline"
-              >
-                {copyContent.isPending && copyFormat === 'mobile' ? (
-                  "복사 중..."
-                ) : (
-                  <>
-                    <Smartphone className="h-4 w-4 mr-2" />
-                    모바일 복사
-                  </>
-                )}
-              </Button>
+            <div className="space-y-3">
+              <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2">
+                <Button 
+                  onClick={() => handleCopy('normal')}
+                  disabled={copyContent.isPending}
+                  variant="outline"
+                  className="flex-1 sm:flex-none"
+                >
+                  {copyContent.isPending && copyFormat === 'normal' ? (
+                    "복사 중..."
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 mr-2" />
+                      일반 복사 (PC용)
+                    </>
+                  )}
+                </Button>
+                <Button 
+                  onClick={() => handleCopy('mobile')}
+                  disabled={copyContent.isPending}
+                  variant="outline"
+                  className="flex-1 sm:flex-none"
+                >
+                  {copyContent.isPending && copyFormat === 'mobile' ? (
+                    "복사 중..."
+                  ) : (
+                    <>
+                      <Smartphone className="h-4 w-4 mr-2" />
+                      모바일 복사 (짧은 줄바꿈)
+                    </>
+                  )}
+                </Button>
+                <Button 
+                  onClick={toggleMobilePreview}
+                  variant="ghost"
+                  size="sm"
+                  className="flex-1 sm:flex-none"
+                >
+                  {showMobilePreview ? (
+                    <>
+                      <EyeOff className="h-4 w-4 mr-2" />
+                      미리보기 닫기
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-4 w-4 mr-2" />
+                      모바일 미리보기
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* 모바일 미리보기 */}
+              {showMobilePreview && (
+                <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border">
+                  <div className="flex items-center mb-3">
+                    <Smartphone className="h-4 w-4 mr-2 text-gray-600" />
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      모바일 화면 미리보기 (30자 줄바꿈)
+                    </span>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 p-3 rounded border max-w-xs mx-auto">
+                    <div className="text-xs leading-relaxed font-normal text-gray-800 dark:text-gray-200" 
+                         style={{ lineHeight: '1.6' }}>
+                      {mobilePreviewContent.split('\n').map((line, index) => (
+                        <div key={index} className={line.trim() === '' ? 'mb-2' : 'mb-1'}>
+                          {line || '\u00A0'}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </CardContent>

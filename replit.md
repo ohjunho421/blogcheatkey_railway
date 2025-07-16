@@ -103,6 +103,9 @@ Preferred communication style: Simple, everyday language.
 - **One-Click Automation**: Single button now handles keyword analysis + research data collection automatically
 - **Progress Visibility**: Project progress stepper visible from the start, not just after project creation
 - **Text Formatting**: Subtitles followed by 2 line breaks, paragraphs by 1 line break for optimal readability
+- **Mobile Optimization**: Enhanced mobile formatting with 30-character line breaks for better mobile reading
+- **In-paragraph Line Breaks**: Added 40-50 character line breaks within paragraphs for improved readability
+- **Responsive UI**: Mobile-first design with responsive buttons and improved text display
 
 ### January 15, 2025
 - **Enhanced Business Info Management**: Added user-specific business information storage with `userBusinessInfo` table
