@@ -1,0 +1,100 @@
+2025-07-16 23:29:46.01
+17205028
+User
+API overloaded, retrying in 2000ms... (attempt 2/3)
+2025-07-16 23:30:09.71
+17205028
+User
+2:30:09 PM [express] POST /api/projects/40/analyze 200 in 35901ms :: {"id":40,"userId":1,"keyword":"…
+2025-07-16 23:30:10.10
+17205028
+User
+2:30:10 PM [express] GET /api/projects/40 200 in 39ms :: {"id":40,"userId":1,"keyword":"태권도 블로그","st…
+2025-07-16 23:31:20.84
+17205028
+User
+2:31:20 PM [express] POST /api/projects/40/research 200 in 16445ms :: {"id":40,"userId":1,"keyword":…
+2025-07-16 23:31:21.21
+17205028
+User
+2:31:21 PM [express] GET /api/projects/40 200 in 35ms :: {"id":40,"userId":1,"keyword":"태권도 블로그","st…
+2025-07-16 23:31:21.80
+17205028
+User
+2:31:21 PM [express] GET /api/user/business-info 200 in 37ms :: {"id":1,"userId":1,"businessName":"다…
+2025-07-16 23:31:21.92
+17205028
+User
+2:31:21 PM [express] GET /api/user/business-infos 200 in 144ms :: [{"id":1,"userId":1,"businessName"…
+2025-07-16 23:32:04.45
+17205028
+User
+2:32:04 PM [express] POST /api/projects 200 in 165ms :: {"id":41,"userId":1,"keyword":"강남수학학원","stat…
+2025-07-16 23:32:24.85
+17205028
+User
+2:32:24 PM [express] POST /api/projects/41/analyze 200 in 20171ms :: {"id":41,"userId":1,"keyword":"…
+2025-07-16 23:32:25.31
+17205028
+User
+2:32:25 PM [express] GET /api/projects/41 200 in 33ms :: {"id":41,"userId":1,"keyword":"강남수학학원","sta…
+2025-07-16 23:32:57.04
+17205028
+User
+2:32:57 PM [express] POST /api/projects/41/research 200 in 13433ms :: {"id":41,"userId":1,"keyword":…
+2025-07-16 23:32:57.37
+17205028
+User
+2:32:57 PM [express] GET /api/projects/41 200 in 33ms :: {"id":41,"userId":1,"keyword":"강남수학학원","sta…
+2025-07-16 23:32:57.63
+17205028
+User
+2:32:57 PM [express] GET /api/user/business-info 200 in 33ms :: {"id":1,"userId":1,"businessName":"다…
+2025-07-16 23:32:57.74
+17205028
+User
+2:32:57 PM [express] GET /api/user/business-infos 200 in 134ms :: [{"id":1,"userId":1,"businessName"…
+2025-07-16 23:43:15.86
+17205028
+User
+2:43:15 PM [express] POST /api/projects 200 in 539ms :: {"id":42,"userId":1,"keyword":"커피머신설치","stat…
+2025-07-16 23:43:41.37
+17205028
+User
+2:43:41 PM [express] POST /api/projects/42/analyze 200 in 25248ms :: {"id":42,"userId":1,"keyword":"…
+2025-07-16 23:43:50.55
+17205028
+User
+2:43:50 PM [express] POST /api/projects 200 in 63ms :: {"id":43,"userId":1,"keyword":"커피머신","status"…
+2025-07-16 23:44:06.91
+17205028
+User
+2:44:06 PM [express] POST /api/projects/43/analyze 200 in 16155ms :: {"id":43,"userId":1,"keyword":"…
+2025-07-16 23:51:07.93
+17205028
+System
+starting up user application
+2025-07-16 23:51:08.09
+17205028
+System
+forwarding local port 5000 to external port 80 (mapped as 1104)
+2025-07-16 23:51:09.26
+17205028
+User
+> rest-express@1.0.0 start
+2025-07-16 23:51:09.26
+17205028
+User
+> NODE_ENV=production node dist/index.js
+2025-07-16 23:51:13.74
+17205028
+User
+2:51:13 PM [express] serving on port 5000
+2025-07-16 23:51:13.74
+17205028
+User
+2:51:13 PM [express] health check available at http://0.0.0.0:5000/health
+2025-07-16 23:52:30.83
+17205028
+System
+system: received signal terminated
