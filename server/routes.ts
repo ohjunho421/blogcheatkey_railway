@@ -168,84 +168,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "content_generation",
       });
 
-      // Generate content with Claude
-      const content = await writeOptimizedBlogPost(
+      // Generate content with strict morpheme requirements
+      const { generateStrictMorphemeContent } = await import('./services/strictMorphemeGenerator');
+      
+      const generationResult = await generateStrictMorphemeContent(
         project.keyword,
         project.subtitles as string[],
         project.researchData as any,
         project.businessInfo as any
       );
-
-      // Enhance introduction and conclusion with Gemini
-      let enhancedContent = content;
-      try {
-        enhancedContent = await enhanceIntroductionAndConclusion(
-          content,
-          project.keyword,
-          project.businessInfo as any
-        );
-      } catch (enhancementError) {
-        console.error("Introduction/conclusion enhancement failed, using original content:", enhancementError);
-        enhancedContent = content;
-      }
-
-      // Analyze SEO optimization (with fallback)
-      let seoAnalysis;
-      let finalContent = enhancedContent;
-      let attempts = 0;
-      const maxAttempts = 3;
       
-      try {
-        seoAnalysis = await analyzeSEOOptimization(enhancedContent, project.keyword);
-        
-        // If keyword morphemes exceed 20, try to regenerate with stricter limits
-        while (!seoAnalysis.isOptimized && attempts < maxAttempts) {
-          const hasOverusage = seoAnalysis.issues.some(issue => 
-            issue.includes('20회 초과') || issue.includes('초과')
+      let finalContent = generationResult.content;
+      let seoAnalysis = generationResult.analysis;
+      
+      console.log(`Content generation completed in ${generationResult.attempts} attempts. Success: ${generationResult.success}`);
+      
+      // If generation was successful but we want to enhance introduction/conclusion, do it carefully
+      if (generationResult.success) {
+        try {
+          const enhancedContent = await enhanceIntroductionAndConclusion(
+            finalContent,
+            project.keyword,
+            project.businessInfo as any
           );
           
-          if (hasOverusage) {
-            console.log(`Attempt ${attempts + 1}: Keyword overusage detected, applying morpheme optimization`);
-            
-            // 형태소 최적화 적용
-            try {
-              const { optimizeMorphemeUsage, restoreContentStructure } = await import('./services/morphemeOptimizer');
-              
-              // 키워드 형태소별 최대 20회 제한
-              const keywordMorphemes = project.keyword.split(/\s+/);
-              const targetCounts: Record<string, number> = {};
-              keywordMorphemes.forEach(morpheme => {
-                targetCounts[morpheme] = 20;
-              });
-              
-              const optimizationResult = await optimizeMorphemeUsage(finalContent, project.keyword, targetCounts);
-              finalContent = restoreContentStructure(optimizationResult.optimizedContent, project.subtitles as string[]);
-              
-              console.log('Morpheme optimization changes:', optimizationResult.changes);
-              seoAnalysis = await analyzeSEOOptimization(finalContent, project.keyword);
-              attempts++;
-            } catch (optimizationError) {
-              console.error('Morpheme optimization failed, trying regeneration:', optimizationError);
-              finalContent = await writeOptimizedBlogPost(
-                project.keyword,
-                project.subtitles as string[],
-                project.researchData as any,
-                project.businessInfo as any,
-                [`키워드 형태소를 절대 20회를 넘지 않도록 주의`, ...seoAnalysis.suggestions]
-              );
-              seoAnalysis = await analyzeSEOOptimization(finalContent, project.keyword);
-              attempts++;
-            }
+          // Check if enhancement broke morpheme conditions
+          const { analyzeMorphemes } = await import('./services/morphemeAnalyzer');
+          const enhancedAnalysis = analyzeMorphemes(enhancedContent, project.keyword);
+          
+          if (enhancedAnalysis.isOptimized) {
+            console.log('Introduction/conclusion enhancement successful and maintains morpheme conditions');
+            finalContent = enhancedContent;
+            seoAnalysis = enhancedAnalysis;
           } else {
-            break;
+            console.log('Introduction/conclusion enhancement broke morpheme conditions, keeping original');
           }
+        } catch (enhancementError) {
+          console.error("Introduction/conclusion enhancement failed, keeping strict morpheme content:", enhancementError);
         }
-      } catch (seoError) {
-        console.error("SEO analysis failed, proceeding without optimization:", seoError);
-        
-        // Use enhanced morpheme analysis fallback
-        console.log("Using enhanced morpheme analysis for SEO optimization");
-        seoAnalysis = enhancedSEOAnalysis(enhancedContent, project.keyword);
+      } else {
+        console.log('Generation did not fully meet morpheme conditions, skipping enhancement to avoid further degradation');
       }
 
       // Don't auto-generate images, only generate content
@@ -277,84 +239,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "content_generation",
       });
 
-      // Generate new content with Claude
-      const content = await writeOptimizedBlogPost(
+      // Regenerate content with strict morpheme requirements
+      const { regenerateWithStrictMorphemes } = await import('./services/strictMorphemeGenerator');
+      
+      const regenerationResult = await regenerateWithStrictMorphemes(
+        project.generatedContent || '',
         project.keyword,
         project.subtitles as string[],
         project.researchData as any,
         project.businessInfo as any
       );
-
-      // Enhance introduction and conclusion with Gemini
-      let enhancedContent = content;
-      try {
-        enhancedContent = await enhanceIntroductionAndConclusion(
-          content,
-          project.keyword,
-          project.businessInfo as any
-        );
-      } catch (enhancementError) {
-        console.error("Introduction/conclusion enhancement failed, using original content:", enhancementError);
-        enhancedContent = content;
-      }
-
-      // Analyze SEO optimization with strict keyword limits
-      let seoAnalysis;
-      let finalContent = enhancedContent;
-      let attempts = 0;
-      const maxAttempts = 3;
       
-      try {
-        seoAnalysis = await analyzeSEOOptimization(enhancedContent, project.keyword);
-        
-        // If keyword morphemes exceed 20, try to regenerate with stricter limits
-        while (!seoAnalysis.isOptimized && attempts < maxAttempts) {
-          const hasOverusage = seoAnalysis.issues.some(issue => 
-            issue.includes('20회 초과') || issue.includes('초과')
-          );
-          
-          if (hasOverusage) {
-            console.log(`Regeneration attempt ${attempts + 1}: Keyword overusage detected, applying morpheme optimization`);
-            
-            // 형태소 최적화 적용
-            try {
-              const { optimizeMorphemeUsage, restoreContentStructure } = await import('./services/morphemeOptimizer');
-              
-              // 키워드 형태소별 최대 20회 제한
-              const keywordMorphemes = project.keyword.split(/\s+/);
-              const targetCounts: Record<string, number> = {};
-              keywordMorphemes.forEach(morpheme => {
-                targetCounts[morpheme] = 20;
-              });
-              
-              const optimizationResult = await optimizeMorphemeUsage(finalContent, project.keyword, targetCounts);
-              finalContent = restoreContentStructure(optimizationResult.optimizedContent, project.subtitles as string[]);
-              
-              console.log('Regeneration morpheme optimization changes:', optimizationResult.changes);
-              seoAnalysis = await analyzeSEOOptimization(finalContent, project.keyword);
-              attempts++;
-            } catch (optimizationError) {
-              console.error('Regeneration morpheme optimization failed, trying regeneration:', optimizationError);
-              finalContent = await writeOptimizedBlogPost(
-                project.keyword,
-                project.subtitles as string[],
-                project.researchData as any,
-                project.businessInfo as any,
-                [`키워드 형태소를 절대 20회를 넘지 않도록 주의`, ...seoAnalysis.suggestions]
-              );
-              seoAnalysis = await analyzeSEOOptimization(finalContent, project.keyword);
-              attempts++;
-            }
-          } else {
-            break;
-          }
-        }
-      } catch (seoError) {
-        console.error("SEO analysis failed, proceeding without optimization:", seoError);
-        seoAnalysis = enhancedSEOAnalysis(enhancedContent, project.keyword);
-      }
+      const finalContent = regenerationResult.content;
+      const seoAnalysis = regenerationResult.analysis;
+      
+      console.log(`Content regeneration completed in ${regenerationResult.attempts} attempts. Success: ${regenerationResult.success}`);
 
-      // Update project with new content
+      // Update project with regenerated content
       const updatedProject = await storage.updateBlogProject(id, {
         generatedContent: finalContent,
         seoMetrics: seoAnalysis,
