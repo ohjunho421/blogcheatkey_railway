@@ -97,6 +97,7 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes
 
 ### January 16, 2025
+- **Non-Conversational Content Generation**: Modified Claude and Gemini prompts to eliminate all conversational expressions and produce pure informational blog posts ready for copy-paste
 - **Enhanced Morpheme Optimization**: Each keyword morpheme (BMW, 코딩) now requires 17-20 individual occurrences, not combined total
 - **Keyword Frequency Dominance**: Keyword morphemes must be the most frequent words in content - no other morpheme can exceed keyword counts
 - **Text Format Output**: Changed from markdown to plain text with optimized line breaks for better readability
