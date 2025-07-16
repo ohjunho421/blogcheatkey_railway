@@ -97,8 +97,8 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes
 
 ### January 16, 2025
-- **Professional-Friendly Tone Balance**: Balanced professional expertise with friendly approach - introductions now establish credibility and create curiosity, conclusions guide readers to business contact for complex issues
-- **Expert Positioning Strategy**: Content now positions author as knowledgeable expert while maintaining approachable tone
+- **Natural Blog Tone Implementation**: Changed to natural blog writing style using ~합니다, ~때문이죠, ~입니다, ~신가요? expressions for more engaging and relatable content
+- **Professional-Friendly Tone Balance**: Balanced professional expertise with friendly approach - introductions establish credibility and create curiosity, conclusions guide readers to business contact for complex issues
 - **Enhanced Mobile Formatting**: Improved mobile line break algorithm with cleaner 25-28 character segments, better Korean phrase boundary detection, and optimized readability
 - **Strict Morpheme Generation System**: Created new strict morpheme generator that ensures all 3 conditions are met: 17-20 morpheme count, 1700-2000 characters, keyword morpheme dominance
 - **Non-Conversational Content Generation**: Modified Claude and Gemini prompts to eliminate all conversational expressions and produce pure informational blog posts ready for copy-paste
