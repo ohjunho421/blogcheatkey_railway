@@ -100,7 +100,7 @@ Preferred communication style: Simple, everyday language.
 - **Interactive AI Image Generation**: Implemented hover-triggered image generation buttons on each subtitle section - users can generate infographics or photos directly from content sections with visual feedback
 - **Chatbot Image Generation**: Added AI image generation to editing chat - users can request images with commands like "BMW 그림을 그려줘"
 - **Google Vertex AI Integration**: Successfully integrated Imagen 3.0 for high-quality image generation with proper authentication and error handling
-- **Enhanced Gemini Error Handling**: Added retry logic and fallback responses for API overload situations, ensuring keyword analysis always succeeds
+- **Enhanced API Error Handling**: Added retry logic and fallback responses for both Gemini and Claude API overload situations (status 503/529), ensuring content generation always succeeds with intelligent fallback content
 - **Engaging Introduction & Conclusion Enhancement**: Enhanced intro to address reader pain points and build empathy, strengthened conclusion with compelling CTA that acknowledges time constraints and drives immediate action to contact business
 - **Natural Blog Tone Implementation**: Changed to natural blog writing style using ~합니다, ~때문이죠, ~입니다, ~신가요? expressions for more engaging and relatable content
 - **Professional-Friendly Tone Balance**: Balanced professional expertise with friendly approach - introductions establish credibility and create curiosity, conclusions guide readers to business contact for complex issues
