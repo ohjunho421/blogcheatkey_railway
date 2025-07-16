@@ -28,13 +28,16 @@ export async function writeOptimizedBlogPost(
     throw new Error("Anthropic API key is not configured");
   }
 
-  const systemPrompt = `전문 SEO 블로그 작성자로서 다음을 준수하여 작성:
+  const systemPrompt = `전문 SEO 블로그 작성자로서 정보성 블로그 글을 작성하세요.
+
+💡 중요: 블로그 글만 작성하세요. 대화형 콘텐츠, 질문-답변 형식, 혹은 상담 내용이 아닙니다.
 
 필수 조건:
 - 키워드 "${keyword}"의 각 형태소(BMW, 코딩 등)를 총 17-20회 자연스럽게 분산
 - 키워드 전체 단어도 5-7회 직접 사용
 - 공백제외 1700-2000자
 - 구조: 서론→본론(4개소주제)→결론
+- 정보 전달형 블로그 글로 작성 (대화문이나 질답 형식 금지)
 
 🚨 키워드 형태소 엄격한 제한 (절대 준수!) 🚨:
 - "BMW" 형태소: 최대 20회까지만! (21회 이상 절대 금지)
@@ -91,7 +94,9 @@ export async function writeOptimizedBlogPost(
 
 내용이 계속됩니다...`;
 
-  const userPrompt = `키워드: "${keyword}"
+  const userPrompt = `정보성 블로그 글을 작성하세요:
+
+키워드: "${keyword}"
 
 소제목: ${subtitles.map((s, i) => `${i + 1}.${s}`).join(' | ')}
 
@@ -101,20 +106,22 @@ export async function writeOptimizedBlogPost(
 전문성: ${businessInfo.expertise}
 차별점: ${businessInfo.differentiators}
 
-일반 텍스트 형식으로 1700-2000자 블로그를 작성하세요. 
+📝 블로그 글 작성 요구사항:
+- 일반 텍스트 형식으로 1700-2000자 블로그 작성
+- 정보 전달형 글 (대화문, 질답, 상담 내용 금지)
 - 마크다운 문법 사용하지 말고 순수 텍스트로 작성
 - 각 소제목 후 줄바꿈 2회
 - 문단간 줄바꿈 1회로 가독성 확보
 - 문단 내에서도 40-50자마다 자연스럽게 줄바꿈
 - 모바일 화면을 고려하여 한 줄당 20-30자 이내로 조절
 - 키워드 형태소 각각 17-20회 포함 (절대 20회 초과 금지!)
-- 경고: 키워드 과다 사용은 SEO에 해로우니 절대 20회를 넘지 말 것
 
-서론 작성 가이드라인:
-- "BMW 코딩에 관심은 있지만 어디서부터 시작해야 할지 모르겠나요?"
-- "복잡한 ECU 프로그래밍 때문에 고민이 많으신가요?" 
-- 이런 식으로 독자의 고민을 정확히 짚어주며 시작
-- 업체의 전문성을 자연스럽게 소개하여 신뢰감 형성`;
+🎯 글의 목적: 독자에게 유용한 정보를 체계적으로 전달하는 블로그 글
+
+❌ 작성하지 말 것:
+- "안녕하세요", "문의하세요" 같은 대화형 표현
+- 질문-답변 형식의 상담 내용
+- "상담을 통해 도움을 드리겠습니다" 같은 영업성 문장`;
 
   try {
     const message = await anthropic.messages.create({

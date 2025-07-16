@@ -202,16 +202,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
           
           if (hasOverusage) {
-            console.log(`Attempt ${attempts + 1}: Keyword overusage detected, regenerating with stricter limits`);
-            finalContent = await writeOptimizedBlogPost(
-              project.keyword,
-              project.subtitles as string[],
-              project.researchData as any,
-              project.businessInfo as any,
-              [`키워드 형태소를 절대 20회를 넘지 않도록 주의`, ...seoAnalysis.suggestions]
-            );
-            seoAnalysis = await analyzeSEOOptimization(finalContent, project.keyword);
-            attempts++;
+            console.log(`Attempt ${attempts + 1}: Keyword overusage detected, applying morpheme optimization`);
+            
+            // 형태소 최적화 적용
+            try {
+              const { optimizeMorphemeUsage, restoreContentStructure } = await import('./services/morphemeOptimizer');
+              
+              // 키워드 형태소별 최대 20회 제한
+              const keywordMorphemes = project.keyword.split(/\s+/);
+              const targetCounts: Record<string, number> = {};
+              keywordMorphemes.forEach(morpheme => {
+                targetCounts[morpheme] = 20;
+              });
+              
+              const optimizationResult = await optimizeMorphemeUsage(finalContent, project.keyword, targetCounts);
+              finalContent = restoreContentStructure(optimizationResult.optimizedContent, project.subtitles as string[]);
+              
+              console.log('Morpheme optimization changes:', optimizationResult.changes);
+              seoAnalysis = await analyzeSEOOptimization(finalContent, project.keyword);
+              attempts++;
+            } catch (optimizationError) {
+              console.error('Morpheme optimization failed, trying regeneration:', optimizationError);
+              finalContent = await writeOptimizedBlogPost(
+                project.keyword,
+                project.subtitles as string[],
+                project.researchData as any,
+                project.businessInfo as any,
+                [`키워드 형태소를 절대 20회를 넘지 않도록 주의`, ...seoAnalysis.suggestions]
+              );
+              seoAnalysis = await analyzeSEOOptimization(finalContent, project.keyword);
+              attempts++;
+            }
           } else {
             break;
           }
@@ -290,16 +311,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
           
           if (hasOverusage) {
-            console.log(`Regeneration attempt ${attempts + 1}: Keyword overusage detected, regenerating with stricter limits`);
-            finalContent = await writeOptimizedBlogPost(
-              project.keyword,
-              project.subtitles as string[],
-              project.researchData as any,
-              project.businessInfo as any,
-              [`키워드 형태소를 절대 20회를 넘지 않도록 주의`, ...seoAnalysis.suggestions]
-            );
-            seoAnalysis = await analyzeSEOOptimization(finalContent, project.keyword);
-            attempts++;
+            console.log(`Regeneration attempt ${attempts + 1}: Keyword overusage detected, applying morpheme optimization`);
+            
+            // 형태소 최적화 적용
+            try {
+              const { optimizeMorphemeUsage, restoreContentStructure } = await import('./services/morphemeOptimizer');
+              
+              // 키워드 형태소별 최대 20회 제한
+              const keywordMorphemes = project.keyword.split(/\s+/);
+              const targetCounts: Record<string, number> = {};
+              keywordMorphemes.forEach(morpheme => {
+                targetCounts[morpheme] = 20;
+              });
+              
+              const optimizationResult = await optimizeMorphemeUsage(finalContent, project.keyword, targetCounts);
+              finalContent = restoreContentStructure(optimizationResult.optimizedContent, project.subtitles as string[]);
+              
+              console.log('Regeneration morpheme optimization changes:', optimizationResult.changes);
+              seoAnalysis = await analyzeSEOOptimization(finalContent, project.keyword);
+              attempts++;
+            } catch (optimizationError) {
+              console.error('Regeneration morpheme optimization failed, trying regeneration:', optimizationError);
+              finalContent = await writeOptimizedBlogPost(
+                project.keyword,
+                project.subtitles as string[],
+                project.researchData as any,
+                project.businessInfo as any,
+                [`키워드 형태소를 절대 20회를 넘지 않도록 주의`, ...seoAnalysis.suggestions]
+              );
+              seoAnalysis = await analyzeSEOOptimization(finalContent, project.keyword);
+              attempts++;
+            }
           } else {
             break;
           }

@@ -116,6 +116,9 @@ Preferred communication style: Simple, everyday language.
 - **Mobile Line Break Enhancement**: Improved mobile formatting to respect 30-character limit while maintaining readability
 - **Content Regeneration Feature**: Added "다시 생성" button for users unsatisfied with generated content
 - **Strict Keyword Limits**: Enhanced Claude prompts with absolute 20-count limit warnings and automatic retry logic for overuse detection
+- **Blog Structure Enforcement**: Added clear instructions to Claude to generate informational blog posts, not conversational content
+- **Morpheme Optimization System**: Created intelligent morpheme optimizer that removes or replaces keyword-heavy sentences when overuse is detected
+- **Content Structure Restoration**: Added system to restore proper blog structure (intro-body-conclusion) after optimization
 
 ### January 15, 2025
 - **Enhanced Business Info Management**: Added user-specific business information storage with `userBusinessInfo` table
