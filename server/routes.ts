@@ -8,6 +8,7 @@ import { writeOptimizedBlogPost } from "./services/anthropic";
 import { searchResearch, getDetailedResearch } from "./services/perplexity";
 import { generateMultipleImages } from "./services/imageGeneration";
 import { analyzeSEOOptimization, formatForMobile } from "./services/seoOptimizer";
+import { enhancedSEOAnalysis } from "./services/morphemeAnalyzer";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -192,18 +193,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (seoError) {
         console.error("SEO analysis failed, proceeding without optimization:", seoError);
         
-        // Create basic SEO analysis if Gemini fails
-        const characterCount = content.replace(/\s/g, '').length;
-        const keywordCount = (content.match(new RegExp(project.keyword, 'gi')) || []).length;
-        
-        seoAnalysis = {
-          keywordFrequency: keywordCount,
-          characterCount: characterCount,
-          morphemeCount: keywordCount,
-          isOptimized: keywordCount >= 17 && keywordCount <= 20 && characterCount >= 1700 && characterCount <= 2000,
-          issues: ["SEO 분석 서비스 일시 중단"],
-          suggestions: ["수동으로 키워드 빈도와 글자수를 확인해주세요"]
-        };
+        // Use enhanced morpheme analysis fallback
+        console.log("Using enhanced morpheme analysis for SEO optimization");
+        seoAnalysis = enhancedSEOAnalysis(content, project.keyword);
       }
 
       // Don't auto-generate images, only generate content

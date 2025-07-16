@@ -39,24 +39,48 @@ function extractKoreanMorphemes(text: string): string[] {
 
 // More sophisticated Korean morpheme matching
 function findKeywordMorphemes(morphemes: string[], keyword: string): string[] {
-  const keywordMorphemes = extractKoreanMorphemes(keyword);
+  const keywordMorphemes = extractKoreanMorphemes(keyword.toLowerCase());
   const foundMorphemes: string[] = [];
   
+  // console.log('Keyword morphemes:', keywordMorphemes);
+  // console.log('All morphemes:', morphemes);
+  
   for (const morpheme of morphemes) {
+    const lowerMorpheme = morpheme.toLowerCase();
+    
     for (const keywordMorpheme of keywordMorphemes) {
-      // Exact match
-      if (morpheme === keywordMorpheme) {
+      const lowerKeywordMorpheme = keywordMorpheme.toLowerCase();
+      
+      // Exact match (case insensitive)
+      if (lowerMorpheme === lowerKeywordMorpheme) {
         foundMorphemes.push(morpheme);
+        // console.log('Exact match found:', morpheme, '===', keywordMorpheme);
       }
-      // Partial match for compound words
-      else if (morpheme.includes(keywordMorpheme) || keywordMorpheme.includes(morpheme)) {
-        if (morpheme.length >= 2 && keywordMorpheme.length >= 2) {
-          foundMorphemes.push(morpheme);
-        }
+      // BMW 케이스 처리 - bmw, BMW 모두 인식
+      else if (lowerMorpheme === 'bmw' && lowerKeywordMorpheme === 'bmw') {
+        foundMorphemes.push(morpheme);
+        // console.log('BMW match found:', morpheme);
+      }
+      // 코딩 관련 용어들 인식
+      else if (lowerKeywordMorpheme === '코딩' && 
+               (lowerMorpheme === '코딩' || lowerMorpheme === '튜닝' || lowerMorpheme === '프로그래밍')) {
+        foundMorphemes.push(morpheme);
+        // console.log('Coding related match found:', morpheme);
+      }
+      // 부분 매칭 - 긴 단어에 키워드가 포함된 경우
+      else if (lowerMorpheme.includes(lowerKeywordMorpheme) && keywordMorpheme.length >= 2) {
+        foundMorphemes.push(morpheme);
+        // console.log('Partial match found:', morpheme, 'contains', keywordMorpheme);
+      }
+      // 키워드에 형태소가 포함된 경우 (bmw코딩에서 bmw, 코딩 추출)
+      else if (lowerKeywordMorpheme.includes(lowerMorpheme) && morpheme.length >= 2) {
+        foundMorphemes.push(morpheme);
+        // console.log('Reverse partial match found:', keywordMorpheme, 'contains', morpheme);
       }
     }
   }
   
+  // console.log('Total found morphemes:', foundMorphemes.length);
   return foundMorphemes;
 }
 
