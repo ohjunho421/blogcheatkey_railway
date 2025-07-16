@@ -74,6 +74,10 @@ export async function generateImage(prompt: string, style: string = "infographic
     throw new Error("No image data in response");
   } catch (error) {
     console.error("Image generation error:", error);
+    // For permission errors, provide a helpful message
+    if (error instanceof Error && error.message.includes('403')) {
+      throw new Error('Google Cloud 권한이 필요합니다. 서비스 계정에 Vertex AI User 역할을 추가해주세요.');
+    }
     throw new Error(`이미지 생성에 실패했습니다: ${error}`);
   }
 }
@@ -130,6 +134,10 @@ export async function generateInfographic(subtitle: string, keyword: string): Pr
     throw new Error("No image data in response");
   } catch (error) {
     console.error("Image generation error:", error);
+    // For permission errors, provide a helpful message
+    if (error instanceof Error && error.message.includes('403')) {
+      throw new Error('Google Cloud 권한이 필요합니다. 서비스 계정에 Vertex AI User 역할을 추가해주세요.');
+    }
     throw new Error("Failed to generate infographic");
   }
 }
