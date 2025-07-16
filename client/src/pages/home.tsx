@@ -204,8 +204,11 @@ export default function Home() {
             )}
 
             {/* Reference Links */}
-            {project && project.referenceLinks && (
-              <ReferenceLinks links={project.referenceLinks as string[]} />
+            {project && project.researchData?.citations && (
+              <ReferenceLinks 
+                links={project.researchData.citations} 
+                citationsWithTitles={project.researchData.citationsWithTitles} 
+              />
             )}
 
             {/* Editing Chat */}

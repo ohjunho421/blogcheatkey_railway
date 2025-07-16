@@ -13,7 +13,7 @@ export function AIModelStatus({ project }: AIModelStatusProps) {
     switch (modelName) {
       case "Gemini 2.5 Pro":
         return project.keywordAnalysis ? "완료" : 
-               project.status === "keyword_analysis" ? "분석 중" : "대기 중";
+               (project.status === "keyword_analysis" || project.status === "data_collection") ? "분석 중" : "대기 중";
       case "Perplexity Sonar Pro":
         return project.researchData ? "완료" :
                project.status === "data_collection" ? "수집 중" : "대기 중";

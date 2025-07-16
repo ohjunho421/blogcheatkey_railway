@@ -24,6 +24,7 @@ interface PerplexityResponse {
 export async function searchResearch(keyword: string, subtitles: string[]): Promise<{
   content: string;
   citations: string[];
+  citationsWithTitles?: Array<{url: string, title: string}>;
 }> {
   const apiKey = process.env.PERPLEXITY_API_KEY;
   if (!apiKey) {

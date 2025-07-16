@@ -106,6 +106,10 @@ Preferred communication style: Simple, everyday language.
 - **Mobile Optimization**: Enhanced mobile formatting with 30-character line breaks for better mobile reading
 - **In-paragraph Line Breaks**: Added 40-50 character line breaks within paragraphs for improved readability
 - **Responsive UI**: Mobile-first design with responsive buttons and improved text display
+- **AI Status Indicators**: Fixed real-time AI model status display during keyword analysis and data collection
+- **Enhanced Reference Links**: Added meaningful titles to citation links instead of raw URLs
+- **Improved Content Tone**: Updated Claude prompts for more engaging, empathetic introduction and conclusion writing
+- **Mobile Preview Feature**: Added preview functionality to show how mobile formatting will look before copying
 
 ### January 15, 2025
 - **Enhanced Business Info Management**: Added user-specific business information storage with `userBusinessInfo` table
