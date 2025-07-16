@@ -97,6 +97,7 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes
 
 ### January 16, 2025
+- **Friendly Tone Implementation**: Changed from formal/encyclopedic style to warm, friendly, and easy-to-understand tone that feels like talking to a helpful friend
 - **Strict Morpheme Generation System**: Created new strict morpheme generator that ensures all 3 conditions are met: 17-20 morpheme count, 1700-2000 characters, keyword morpheme dominance
 - **Non-Conversational Content Generation**: Modified Claude and Gemini prompts to eliminate all conversational expressions and produce pure informational blog posts ready for copy-paste
 - **Enhanced Morpheme Optimization**: Each keyword morpheme (BMW, 코딩) now requires 17-20 individual occurrences, not combined total
