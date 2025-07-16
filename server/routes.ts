@@ -225,6 +225,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Regenerate blog content
+  app.post("/api/projects/:id/regenerate", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const project = await storage.getBlogProject(id);
+      
+      if (!project || !project.subtitles || !project.researchData || !project.businessInfo) {
+        return res.status(400).json({ error: "필요한 정보가 모두 준비되지 않았습니다" });
+      }
+
+      // Update status to content_generation
+      await storage.updateBlogProject(id, {
+        status: "content_generation",
+      });
+
+      // Generate new content with Claude
+      const content = await writeOptimizedBlogPost(
+        project.keyword,
+        project.subtitles as string[],
+        project.researchData as any,
+        project.businessInfo as any
+      );
+
+      // Enhance introduction and conclusion with Gemini
+      let enhancedContent = content;
+      try {
+        enhancedContent = await enhanceIntroductionAndConclusion(
+          content,
+          project.keyword,
+          project.businessInfo as any
+        );
+      } catch (enhancementError) {
+        console.error("Introduction/conclusion enhancement failed, using original content:", enhancementError);
+        enhancedContent = content;
+      }
+
+      // Analyze SEO optimization
+      let seoAnalysis;
+      let finalContent = enhancedContent;
+      
+      try {
+        seoAnalysis = await analyzeSEOOptimization(enhancedContent, project.keyword);
+        
+        // If not optimized, try once more
+        if (!seoAnalysis.isOptimized) {
+          finalContent = await writeOptimizedBlogPost(
+            project.keyword,
+            project.subtitles as string[],
+            project.researchData as any,
+            project.businessInfo as any,
+            seoAnalysis.suggestions
+          );
+        }
+      } catch (seoError) {
+        console.error("SEO analysis failed, proceeding without optimization:", seoError);
+        seoAnalysis = enhancedSEOAnalysis(enhancedContent, project.keyword);
+      }
+
+      // Update project with new content
+      const updatedProject = await storage.updateBlogProject(id, {
+        generatedContent: finalContent,
+        seoMetrics: seoAnalysis,
+        status: "completed",
+      });
+
+      res.json(updatedProject);
+    } catch (error) {
+      console.error("Content regeneration error:", error);
+      res.status(500).json({ error: "블로그 재생성에 실패했습니다" });
+    }
+  });
+
   // Copy content (normal or mobile)
   app.post("/api/projects/:id/copy", async (req, res) => {
     try {

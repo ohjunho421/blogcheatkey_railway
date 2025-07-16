@@ -72,6 +72,31 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
     copyContent.mutate(format);
   };
 
+  const regenerateContent = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", `/api/projects/${project.id}/regenerate`);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "재생성 완료",
+        description: "새로운 콘텐츠가 생성되었습니다.",
+      });
+      onRefresh();
+    },
+    onError: (error) => {
+      toast({
+        title: "재생성 실패",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleRegenerate = () => {
+    regenerateContent.mutate();
+  };
+
   const toggleMobilePreview = async () => {
     if (!showMobilePreview && !mobilePreviewContent) {
       try {
@@ -194,7 +219,7 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
               </div>
             </div>
 
-            {/* 복사 버튼들 */}
+            {/* 복사 및 재생성 버튼들 */}
             <div className="space-y-3">
               <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2">
                 <Button 
@@ -242,6 +267,29 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
                     <>
                       <Eye className="h-4 w-4 mr-2" />
                       모바일 미리보기
+                    </>
+                  )}
+                </Button>
+              </div>
+              
+              {/* 재생성 버튼 */}
+              <div className="flex justify-center pt-2">
+                <Button 
+                  onClick={handleRegenerate}
+                  disabled={regenerateContent.isPending}
+                  variant="destructive"
+                  size="sm"
+                  className="w-full sm:w-auto"
+                >
+                  {regenerateContent.isPending ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      콘텐츠 재생성 중...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      다시 생성 (완전히 새로운 콘텐츠)
                     </>
                   )}
                 </Button>
