@@ -357,7 +357,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           cleanPrompt = cleanPrompt
             // Remove leading image request words
             .replace(/^(그림을?\s*|이미지를?\s*|사진을?\s*)/gi, '')
-            // Remove trailing action words
+            // Remove trailing action words first
             .replace(/\s*(그려|만들어|생성해?|해봐?)(줘|주세요|라)?\s*$/gi, '')
             // Remove middle action words
             .replace(/\s*(그려|만들어|생성해?|해봐?)?(줘|주세요|라)\s*/gi, '')
@@ -371,8 +371,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             .replace(/\s*사진을?\s*/gi, ' ')
             // Remove "에 대한" patterns
             .replace(/\s*에 대한\s*/gi, ' ')
-            // Remove "의" patterns at the end
-            .replace(/\s*의\s*$/gi, '')
+            // Remove Korean particles at the end (multiple passes to ensure removal)
+            .replace(/을$/gi, '')
+            .replace(/를$/gi, '')
+            .replace(/이$/gi, '')
+            .replace(/가$/gi, '')
+            .replace(/는$/gi, '')
+            .replace(/은$/gi, '')
+            .replace(/의$/gi, '')
+            .replace(/을$/gi, '')
+            .replace(/를$/gi, '')
             // Clean up multiple spaces
             .replace(/\s+/g, ' ')
             .trim();
