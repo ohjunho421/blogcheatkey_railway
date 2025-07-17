@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import { useAuth, useLogout } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,11 +17,32 @@ import { EditingChat } from "@/components/EditingChat";
 import { ReferenceLinks } from "@/components/ReferenceLinks";
 import { InfographicGallery } from "@/components/InfographicGallery";
 import { ReferenceBlogLinksForm } from "@/components/ReferenceBlogLinksForm";
-import { MessageSquare, FileText, Search, Building2, Sparkles, RotateCw } from "lucide-react";
+import { MessageSquare, FileText, Search, Building2, Sparkles, RotateCw, LogOut, User, ChevronDown } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function Home() {
   const [location, navigate] = useLocation();
+  const { user, isAuthenticated } = useAuth();
+  const logoutMutation = useLogout();
   const projectId = location.includes('/project/') ? parseInt(location.split('/project/')[1]) : null;
+
+  const handleLogout = async () => {
+    try {
+      await logoutMutation.mutateAsync();
+      toast({
+        title: "로그아웃",
+        description: "성공적으로 로그아웃되었습니다.",
+      });
+      navigate("/login");
+    } catch (error) {
+      toast({
+        title: "오류",
+        description: "로그아웃 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const { data: project, isLoading, refetch } = useQuery({
     queryKey: ['/api/projects', projectId],
@@ -81,8 +104,54 @@ export default function Home() {
                   새 프로젝트
                 </Button>
               )}
-              <div className="w-8 h-8 bg-muted rounded-full"></div>
-              <span className="text-sm text-muted-foreground">김자영님</span>
+              {user && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="flex items-center space-x-2 h-auto p-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user.profileImage} alt={user.name} />
+                        <AvatarFallback>
+                          {user.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm text-muted-foreground hidden sm:block">
+                        {user.name}님
+                      </span>
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <div className="flex items-center justify-start gap-2 p-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user.profileImage} alt={user.name} />
+                        <AvatarFallback>
+                          {user.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{user.name}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user.email}
+                        </p>
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>
+                      <User className="mr-2 h-4 w-4" />
+                      프로필
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <FileText className="mr-2 h-4 w-4" />
+                      작성 내역
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} disabled={logoutMutation.isPending}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      {logoutMutation.isPending ? "로그아웃 중..." : "로그아웃"}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         </div>

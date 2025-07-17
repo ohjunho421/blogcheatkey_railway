@@ -2,8 +2,10 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { businessInfoSchema, keywordAnalysisSchema, seoMetricsSchema } from "@shared/schema";
+import { businessInfoSchema, keywordAnalysisSchema, seoMetricsSchema, emailSignupSchema, emailLoginSchema } from "@shared/schema";
 import { analyzeKeyword, editContent, enhanceIntroductionAndConclusion } from "./services/gemini";
+import passport from 'passport';
+import { setupAuth, isAuthenticated, hashPassword } from './auth';
 import { writeOptimizedBlogPost } from "./services/anthropic";
 import { searchResearch, getDetailedResearch } from "./services/perplexity";
 import { generateMultipleImages, generateImage } from "./services/imageGeneration";
@@ -12,11 +14,110 @@ import { enhancedSEOAnalysis } from "./services/morphemeAnalyzer";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
+  // Setup authentication middleware
+  setupAuth(app);
+  
   // Health check endpoint should be at the top
   // Health check and ping endpoints are already handled in server/index.ts
   
+  // ===== AUTHENTICATION ROUTES =====
+  
+  // Email signup
+  app.post("/auth/signup", async (req, res) => {
+    try {
+      const validatedData = emailSignupSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(validatedData.email);
+      if (existingUser) {
+        return res.status(400).json({ error: "이미 등록된 이메일입니다." });
+      }
+      
+      // Hash password and create user
+      const hashedPassword = await hashPassword(validatedData.password);
+      const user = await storage.createUser({
+        email: validatedData.email,
+        password: hashedPassword,
+        name: validatedData.name,
+        isEmailVerified: false
+      });
+      
+      // Auto login after signup
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ error: "회원가입 후 자동 로그인에 실패했습니다." });
+        }
+        res.json({ user: { id: user.id, email: user.email, name: user.name } });
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors[0].message });
+      }
+      console.error("Signup error:", error);
+      res.status(500).json({ error: "회원가입에 실패했습니다." });
+    }
+  });
+  
+  // Email login
+  app.post("/auth/login", (req, res, next) => {
+    passport.authenticate('local', (err, user, info) => {
+      if (err) {
+        return res.status(500).json({ error: "로그인 처리 중 오류가 발생했습니다." });
+      }
+      if (!user) {
+        return res.status(401).json({ error: info?.message || "로그인에 실패했습니다." });
+      }
+      
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ error: "로그인 세션 생성에 실패했습니다." });
+        }
+        res.json({ user: { id: user.id, email: user.email, name: user.name } });
+      });
+    })(req, res, next);
+  });
+  
+  // Google OAuth routes
+  app.get("/auth/google", passport.authenticate('google', { 
+    scope: ['profile', 'email'] 
+  }));
+  
+  app.get("/auth/google/callback", 
+    passport.authenticate('google', { failureRedirect: '/login?error=google' }),
+    (req, res) => {
+      res.redirect('/'); // Redirect to main app after successful login
+    }
+  );
+  
+  // Logout
+  app.post("/auth/logout", (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ error: "로그아웃에 실패했습니다." });
+      }
+      res.json({ message: "로그아웃되었습니다." });
+    });
+  });
+  
+  // Get current user
+  app.get("/auth/user", (req, res) => {
+    if (req.isAuthenticated() && req.user) {
+      const user = req.user as any;
+      res.json({ 
+        id: user.id, 
+        email: user.email, 
+        name: user.name, 
+        profileImage: user.profileImage 
+      });
+    } else {
+      res.status(401).json({ error: "인증되지 않은 사용자입니다." });
+    }
+  });
+  
+  // ===== PROTECTED ROUTES (require authentication) =====
+  
   // Create new blog project
-  app.post("/api/projects", async (req, res) => {
+  app.post("/api/projects", isAuthenticated, async (req, res) => {
     try {
       const { keyword } = req.body;
       
@@ -24,8 +125,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "키워드를 입력해주세요" });
       }
 
+      const user = req.user as any;
       const project = await storage.createBlogProject({
         keyword,
+        userId: user.id,
         status: "keyword_analysis",
         keywordAnalysis: null,
         subtitles: null,
@@ -44,7 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get project
-  app.get("/api/projects/:id", async (req, res) => {
+  app.get("/api/projects/:id", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const project = await storage.getBlogProject(id);
@@ -61,7 +164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Analyze keyword with Gemini
-  app.post("/api/projects/:id/analyze", async (req, res) => {
+  app.post("/api/projects/:id/analyze", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const project = await storage.getBlogProject(id);
@@ -86,7 +189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update subtitles
-  app.post("/api/projects/:id/subtitles", async (req, res) => {
+  app.post("/api/projects/:id/subtitles", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { subtitles } = req.body;
@@ -107,7 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Research with Perplexity
-  app.post("/api/projects/:id/research", async (req, res) => {
+  app.post("/api/projects/:id/research", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const project = await storage.getBlogProject(id);
@@ -132,7 +235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Save business info
-  app.post("/api/projects/:id/business", async (req, res) => {
+  app.post("/api/projects/:id/business", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const businessInfo = businessInfoSchema.parse(req.body);
@@ -154,7 +257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate blog content
-  app.post("/api/projects/:id/generate", async (req, res) => {
+  app.post("/api/projects/:id/generate", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const project = await storage.getBlogProject(id);
@@ -255,7 +358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Regenerate blog content
-  app.post("/api/projects/:id/regenerate", async (req, res) => {
+  app.post("/api/projects/:id/regenerate", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const project = await storage.getBlogProject(id);
@@ -300,7 +403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Copy content (normal or mobile)
-  app.post("/api/projects/:id/copy", async (req, res) => {
+  app.post("/api/projects/:id/copy", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { format } = req.body; // 'normal' or 'mobile'
@@ -322,7 +425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update reference blog links
-  app.post("/api/projects/:id/reference-links", async (req, res) => {
+  app.post("/api/projects/:id/reference-links", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { links } = req.body;
@@ -347,7 +450,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const imageGenerationRateLimit = new Map<string, number>();
   
   // Chat with Gemini for editing and image generation
-  app.post("/api/projects/:id/chat", async (req, res) => {
+  app.post("/api/projects/:id/chat", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { message } = req.body;
@@ -510,7 +613,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get chat messages
-  app.get("/api/projects/:id/chat", async (req, res) => {
+  app.get("/api/projects/:id/chat", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const messages = await storage.getChatMessages(id);
@@ -522,7 +625,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Download image
-  app.get("/api/projects/:id/images/:imageIndex", async (req, res) => {
+  app.get("/api/projects/:id/images/:imageIndex", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const imageIndex = parseInt(req.params.imageIndex);
@@ -558,11 +661,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user business info
-  app.get("/api/user/business-info", async (req, res) => {
+  app.get("/api/user/business-info", isAuthenticated, async (req, res) => {
     try {
-      const userId = 1; // Default user for demo
-      const businessInfo = await storage.getUserBusinessInfo(userId);
-      res.json(businessInfo);
+      const user = req.user as any;
+      const businessInfos = await storage.getAllUserBusinessInfos(user.id);
+      res.json(businessInfos);
     } catch (error) {
       console.error("Get business info error:", error);
       res.status(500).json({ error: "업체 정보 조회에 실패했습니다" });

@@ -1,12 +1,35 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Users table with social login support
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  email: text("email").unique(),
+  password: text("password"), // null for social login users
+  name: text("name"),
+  profileImage: text("profile_image"),
+  // Social login fields
+  googleId: text("google_id").unique(),
+  kakaoId: text("kakao_id").unique(),
+  naverId: text("naver_id").unique(),
+  // Account status
+  isEmailVerified: boolean("is_email_verified").default(false),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// Sessions table for authentication
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
 
 export const userBusinessInfo = pgTable("user_business_info", {
   id: serial("id").primaryKey(),
@@ -46,10 +69,29 @@ export const chatMessages = pgTable("chat_messages", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
+// Email login schema
+export const emailSignupSchema = z.object({
+  email: z.string().email("올바른 이메일을 입력해주세요"),
+  password: z.string().min(6, "비밀번호는 최소 6자 이상이어야 합니다"),
+  name: z.string().min(1, "이름을 입력해주세요"),
 });
+
+export const emailLoginSchema = z.object({
+  email: z.string().email("올바른 이메일을 입력해주세요"),
+  password: z.string().min(1, "비밀번호를 입력해주세요"),
+});
+
+// Social login user creation
+export const socialUserSchema = z.object({
+  email: z.string().email().optional(),
+  name: z.string(),
+  profileImage: z.string().optional(),
+  googleId: z.string().optional(),
+  kakaoId: z.string().optional(),
+  naverId: z.string().optional(),
+});
+
+export const insertUserSchema = createInsertSchema(users);
 
 export const insertBlogProjectSchema = createInsertSchema(blogProjects).pick({
   keyword: true,
@@ -108,6 +150,9 @@ export const referenceBlogLinkSchema = z.object({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+export type EmailSignup = z.infer<typeof emailSignupSchema>;
+export type EmailLogin = z.infer<typeof emailLoginSchema>;
+export type SocialUser = z.infer<typeof socialUserSchema>;
 export type InsertUserBusinessInfo = z.infer<typeof insertUserBusinessInfoSchema>;
 export type UserBusinessInfo = typeof userBusinessInfo.$inferSelect;
 export type InsertBlogProject = z.infer<typeof insertBlogProjectSchema>;

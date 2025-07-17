@@ -1,0 +1,147 @@
+import passport from 'passport';
+import { Strategy as LocalStrategy } from 'passport-local';
+import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import bcrypt from 'bcryptjs';
+import session from 'express-session';
+import connectPg from 'connect-pg-simple';
+import MemoryStore from 'memorystore';
+import { storage } from './storage';
+import type { Express, RequestHandler } from 'express';
+
+// Configure session store
+export function getSession() {
+  const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
+  
+  // 개발 환경에서는 메모리 스토어 사용
+  const MemStore = MemoryStore(session);
+  const sessionStore = new MemStore({
+    checkPeriod: 86400000 // prune expired entries every 24h
+  });
+  
+  return session({
+    secret: process.env.SESSION_SECRET || 'blog-cheat-key-secret-2025',
+    store: sessionStore,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: false, // Set to true in production with HTTPS
+      maxAge: sessionTtl,
+    },
+  });
+}
+
+// Passport serialization
+passport.serializeUser((user: any, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async (id: number, done) => {
+  try {
+    const user = await storage.getUser(id);
+    done(null, user || false);
+  } catch (error) {
+    done(error, false);
+  }
+});
+
+// Local Strategy (Email/Password)
+passport.use(new LocalStrategy(
+  {
+    usernameField: 'email',
+    passwordField: 'password'
+  },
+  async (email, password, done) => {
+    try {
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return done(null, false, { message: '등록되지 않은 이메일입니다.' });
+      }
+
+      if (!user.password) {
+        return done(null, false, { message: '소셜 로그인 계정입니다. 해당 소셜 로그인을 사용해주세요.' });
+      }
+
+      const isValid = await bcrypt.compare(password, user.password);
+      if (!isValid) {
+        return done(null, false, { message: '비밀번호가 일치하지 않습니다.' });
+      }
+
+      return done(null, user);
+    } catch (error) {
+      return done(error);
+    }
+  }
+));
+
+// Google Strategy
+if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+  passport.use(new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: "/auth/google/callback"
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        // Check if user already exists with Google ID
+        let user = await storage.getUserBySocialId('google', profile.id);
+        
+        if (user) {
+          return done(null, user);
+        }
+
+        // Check if user exists with same email
+        if (profile.emails && profile.emails[0]) {
+          user = await storage.getUserByEmail(profile.emails[0].value);
+          if (user) {
+            // Link Google account to existing user
+            await storage.updateUser(user.id, {
+              googleId: profile.id,
+              profileImage: profile.photos?.[0]?.value || user.profileImage
+            });
+            return done(null, user);
+          }
+        }
+
+        // Create new user
+        const newUser = await storage.createUser({
+          email: profile.emails?.[0]?.value || null,
+          name: profile.displayName || profile.username || 'Google User',
+          profileImage: profile.photos?.[0]?.value || null,
+          googleId: profile.id,
+          isEmailVerified: true
+        });
+
+        return done(null, newUser);
+      } catch (error) {
+        return done(error);
+      }
+    }
+  ));
+}
+
+// Middleware to check if user is authenticated
+export const isAuthenticated: RequestHandler = (req, res, next) => {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ error: '로그인이 필요합니다.' });
+};
+
+// Initialize authentication
+export function setupAuth(app: Express) {
+  app.use(getSession());
+  app.use(passport.initialize());
+  app.use(passport.session());
+}
+
+// Hash password utility
+export async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 12);
+}
+
+// Compare password utility
+export async function comparePassword(password: string, hash: string): Promise<boolean> {
+  return bcrypt.compare(password, hash);
+}

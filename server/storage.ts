@@ -5,8 +5,10 @@ import { eq } from "drizzle-orm";
 export interface IStorage {
   // User methods
   getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserBySocialId(provider: 'google' | 'kakao' | 'naver', socialId: string): Promise<User | undefined>;
+  createUser(userData: Partial<InsertUser>): Promise<User>;
+  updateUser(id: number, updates: Partial<InsertUser>): Promise<User>;
   
   // User business info methods
   getUserBusinessInfo(userId: number): Promise<UserBusinessInfo | undefined>;
@@ -33,15 +35,32 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
     return user || undefined;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async getUserBySocialId(provider: 'google' | 'kakao' | 'naver', socialId: string): Promise<User | undefined> {
+    const column = provider === 'google' ? users.googleId : 
+                   provider === 'kakao' ? users.kakaoId : 
+                   users.naverId;
+    const [user] = await db.select().from(users).where(eq(column, socialId));
+    return user || undefined;
+  }
+
+  async createUser(userData: Partial<InsertUser>): Promise<User> {
     const [user] = await db
       .insert(users)
-      .values(insertUser)
+      .values(userData)
+      .returning();
+    return user;
+  }
+
+  async updateUser(id: number, updates: Partial<InsertUser>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(users.id, id))
       .returning();
     return user;
   }
@@ -74,20 +93,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createBlogProject(insertProject: InsertBlogProject): Promise<BlogProject> {
-    // Ensure default user exists
-    let defaultUser = await this.getUser(1);
-    if (!defaultUser) {
-      defaultUser = await this.createUser({
-        username: 'demo_user',
-        password: 'demo_password'
-      });
-    }
-
     const [project] = await db
       .insert(blogProjects)
       .values({
         ...insertProject,
-        userId: defaultUser.id,
         status: insertProject.status || 'keyword_analysis',
       })
       .returning();
