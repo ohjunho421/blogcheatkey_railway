@@ -244,11 +244,14 @@ export const isAuthenticated: RequestHandler = (req, res, next) => {
   */
 };
 
-// Initialize authentication
+// Initialize authentication - 인증 기능 일시 비활성화
 export function setupAuth(app: Express) {
   app.use(getSession());
+  // Passport 미들웨어 일시 비활성화
+  /*
   app.use(passport.initialize());
   app.use(passport.session());
+  */
 }
 
 // Hash password utility

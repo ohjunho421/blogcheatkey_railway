@@ -1,3 +1,4 @@
+import React from "react";
 import { Link, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,11 +39,12 @@ export default function Signup() {
     },
   });
 
-  // Redirect if already authenticated
-  if (isAuthenticated) {
-    navigate("/");
-    return null;
-  }
+  // Redirect if already authenticated - useEffect 사용으로 hook 순서 보장
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/");
+    }
+  }, [isAuthenticated, navigate]);
 
   const onSubmit = async (data: SignupForm) => {
     try {

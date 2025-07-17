@@ -101,8 +101,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
   
-  // Get current user
+  // Get current user - 임시로 더미 사용자 반환
   app.get("/auth/user", (req, res) => {
+    // 임시로 더미 사용자 정보 반환 (인증 우회)
+    res.json({
+      id: 1,
+      email: "guest@blogcheatkey.com",
+      name: "게스트 사용자",
+      profileImage: null
+    });
+    
+    // 원래 코드 (나중에 활성화)
+    /*
     if (req.isAuthenticated() && req.user) {
       const user = req.user as any;
       res.json({ 
@@ -114,6 +124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } else {
       res.status(401).json({ error: "인증되지 않은 사용자입니다." });
     }
+    */
   });
 
   // ===== SOCIAL LOGIN ROUTES =====

@@ -1,0 +1,116 @@
+2025-07-17 17:16:54.83
+7b91325d
+User
+file: 'parse_relation.c',
+2025-07-17 17:16:54.83
+7b91325d
+User
+line: '3722',
+2025-07-17 17:16:54.83
+7b91325d
+User
+routine: 'errorMissingColumn'
+2025-07-17 17:16:54.83
+7b91325d
+User
+}
+2025-07-17 17:17:13.21
+7b91325d
+User
+Project creation error: error: column "username" does not exist
+2025-07-17 17:17:13.21
+7b91325d
+User
+at file:///home/runner/workspace/node_modules/@neondatabase/serverless/index.mjs:1345:74
+2025-07-17 17:17:13.21
+7b91325d
+User
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+2025-07-17 17:17:13.21
+7b91325d
+User
+at async NeonPreparedQuery.execute (file:///home/runner/workspace/node_modules/drizzle-orm/neon-serverless/session.js:76:20)
+2025-07-17 17:17:13.21
+7b91325d
+User
+at async DatabaseStorage.getUser (file:///home/runner/workspace/dist/index.js:1410:20)
+2025-07-17 17:17:13.21
+7b91325d
+User
+at async DatabaseStorage.createBlogProject (file:///home/runner/workspace/dist/index.js:1437:23)
+2025-07-17 17:17:13.21
+7b91325d
+User
+at async file:///home/runner/workspace/dist/index.js:1843:23 {
+2025-07-17 17:17:13.21
+7b91325d
+User
+length: 108,
+2025-07-17 17:17:13.21
+7b91325d
+User
+severity: 'ERROR',
+2025-07-17 17:17:13.21
+7b91325d
+User
+code: '42703',
+2025-07-17 17:17:13.21
+7b91325d
+User
+detail: undefined,
+2025-07-17 17:17:13.21
+7b91325d
+User
+hint: undefined,
+2025-07-17 17:17:13.21
+7b91325d
+User
+position: '14',
+2025-07-17 17:17:13.21
+7b91325d
+User
+internalPosition: undefined,
+2025-07-17 17:17:13.21
+7b91325d
+User
+internalQuery: undefined,
+2025-07-17 17:17:13.21
+7b91325d
+User
+where: undefined,
+2025-07-17 17:17:13.21
+7b91325d
+User
+schema: undefined,
+2025-07-17 17:17:13.21
+7b91325d
+User
+table: undefined,
+2025-07-17 17:17:13.21
+7b91325d
+User
+column: undefined,
+2025-07-17 17:17:13.21
+7b91325d
+User
+dataType: undefined,
+2025-07-17 17:17:13.21
+7b91325d
+User
+constraint: undefined,
+2025-07-17 17:17:13.21
+7b91325d
+User
+file: 'parse_relation.c',
+2025-07-17 17:17:13.21
+7b91325d
+User
+line: '3722',
+2025-07-17 17:17:13.21
+7b91325d
+User
+routine: 'errorMissingColumn'
+2025-07-17 17:17:13.21
+7b91325d
+User
+}
