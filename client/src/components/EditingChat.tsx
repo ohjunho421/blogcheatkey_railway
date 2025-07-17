@@ -43,10 +43,16 @@ export function EditingChat({ project, onRefresh }: EditingChatProps) {
           title: "수정 완료",
           description: "콘텐츠가 수정되었습니다.",
         });
+      } else if (data.type === 'rate_limit') {
+        toast({
+          title: "요청 제한",
+          description: data.message,
+          variant: "destructive",
+        });
       } else if (data.type === 'error') {
         toast({
           title: "이미지 생성 실패",
-          description: "이미지 생성에 실패했습니다. 다시 시도해주세요.",
+          description: "이미지 생성에 실패했습니다. 할당량 문제일 수 있습니다.",
           variant: "destructive",
         });
       }

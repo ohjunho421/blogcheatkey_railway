@@ -320,6 +320,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Simple rate limiting for image generation
+  const imageGenerationRateLimit = new Map<string, number>();
+  
   // Chat with Gemini for editing and image generation
   app.post("/api/projects/:id/chat", async (req, res) => {
     try {
@@ -349,6 +352,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       if (isImageRequest) {
+        // Rate limiting for image generation (1 request per 30 seconds per project)
+        const rateLimitKey = `image_${id}`;
+        const lastRequest = imageGenerationRateLimit.get(rateLimitKey);
+        const now = Date.now();
+        
+        if (lastRequest && (now - lastRequest) < 30000) {
+          const remainingTime = Math.ceil((30000 - (now - lastRequest)) / 1000);
+          return res.json({
+            success: true,
+            type: 'rate_limit',
+            message: `이미지 생성은 30초마다 1회만 가능합니다. ${remainingTime}초 후 다시 시도해주세요.`
+          });
+        }
+        
+        imageGenerationRateLimit.set(rateLimitKey, now);
+        
         try {
           // Enhanced image prompt extraction
           let cleanPrompt = message;

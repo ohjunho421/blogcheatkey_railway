@@ -30,23 +30,27 @@ async function getAccessToken(): Promise<string> {
 }
 
 export async function generateImage(prompt: string, style: string = "infographic"): Promise<string> {
-  try {
-    const accessToken = await getAccessToken();
-    
-    // Enhanced prompt generation based on style and content
-    let enhancedPrompt = "";
-    
-    if (style === "photo") {
-      enhancedPrompt = `Professional, high-quality photo of ${prompt}. Clear, well-lit, and visually appealing. Modern photography style.`;
-    } else if (style === "infographic") {
-      enhancedPrompt = `Clean, modern infographic about ${prompt}. Use clear typography, relevant icons, and professional design. Business-appropriate with informative visual elements.`;
-    } else {
-      enhancedPrompt = `High-quality visual representation of ${prompt}. Professional, clear, and engaging design.`;
-    }
-    
-    console.log(`Enhanced prompt: "${enhancedPrompt}"`);
-    
-    const endpoint = `https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/imagen-3.0-generate-002:predict`;
+  const maxRetries = 3;
+  let attempt = 0;
+  
+  while (attempt < maxRetries) {
+    try {
+      const accessToken = await getAccessToken();
+      
+      // Enhanced prompt generation based on style and content
+      let enhancedPrompt = "";
+      
+      if (style === "photo") {
+        enhancedPrompt = `Professional, high-quality photo of ${prompt}. Clear, well-lit, and visually appealing. Modern photography style.`;
+      } else if (style === "infographic") {
+        enhancedPrompt = `Clean, modern infographic about ${prompt}. Use clear typography, relevant icons, and professional design. Business-appropriate with informative visual elements.`;
+      } else {
+        enhancedPrompt = `High-quality visual representation of ${prompt}. Professional, clear, and engaging design.`;
+      }
+      
+      console.log(`Enhanced prompt: "${enhancedPrompt}" (attempt ${attempt + 1})`);
+      
+      const endpoint = `https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/imagen-3.0-generate-002:predict`;
     
     const requestBody = {
       instances: [
@@ -72,25 +76,56 @@ export async function generateImage(prompt: string, style: string = "infographic
       body: JSON.stringify(requestBody)
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`HTTP error! status: ${response.status}, body: ${errorText}`);
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+        
+        // Handle 429 quota exceeded errors with retry logic
+        if (response.status === 429) {
+          attempt++;
+          if (attempt < maxRetries) {
+            const waitTime = Math.pow(2, attempt) * 1000; // Exponential backoff
+            console.log(`Quota exceeded, waiting ${waitTime}ms before retry ${attempt + 1}/${maxRetries}`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            continue;
+          } else {
+            throw new Error(`할당량 초과: Google Cloud Console에서 Imagen 3.0 할당량 증가를 요청해주세요. 자세한 방법: https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai`);
+          }
+        }
+        
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-    const data = await response.json();
-    if (data.predictions && data.predictions[0] && data.predictions[0].bytesBase64Encoded) {
-      return `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
+      const data = await response.json();
+      if (data.predictions && data.predictions[0] && data.predictions[0].bytesBase64Encoded) {
+        return `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
+      }
+      throw new Error("No image data in response");
+      
+    } catch (error) {
+      console.error("Image generation error:", error?.message || error);
+      
+      // Handle 429 errors from fetch-level errors
+      if (error instanceof Error && error.message.includes('429')) {
+        attempt++;
+        if (attempt < maxRetries) {
+          const waitTime = Math.pow(2, attempt) * 1000;
+          console.log(`Quota error, waiting ${waitTime}ms before retry ${attempt + 1}/${maxRetries}`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue;
+        }
+      }
+      
+      // For permission errors, provide a helpful message
+      if (error instanceof Error && error.message.includes('403')) {
+        throw new Error('Google Cloud 권한이 필요합니다. 서비스 계정에 Vertex AI User 역할을 추가해주세요.');
+      }
+      
+      throw new Error(`이미지 생성에 실패했습니다: ${error}`);
     }
-    throw new Error("No image data in response");
-  } catch (error) {
-    console.error("Image generation error:", error?.message || error);
-    // For permission errors, provide a helpful message
-    if (error instanceof Error && error.message.includes('403')) {
-      throw new Error('Google Cloud 권한이 필요합니다. 서비스 계정에 Vertex AI User 역할을 추가해주세요.');
-    }
-    throw new Error(`이미지 생성에 실패했습니다: ${error}`);
   }
+  
+  throw new Error('최대 재시도 횟수를 초과했습니다.');
 }
 
 export async function generateInfographic(subtitle: string, keyword: string): Promise<string> {
