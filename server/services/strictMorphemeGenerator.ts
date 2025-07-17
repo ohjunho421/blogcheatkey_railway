@@ -16,7 +16,7 @@ export async function generateStrictMorphemeContent(
   researchData: { content: string; citations: string[] },
   businessInfo: BusinessInfo
 ): Promise<StrictGenerationResult> {
-  const maxAttempts = 5;
+  const maxAttempts = 3; // Reduced from 5 to 3
   let attempts = 0;
   
   while (attempts < maxAttempts) {
@@ -59,8 +59,8 @@ export async function generateStrictMorphemeContent(
         };
       }
       
-      // If not optimized, try morpheme optimization
-      if (attempts < maxAttempts - 1) {
+      // If not optimized, try morpheme optimization only on first attempt
+      if (attempts === 1) {
         try {
           console.log(`Applying morpheme optimization on attempt ${attempts + 1}`);
           
@@ -68,9 +68,9 @@ export async function generateStrictMorphemeContent(
           const keywordParts = keyword.toLowerCase().match(/[가-힣a-z]+/g) || [];
           const targetCounts: Record<string, number> = {};
           
-          // Set target to 18 (middle of 17-20 range)
+          // Set target to 16 (middle of 15-17 range)
           keywordParts.forEach(part => {
-            targetCounts[part] = 18;
+            targetCounts[part] = 16;
           });
           
           const optimizationResult = await optimizeMorphemeUsage(content, keyword, targetCounts);

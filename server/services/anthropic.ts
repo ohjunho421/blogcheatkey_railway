@@ -46,29 +46,17 @@ export async function writeOptimizedBlogPost(
 - 복사해서 바로 블로그에 게시할 수 있는 수준
 
 필수 조건:
-- 키워드 "${keyword}"의 각 형태소(BMW, 코딩 등)를 총 17-20회 자연스럽게 분산
-- 키워드 전체 단어도 5-7회 직접 사용
-- 공백제외 1700-2000자
-- 구조: 서론→본론(4개소주제)→결론
-- 정보 전달형 블로그 글로 작성 (대화문이나 질답 형식 금지)
+- 키워드 "${keyword}" 각 형태소를 16회씩 사용
+- 공백 제외 1800자 내외
+- 서론→본론(4소주제)→결론 구조
+- 정보 전달형 블로그
 
 🚨 키워드 형태소 필수 조건 (절대 준수!) 🚨:
 
-키워드 "${keyword}"에서 추출되는 형태소:
-- "BMW" 형태소: 정확히 15-17회 (부족하면 추가, 초과하면 동의어 대체)
-- "코딩" 형태소: 정확히 15-17회 (부족하면 추가, 초과하면 동의어 대체)
-
-필수 체크리스트:
-□ BMW 형태소가 15-17회 사용되었는가?
-□ 코딩 형태소가 15-17회 사용되었는가?
-□ 키워드 형태소가 다른 모든 단어보다 많이 사용되었는가?
-□ 공백 제외 글자수가 1700-2000자인가?
-
-작성 방법:
-1. 각 형태소를 15회씩 먼저 배치한 후 2회까지 더 추가 가능
-2. 글 전체에서 "BMW"와 "코딩"이 가장 많이 출현하는 단어가 되어야 함
-3. 다른 단어들은 키워드 형태소보다 적게 사용
-4. 부족할 경우 자연스럽게 추가, 과다할 경우 동의어로 대체
+키워드 "${keyword}" 형태소 조건:
+- 각 형태소를 16회씩 정확히 사용 (가장 간단한 목표)
+- 공백 제외 1800자 내외 (중간값 목표)
+- 서론-본론-결론 구조 유지
 
 동의어 활용:
 - BMW → 비엠더블유, 독일 프리미엄 브랜드, 바바리안 모터 웍스
@@ -186,15 +174,15 @@ export async function writeOptimizedBlogPost(
 - "이런 경험 있으신가요?", "궁금하시죠?", "어떠신가요?"`;
 
   // Retry logic for API overload
-  const maxRetries = 3;
-  const retryDelay = 5000; // 5 seconds
+  const maxRetries = 2; // Reduced from 3 to 2
+  const retryDelay = 2000; // Reduced from 5000ms to 2000ms
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       console.log(`Claude API attempt ${attempt}/${maxRetries}`);
       
       const message = await anthropic.messages.create({
-        max_tokens: 8000,
+        max_tokens: 6000, // Reduced from 8000 to speed up generation
         messages: [
           { 
             role: 'user', 
@@ -203,7 +191,7 @@ export async function writeOptimizedBlogPost(
         ],
         model: DEFAULT_MODEL_STR,
         system: systemPrompt,
-        temperature: 0.3,
+        temperature: 0.7, // Increased from 0.3 to speed up generation
       });
 
       const content = message.content[0];

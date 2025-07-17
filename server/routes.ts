@@ -183,32 +183,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Content generation completed in ${generationResult.attempts} attempts. Success: ${generationResult.success}`);
       
-      // If generation was successful but we want to enhance introduction/conclusion, do it carefully
-      if (generationResult.success) {
-        try {
-          const enhancedContent = await enhanceIntroductionAndConclusion(
-            finalContent,
-            project.keyword,
-            project.businessInfo as any
-          );
-          
-          // Check if enhancement broke morpheme conditions
-          const { analyzeMorphemes } = await import('./services/morphemeAnalyzer');
-          const enhancedAnalysis = analyzeMorphemes(enhancedContent, project.keyword);
-          
-          if (enhancedAnalysis.isOptimized) {
-            console.log('Introduction/conclusion enhancement successful and maintains morpheme conditions');
-            finalContent = enhancedContent;
-            seoAnalysis = enhancedAnalysis;
-          } else {
-            console.log('Introduction/conclusion enhancement broke morpheme conditions, keeping original');
-          }
-        } catch (enhancementError) {
-          console.error("Introduction/conclusion enhancement failed, keeping strict morpheme content:", enhancementError);
-        }
-      } else {
-        console.log('Generation did not fully meet morpheme conditions, skipping enhancement to avoid further degradation');
-      }
+      // Skip enhancement to speed up generation - use direct content
+      console.log('Skipping introduction/conclusion enhancement to speed up generation');
 
       // Don't auto-generate images, only generate content
       const updatedProject = await storage.updateBlogProject(id, {

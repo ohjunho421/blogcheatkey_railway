@@ -34,8 +34,8 @@ export async function analyzeKeyword(keyword: string): Promise<KeywordAnalysis> 
 각 소제목은 구체적이고 실용적이며, SEO에 최적화된 형태로 작성해주세요.`;
 
   // Retry logic for API overload
-  const maxRetries = 3;
-  const retryDelay = 2000; // 2 seconds
+  const maxRetries = 2; // Reduced from 3 to 2
+  const retryDelay = 1000; // Reduced from 2000ms to 1000ms
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
