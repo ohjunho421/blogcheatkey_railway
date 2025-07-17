@@ -96,6 +96,11 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### January 17, 2025
+- **Image Generation Issue Resolution**: Fixed Google Vertex AI Imagen 3.0 API response parsing issues - updated to use latest `imagen-3.0-generate-002` model
+- **Enhanced Error Handling**: Improved image generation debugging with better error messages and response structure validation
+- **API Response Format Update**: Updated response parsing to handle the correct `bytesBase64Encoded` format from Imagen 3.0 API
+
 ### January 16, 2025
 - **Interactive AI Image Generation**: Implemented hover-triggered image generation buttons on each subtitle section - users can generate infographics or photos directly from content sections with visual feedback
 - **Chatbot Image Generation**: Added AI image generation to editing chat - users can request images with commands like "BMW 그림을 그려줘"

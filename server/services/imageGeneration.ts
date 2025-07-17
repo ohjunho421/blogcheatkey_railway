@@ -34,7 +34,7 @@ export async function generateImage(prompt: string, style: string = "infographic
     const accessToken = await getAccessToken();
     const enhancedPrompt = `${style === "photo" ? "Professional photo of" : "Clean infographic about"} ${prompt}`;
     
-    const endpoint = `https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/imagen-3.0-generate-001:predict`;
+    const endpoint = `https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/imagen-3.0-generate-002:predict`;
     
     const requestBody = {
       instances: [
@@ -46,7 +46,8 @@ export async function generateImage(prompt: string, style: string = "infographic
         sampleCount: 1,
         aspectRatio: "1:1",
         safetyFilterLevel: "block_some",
-        personGeneration: "dont_allow"
+        personGeneration: "dont_allow",
+        addWatermark: false
       }
     };
 
@@ -66,14 +67,12 @@ export async function generateImage(prompt: string, style: string = "infographic
     }
 
     const data = await response.json();
-    
     if (data.predictions && data.predictions[0] && data.predictions[0].bytesBase64Encoded) {
       return `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
     }
-    
     throw new Error("No image data in response");
   } catch (error) {
-    console.error("Image generation error:", error);
+    console.error("Image generation error:", error?.message || error);
     // For permission errors, provide a helpful message
     if (error instanceof Error && error.message.includes('403')) {
       throw new Error('Google Cloud 권한이 필요합니다. 서비스 계정에 Vertex AI User 역할을 추가해주세요.');
@@ -94,7 +93,7 @@ export async function generateInfographic(subtitle: string, keyword: string): Pr
 
   try {
     const accessToken = await getAccessToken();
-    const endpoint = `https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/imagen-3.0-generate-001:predict`;
+    const endpoint = `https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/imagen-3.0-generate-002:predict`;
     
     const requestBody = {
       instances: [
@@ -106,7 +105,8 @@ export async function generateInfographic(subtitle: string, keyword: string): Pr
         sampleCount: 1,
         aspectRatio: "1:1",
         safetyFilterLevel: "block_some",
-        personGeneration: "dont_allow"
+        personGeneration: "dont_allow",
+        addWatermark: false
       }
     };
 
@@ -130,10 +130,9 @@ export async function generateInfographic(subtitle: string, keyword: string): Pr
     if (data.predictions && data.predictions[0] && data.predictions[0].bytesBase64Encoded) {
       return `data:image/png;base64,${data.predictions[0].bytesBase64Encoded}`;
     }
-    
     throw new Error("No image data in response");
   } catch (error) {
-    console.error("Image generation error:", error);
+    console.error("Infographic generation error:", error?.message || error);
     // For permission errors, provide a helpful message
     if (error instanceof Error && error.message.includes('403')) {
       throw new Error('Google Cloud 권한이 필요합니다. 서비스 계정에 Vertex AI User 역할을 추가해주세요.');

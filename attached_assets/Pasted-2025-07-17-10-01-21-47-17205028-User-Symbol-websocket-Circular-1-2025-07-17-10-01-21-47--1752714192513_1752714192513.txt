@@ -1,0 +1,160 @@
+2025-07-17 10:01:21.47
+17205028
+User
+[Symbol(websocket)]: [Circular *1]
+2025-07-17 10:01:21.47
+17205028
+User
+},
+2025-07-17 10:01:21.47
+17205028
+User
+_socket: TLSSocket {
+2025-07-17 10:01:21.47
+17205028
+User
+_tlsOptions: [Object],
+2025-07-17 10:01:21.47
+17205028
+User
+_newSessionPending: false,
+2025-07-17 10:01:21.47
+17205028
+User
+_controlReleased: true,
+2025-07-17 10:01:21.47
+17205028
+User
+secureConnecting: false,
+2025-07-17 10:01:21.47
+17205028
+User
+servername: 'ep-silent-term-ad0xcxso.c-2.us-east-1.aws.neon.tech',
+2025-07-17 10:01:21.47
+17205028
+User
+authorized: true,
+2025-07-17 10:01:21.47
+17205028
+User
+authorizationError: null,
+2025-07-17 10:01:21.47
+17205028
+User
+_eventsCount: 6,
+2025-07-17 10:01:21.47
+17205028
+User
+connecting: false,
+2025-07-17 10:01:21.47
+17205028
+User
+_parent: null,
+2025-07-17 10:01:21.47
+17205028
+User
+_host: 'ep-silent-term-ad0xcxso.c-2.us-east-1.aws.neon.tech',
+2025-07-17 10:01:21.47
+17205028
+User
+_closeAfterHandlingError: false,
+2025-07-17 10:01:21.47
+17205028
+User
+_readableState: [ReadableState],
+2025-07-17 10:01:21.47
+17205028
+User
+allowHalfOpen: false,
+2025-07-17 10:01:21.47
+17205028
+User
+_sockname: null,
+2025-07-17 10:01:21.47
+17205028
+User
+_pendingData: null,
+2025-07-17 10:01:21.47
+17205028
+User
+_pendingEncoding: '',
+2025-07-17 10:01:21.47
+17205028
+User
+_server: null,
+2025-07-17 10:01:21.47
+17205028
+User
+ssl: [TLSWrap],
+2025-07-17 10:01:21.47
+17205028
+User
+_requestCert: true,
+2025-07-17 10:01:21.47
+17205028
+User
+_rejectUnauthorized: true,
+2025-07-17 10:01:21.47
+17205028
+User
+[Symbol(alpncallback)]: null,
+2025-07-17 10:01:21.47
+17205028
+User
+[Symbol(verified)]: true,
+2025-07-17 10:01:21.47
+17205028
+User
+[Symbol(kBuffer)]: null,
+2025-07-17 10:01:21.47
+17205028
+User
+[Symbol(kBufferGen)]: null,
+2025-07-17 10:01:21.47
+17205028
+User
+[Symbol(shapeMode)]: true,
+2025-07-17 10:01:21.47
+17205028
+User
+[Symbol(kSetNoDelay)]: true,
+2025-07-17 10:01:21.47
+17205028
+User
+[Symbol(kBytesWritten)]: 0,
+2025-07-17 10:01:21.47
+17205028
+User
+[Symbol(connect-options)]: [Object],
+2025-07-17 10:01:21.47
+17205028
+User
+_bufferedAmount: 0,
+2025-07-17 10:01:21.47
+17205028
+User
+_redirects: 0,
+2025-07-17 10:01:21.47
+17205028
+User
+[Symbol(kCapture)]: false
+2025-07-17 10:01:21.47
+17205028
+User
+writeBuffer: undefined,
+2025-07-17 10:01:21.47
+17205028
+User
+tlsState: 0,
+2025-07-17 10:01:21.47
+17205028
+User
+tlsRead: undefined,
+2025-07-17 10:01:21.47
+17205028
+User
+},
+2025-07-17 10:01:21.47
+17205028
+User
+_keepAlive: false,
