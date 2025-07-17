@@ -109,7 +109,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         // Create new user
         const newUser = await storage.createUser({
           email: profile.emails?.[0]?.value || null,
-          name: profile.displayName || profile.username || 'Google User',
+          name: profile.displayName || 'Google User',
           profileImage: profile.photos?.[0]?.value || null,
           googleId: profile.id,
           isEmailVerified: true
