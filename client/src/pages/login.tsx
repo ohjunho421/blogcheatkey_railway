@@ -67,11 +67,23 @@ export default function Login() {
   };
 
   const handleKakaoLogin = () => {
-    window.location.href = "/auth/kakao";
+    // 소셜 로그인 기능 일시 비활성화
+    toast({
+      title: "준비 중",
+      description: "카카오 로그인은 준비 중입니다.",
+      variant: "destructive",
+    });
+    // window.location.href = "/auth/kakao";
   };
 
   const handleNaverLogin = () => {
-    window.location.href = "/auth/naver";
+    // 소셜 로그인 기능 일시 비활성화
+    toast({
+      title: "준비 중",
+      description: "네이버 로그인은 준비 중입니다.",
+      variant: "destructive",
+    });
+    // window.location.href = "/auth/naver";
   };
 
   return (

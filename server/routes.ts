@@ -132,7 +132,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   );
   */
 
-  // Kakao OAuth routes
+  // Kakao OAuth routes - 소셜 로그인 기능 일시 비활성화
+  /*
   app.get('/auth/kakao',
     passport.authenticate('kakao')
   );
@@ -143,8 +144,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       failureRedirect: '/login?error=kakao_login_failed'
     })
   );
+  */
 
-  // Naver OAuth routes
+  // Naver OAuth routes - 소셜 로그인 기능 일시 비활성화
+  /*
   app.get('/auth/naver',
     passport.authenticate('naver')
   );
@@ -155,6 +158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       failureRedirect: '/login?error=naver_login_failed'
     })
   );
+  */
   
   // ===== PROTECTED ROUTES (require authentication) =====
   

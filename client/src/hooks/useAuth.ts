@@ -9,6 +9,21 @@ export interface User {
 }
 
 export function useAuth() {
+  // 임시로 인증 체크 우회 - 모든 사용자가 바로 서비스 이용 가능
+  return {
+    user: {
+      id: 1,
+      email: "guest@blogcheatkey.com",
+      name: "게스트 사용자",
+      profileImage: undefined
+    } as User,
+    isLoading: false,
+    isAuthenticated: true,
+    error: null
+  };
+
+  // 원래 코드 (나중에 활성화)
+  /*
   const { data: user, isLoading, error, isError } = useQuery({
     queryKey: ["/auth/user"],
     retry: false,
@@ -26,6 +41,7 @@ export function useAuth() {
     isAuthenticated,
     error
   };
+  */
 }
 
 export function useLogin() {

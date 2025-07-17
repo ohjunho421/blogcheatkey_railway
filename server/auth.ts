@@ -127,7 +127,8 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 }
 */
 
-// Kakao OAuth Strategy
+// Kakao OAuth Strategy - 소셜 로그인 기능 일시 비활성화
+/*
 if (process.env.KAKAO_CLIENT_ID) {
   passport.use(new KakaoStrategy({
     clientID: process.env.KAKAO_CLIENT_ID,
@@ -175,8 +176,10 @@ if (process.env.KAKAO_CLIENT_ID) {
     }
   }));
 }
+*/
 
-// Naver OAuth Strategy
+// Naver OAuth Strategy - 소셜 로그인 기능 일시 비활성화
+/*
 if (process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET) {
   passport.use(new NaverStrategy({
     clientID: process.env.NAVER_CLIENT_ID,
@@ -225,13 +228,20 @@ if (process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET) {
     }
   }));
 }
+*/
 
-// Middleware to check if user is authenticated
+// Middleware to check if user is authenticated - 현재 인증 체크 우회
 export const isAuthenticated: RequestHandler = (req, res, next) => {
+  // 임시로 인증 체크 우회하여 바로 서비스 이용 가능
+  return next();
+  
+  // 원래 코드 (나중에 활성화)
+  /*
   if (req.isAuthenticated()) {
     return next();
   }
   res.status(401).json({ error: '로그인이 필요합니다.' });
+  */
 };
 
 // Initialize authentication
