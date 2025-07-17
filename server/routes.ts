@@ -183,8 +183,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Content generation completed in ${generationResult.attempts} attempts. Success: ${generationResult.success}`);
       
-      // Skip enhancement to speed up generation - use direct content
-      console.log('Skipping introduction/conclusion enhancement to speed up generation');
+      // Enhanced optimization process with multiple stages
+      console.log('Starting multi-stage optimization process');
+      
+      // Stage 1: Initial content optimization
+      if (!generationResult.success) {
+        try {
+          console.log('Stage 1: Initial content optimization');
+          const { optimizeMorphemeUsage } = await import('./services/morphemeOptimizer');
+          const optimizedContent = await optimizeMorphemeUsage(
+            finalContent,
+            project.keyword,
+            project.businessInfo as any
+          );
+          
+          // Re-analyze optimized content
+          const { analyzeMorphemes } = await import('./services/morphemeAnalyzer');
+          const optimizedAnalysis = analyzeMorphemes(optimizedContent.optimizedContent, project.keyword);
+          
+          if (optimizedAnalysis.isOptimized) {
+            console.log('Stage 1 successful: Content meets morpheme conditions');
+            finalContent = optimizedContent.optimizedContent;
+            seoAnalysis = optimizedAnalysis;
+          }
+        } catch (optimizationError) {
+          console.error("Stage 1 optimization failed:", optimizationError);
+        }
+      }
+      
+      // Stage 2: Introduction/conclusion enhancement (only if content is already optimized)
+      if (generationResult.success || seoAnalysis.isOptimized) {
+        try {
+          console.log('Stage 2: Introduction/conclusion enhancement');
+          const enhancedContent = await enhanceIntroductionAndConclusion(
+            finalContent,
+            project.keyword,
+            project.businessInfo as any
+          );
+          
+          // Check if enhancement broke morpheme conditions
+          const { analyzeMorphemes } = await import('./services/morphemeAnalyzer');
+          const enhancedAnalysis = analyzeMorphemes(enhancedContent, project.keyword);
+          
+          if (enhancedAnalysis.isOptimized) {
+            console.log('Stage 2 successful: Enhancement maintains morpheme conditions');
+            finalContent = enhancedContent;
+            seoAnalysis = enhancedAnalysis;
+          } else {
+            console.log('Stage 2 failed: Enhancement broke morpheme conditions, reverting');
+          }
+        } catch (enhancementError) {
+          console.error("Stage 2 enhancement failed:", enhancementError);
+        }
+      } else {
+        console.log('Stage 2 skipped: Content not optimized enough for enhancement');
+      }
 
       // Don't auto-generate images, only generate content
       const updatedProject = await storage.updateBlogProject(id, {

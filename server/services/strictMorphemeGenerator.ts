@@ -1,6 +1,7 @@
 import { writeOptimizedBlogPost, improveBlogPost } from './anthropic';
 import { analyzeMorphemes } from './morphemeAnalyzer';
 import { optimizeMorphemeUsage, restoreContentStructure } from './morphemeOptimizer';
+import { optimizeContentAdvanced } from './advancedOptimizer';
 import type { BusinessInfo } from "@shared/schema";
 
 interface StrictGenerationResult {
@@ -59,10 +60,38 @@ export async function generateStrictMorphemeContent(
         };
       }
       
-      // If not optimized, try morpheme optimization only on first attempt
-      if (attempts === 1) {
+      // If not optimized, try advanced multi-stage optimization
+      if (attempts <= 2) {
         try {
-          console.log(`Applying morpheme optimization on attempt ${attempts + 1}`);
+          console.log(`Applying advanced optimization on attempt ${attempts}`);
+          
+          const optimizationResult = await optimizeContentAdvanced(
+            content,
+            keyword,
+            businessInfo,
+            subtitles,
+            researchData
+          );
+          
+          console.log(`Advanced optimization result: success=${optimizationResult.success}, stage=${optimizationResult.optimizationStage}`);
+          
+          if (optimizationResult.analysis.isOptimized) {
+            console.log(`SUCCESS: Advanced optimization achieved all conditions on attempt ${attempts}`);
+            return {
+              content: optimizationResult.content,
+              analysis: optimizationResult.analysis,
+              attempts,
+              success: true
+            };
+          } else if (optimizationResult.analysis.keywordMorphemeCount > analysis.keywordMorphemeCount || 
+                     Math.abs(optimizationResult.analysis.characterCount - 1750) < Math.abs(analysis.characterCount - 1750)) {
+            console.log(`Improved content found in advanced optimization, using it for next attempt`);
+            content = optimizationResult.content;
+            analysis = optimizationResult.analysis;
+          }
+          
+          // Continue with traditional morpheme optimization as fallback
+          console.log(`Fallback to traditional morpheme optimization`);
           
           // Extract keyword morphemes for target counts
           const keywordParts = keyword.toLowerCase().match(/[가-힣a-z]+/g) || [];
