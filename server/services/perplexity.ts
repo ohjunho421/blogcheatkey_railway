@@ -31,8 +31,11 @@ export async function searchResearch(keyword: string, subtitles: string[]): Prom
     throw new Error("PERPLEXITY_API_KEY is not configured");
   }
 
-  const searchQuery = `${keyword}에 대한 최신 정보, 통계, 연구 자료를 찾아주세요. 특히 다음 주제들과 관련된 자료를 중심으로: ${subtitles.join(", ")}`;
+  const searchQuery = `${keyword} (${subtitles.join(", ")}): 핵심 정보 요약`;
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+  
   const response = await fetch("https://api.perplexity.ai/chat/completions", {
     method: "POST",
     headers: {
@@ -47,14 +50,17 @@ export async function searchResearch(keyword: string, subtitles: string[]): Prom
           content: searchQuery
         }
       ],
-      max_tokens: 2000,
-      temperature: 0.2,
-      top_p: 0.9,
+      max_tokens: 1000, // Further reduced for speed
+      temperature: 0.5, // Increased for faster generation
+      top_p: 0.6, // More focused responses
       return_images: false,
       return_related_questions: false,
       stream: false
-    })
+    }),
+    signal: controller.signal
   });
+  
+  clearTimeout(timeoutId);
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -79,8 +85,11 @@ export async function getDetailedResearch(keyword: string, subtitle: string): Pr
     throw new Error("PERPLEXITY_API_KEY is not configured");
   }
 
-  const searchQuery = `"${keyword}" "${subtitle}"에 대한 구체적인 정보, 전문가 의견, 실제 사례를 찾아주세요. 신뢰할 수 있는 출처의 정보만 제공해주세요.`;
+  const searchQuery = `${keyword} ${subtitle}: 핵심 요약`;
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+  
   const response = await fetch("https://api.perplexity.ai/chat/completions", {
     method: "POST",
     headers: {
@@ -95,14 +104,17 @@ export async function getDetailedResearch(keyword: string, subtitle: string): Pr
           content: searchQuery
         }
       ],
-      max_tokens: 1500,
-      temperature: 0.1,
-      top_p: 0.8,
+      max_tokens: 800, // Further reduced for speed
+      temperature: 0.5, // Increased for faster generation
+      top_p: 0.6, // More focused responses
       return_images: false,
       return_related_questions: false,
       stream: false
-    })
+    }),
+    signal: controller.signal
   });
+  
+  clearTimeout(timeoutId);
 
   if (!response.ok) {
     const errorText = await response.text();

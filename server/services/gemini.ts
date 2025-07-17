@@ -20,22 +20,22 @@ export async function analyzeKeyword(keyword: string): Promise<KeywordAnalysis> 
 키워드: "${keyword}"
 
 분석해야 할 내용:
-1. 이 키워드를 검색하는 사람들의 검색 의도 (왜 검색하는지, 어떤 정보를 원하는지)
-2. 사용자들이 겪고 있는 구체적인 고민이나 어려움
-3. 이 키워드로 블로그를 작성할 때 좋을 4개의 소제목 추천
+1. 검색 의도 (150-200자로 간결하게)
+2. 사용자 고민사항 (150-200자로 간결하게)
+3. 4개의 소제목 추천
 
 다음 JSON 형식으로 응답해주세요:
 {
-  "searchIntent": "검색 의도에 대한 상세한 설명 (200-300자)",
-  "userConcerns": "사용자들의 고민사항에 대한 설명 (200-300자)",
+  "searchIntent": "검색 의도 설명 (150-200자)",
+  "userConcerns": "사용자 고민사항 (150-200자)",
   "suggestedSubtitles": ["소제목1", "소제목2", "소제목3", "소제목4"]
 }
 
 각 소제목은 구체적이고 실용적이며, SEO에 최적화된 형태로 작성해주세요.`;
 
-  // Retry logic for API overload
-  const maxRetries = 2; // Reduced from 3 to 2
-  const retryDelay = 1000; // Reduced from 2000ms to 1000ms
+  // Retry logic for API overload - optimized for speed
+  const maxRetries = 2;
+  const retryDelay = 500; // Reduced from 1000ms to 500ms
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
