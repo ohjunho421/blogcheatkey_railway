@@ -76,7 +76,8 @@ passport.use(new LocalStrategy(
   }
 ));
 
-// Google Strategy
+// Google Strategy - 개인정보 처리방침 준비 후 활성화 예정
+/*
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   passport.use(new GoogleStrategy(
     {
@@ -124,6 +125,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     }
   ));
 }
+*/
 
 // Kakao OAuth Strategy
 if (process.env.KAKAO_CLIENT_ID) {

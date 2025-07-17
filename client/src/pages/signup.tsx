@@ -66,7 +66,13 @@ export default function Signup() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = "/auth/google";
+    // 개인정보 처리방침 준비 후 활성화 예정
+    toast({
+      title: "준비 중",
+      description: "구글 로그인은 개인정보 처리방침 준비 후 제공됩니다.",
+      variant: "destructive",
+    });
+    // window.location.href = "/auth/google";
   };
 
   return (

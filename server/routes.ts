@@ -77,7 +77,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     })(req, res, next);
   });
   
-  // Google OAuth routes
+  // Google OAuth routes - 개인정보 처리방침 준비 후 활성화 예정
+  /*
   app.get("/auth/google", passport.authenticate('google', { 
     scope: ['profile', 'email'] 
   }));
@@ -88,6 +89,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.redirect('/'); // Redirect to main app after successful login
     }
   );
+  */
   
   // Logout
   app.post("/auth/logout", (req, res) => {
@@ -116,7 +118,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ===== SOCIAL LOGIN ROUTES =====
   
-  // Google OAuth routes
+  // Google OAuth routes - 개인정보 처리방침 준비 후 활성화 예정
+  /*
   app.get('/auth/google',
     passport.authenticate('google', { scope: ['profile', 'email'] })
   );
@@ -127,6 +130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       failureRedirect: '/login?error=google_login_failed'
     })
   );
+  */
 
   // Kakao OAuth routes
   app.get('/auth/kakao',

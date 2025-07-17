@@ -97,6 +97,9 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes
 
 ### January 17, 2025
+- **Google OAuth Temporarily Disabled**: Commented out Google OAuth integration due to privacy policy requirements - code preserved for future activation once privacy policy is ready
+- **Social Login System Partially Active**: Naver and Kakao OAuth remain active, Google login shows "준비 중" message to users
+- **Authentication Architecture Maintained**: Database schema and OAuth infrastructure remain intact for easy Google login reactivation
 - **Optional Reference Blog Links Feature**: Implemented user-requested feature for referencing blog writing styles - users can now add reference blog links categorized by purpose (tone, storytelling, hook methods, CTA approaches)
 - **Intelligent Style Analysis**: Created automated web content fetching and analysis system that extracts writing patterns from reference blogs including tone analysis, hook methods, storytelling approaches, and CTA styles
 - **Enhanced Content Generation**: Updated Claude Anthropic service to incorporate reference blog analysis results into content generation prompts for more targeted writing style adaptation
