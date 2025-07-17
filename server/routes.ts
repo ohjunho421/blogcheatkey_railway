@@ -343,23 +343,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Check if user is requesting image generation
-      const imageKeywords = ['그림', '이미지', '그려', '만들어', '생성', 'image', 'draw', 'create'];
+      const imageKeywords = ['그림', '이미지', '그려', '만들어', '생성', 'image', 'draw', 'create', '사진', '인포그래픽'];
       const isImageRequest = imageKeywords.some(keyword => 
-        message.toLowerCase().includes(keyword)
+        message.toLowerCase().includes(keyword.toLowerCase())
       );
 
       if (isImageRequest) {
         try {
-          // Extract image prompt from user message
-          const cleanPrompt = message
-            .replace(/그림을?\s*(그려|만들어|생성해?|해봐?)?(줘|주세요)?/gi, '')
-            .replace(/이미지를?\s*(그려|만들어|생성해?|해봐?)?(줘|주세요)?/gi, '')
-            .replace(/(그려|만들어|생성해?|해봐?)(줘|주세요)/gi, '')
-            .trim() || project.keyword;
+          // Enhanced image prompt extraction
+          let cleanPrompt = message;
+          
+          // Remove common request phrases but preserve the core content
+          cleanPrompt = cleanPrompt
+            // Remove leading image request words
+            .replace(/^(그림을?\s*|이미지를?\s*|사진을?\s*)/gi, '')
+            // Remove trailing action words
+            .replace(/\s*(그려|만들어|생성해?|해봐?)(줘|주세요|라)?\s*$/gi, '')
+            // Remove middle action words
+            .replace(/\s*(그려|만들어|생성해?|해봐?)?(줘|주세요|라)\s*/gi, '')
+            // Remove English equivalents
+            .replace(/\s*(image|draw|create|generate)\s*/gi, '')
+            // Remove remaining "그림을" patterns
+            .replace(/\s*그림을?\s*/gi, ' ')
+            // Remove remaining "이미지를" patterns
+            .replace(/\s*이미지를?\s*/gi, ' ')
+            // Remove remaining "사진을" patterns
+            .replace(/\s*사진을?\s*/gi, ' ')
+            // Remove "에 대한" patterns
+            .replace(/\s*에 대한\s*/gi, ' ')
+            // Remove "의" patterns at the end
+            .replace(/\s*의\s*$/gi, '')
+            // Clean up multiple spaces
+            .replace(/\s+/g, ' ')
+            .trim();
 
-          // Determine style based on request
-          const isInfographic = message.includes('인포그래픽') || message.includes('infographic') || message.includes('설명');
-          const style = isInfographic ? 'infographic' : 'photo';
+          // If prompt is empty or too short, use keyword as fallback
+          if (!cleanPrompt || cleanPrompt.length < 2) {
+            cleanPrompt = project.keyword;
+          }
+
+          // Determine style based on request keywords
+          let style = 'photo'; // default to photo
+          
+          if (message.includes('인포그래픽') || message.includes('infographic')) {
+            style = 'infographic';
+          } else if (message.includes('설명') || message.includes('도표') || message.includes('차트') || message.includes('그래프')) {
+            style = 'infographic';
+          } else if (message.includes('사진') || message.includes('photo') || message.includes('이미지')) {
+            style = 'photo';
+          } else if (message.includes('그림') || message.includes('draw') || message.includes('illustration')) {
+            style = 'photo';
+          }
+
+          console.log(`Original message: "${message}"`);
+          console.log(`Cleaned prompt: "${cleanPrompt}"`);
+          console.log(`Style: ${style}`);
 
           const imageUrl = await generateImage(cleanPrompt, style);
 
@@ -367,7 +405,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.createChatMessage({
             projectId: id,
             role: "assistant",
-            content: `${cleanPrompt}에 대한 ${style === 'infographic' ? '인포그래픽' : '이미지'}를 생성했습니다.`,
+            content: `"${cleanPrompt}"에 대한 ${style === 'infographic' ? '인포그래픽' : '이미지'}를 생성했습니다.`,
             imageUrl: imageUrl,
           });
 

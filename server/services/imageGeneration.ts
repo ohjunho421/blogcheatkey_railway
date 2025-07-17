@@ -32,7 +32,19 @@ async function getAccessToken(): Promise<string> {
 export async function generateImage(prompt: string, style: string = "infographic"): Promise<string> {
   try {
     const accessToken = await getAccessToken();
-    const enhancedPrompt = `${style === "photo" ? "Professional photo of" : "Clean infographic about"} ${prompt}`;
+    
+    // Enhanced prompt generation based on style and content
+    let enhancedPrompt = "";
+    
+    if (style === "photo") {
+      enhancedPrompt = `Professional, high-quality photo of ${prompt}. Clear, well-lit, and visually appealing. Modern photography style.`;
+    } else if (style === "infographic") {
+      enhancedPrompt = `Clean, modern infographic about ${prompt}. Use clear typography, relevant icons, and professional design. Business-appropriate with informative visual elements.`;
+    } else {
+      enhancedPrompt = `High-quality visual representation of ${prompt}. Professional, clear, and engaging design.`;
+    }
+    
+    console.log(`Enhanced prompt: "${enhancedPrompt}"`);
     
     const endpoint = `https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/imagen-3.0-generate-002:predict`;
     

@@ -107,6 +107,10 @@ Preferred communication style: Simple, everyday language.
 - **Keyword Analysis & Research Speed Optimization**: Reduced keyword analysis response length (200→150 chars), optimized Perplexity API calls (max_tokens: 2000→1200, temperature: 0.2→0.4, simplified prompts), decreased retry delays (1000ms→500ms)
 - **Data Collection Performance**: Improved research speed by 70% - from 30+ seconds to ~8.5 seconds through optimized prompts and reduced token usage
 - **Variable Duplication Fix**: Resolved strictMorphemeGenerator.ts compilation errors causing 500 errors during blog generation
+- **Enhanced Chatbot Image Generation**: Improved prompt extraction for chatbot image generation - better removal of action words ("그려줘", "만들어줘") while preserving user's actual intent and description
+- **Improved Prompt Processing**: Enhanced regex patterns to remove Korean particles and request phrases while maintaining core content meaning
+- **Extended Image Keywords**: Added more image generation trigger keywords including "사진", "인포그래픽" for better detection
+- **Better Style Detection**: Improved automatic style detection between photo and infographic based on user's request context
 
 ### January 16, 2025
 - **Interactive AI Image Generation**: Implemented hover-triggered image generation buttons on each subtitle section - users can generate infographics or photos directly from content sections with visual feedback
