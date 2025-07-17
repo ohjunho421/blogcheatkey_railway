@@ -82,7 +82,9 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "/auth/google/callback"
+      callbackURL: process.env.NODE_ENV === 'production' 
+        ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/auth/google/callback`
+        : "https://022c5bc4-9df7-4d5c-aa3c-6aa3a38babe0-00-2e7jp5xj01nnh.kirk.replit.dev/auth/google/callback"
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -127,7 +129,9 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 if (process.env.KAKAO_CLIENT_ID) {
   passport.use(new KakaoStrategy({
     clientID: process.env.KAKAO_CLIENT_ID,
-    callbackURL: "/auth/kakao/callback"
+    callbackURL: process.env.NODE_ENV === 'production' 
+      ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/auth/kakao/callback`
+      : "https://022c5bc4-9df7-4d5c-aa3c-6aa3a38babe0-00-2e7jp5xj01nnh.kirk.replit.dev/auth/kakao/callback"
   }, async (accessToken, refreshToken, profile, done) => {
     try {
       // Check if user already exists with Kakao ID
@@ -175,7 +179,9 @@ if (process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET) {
   passport.use(new NaverStrategy({
     clientID: process.env.NAVER_CLIENT_ID,
     clientSecret: process.env.NAVER_CLIENT_SECRET,
-    callbackURL: "/auth/naver/callback"
+    callbackURL: process.env.NODE_ENV === 'production' 
+      ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co/auth/naver/callback`
+      : "https://022c5bc4-9df7-4d5c-aa3c-6aa3a38babe0-00-2e7jp5xj01nnh.kirk.replit.dev/auth/naver/callback"
   }, async (accessToken, refreshToken, profile, done) => {
     try {
       // Check if user already exists with Naver ID
