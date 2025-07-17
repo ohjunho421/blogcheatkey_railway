@@ -175,7 +175,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         project.keyword,
         project.subtitles as string[],
         project.researchData as any,
-        project.businessInfo as any
+        project.businessInfo as any,
+        project.referenceBlogLinks as any
       );
       
       let finalContent = generationResult.content;
@@ -317,6 +318,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Copy content error:", error);
       res.status(500).json({ error: "콘텐츠 복사에 실패했습니다" });
+    }
+  });
+
+  // Update reference blog links
+  app.post("/api/projects/:id/reference-links", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { links } = req.body;
+      
+      const project = await storage.getBlogProject(id);
+      if (!project) {
+        return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
+      }
+
+      await storage.updateBlogProject(id, {
+        referenceBlogLinks: links
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Reference links update error:", error);
+      res.status(500).json({ error: "참고 링크 저장에 실패했습니다" });
     }
   });
 

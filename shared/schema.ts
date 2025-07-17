@@ -32,6 +32,7 @@ export const blogProjects = pgTable("blog_projects", {
   seoMetrics: jsonb("seo_metrics"),
   referenceLinks: jsonb("reference_links"),
   generatedImages: jsonb("generated_images"), // Array of image URLs
+  referenceBlogLinks: jsonb("reference_blog_links"), // Array of reference blog URLs for tone/style
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -61,6 +62,7 @@ export const insertBlogProjectSchema = createInsertSchema(blogProjects).pick({
   seoMetrics: true,
   referenceLinks: true,
   generatedImages: true,
+  referenceBlogLinks: true,
 });
 
 export const insertChatMessageSchema = createInsertSchema(chatMessages).pick({
@@ -98,6 +100,12 @@ export const seoMetricsSchema = z.object({
   morphemeCount: z.number(),
 });
 
+export const referenceBlogLinkSchema = z.object({
+  url: z.string().url("올바른 URL을 입력해주세요"),
+  purpose: z.enum(["tone", "storytelling", "hook", "cta"]),
+  description: z.string().optional(),
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertUserBusinessInfo = z.infer<typeof insertUserBusinessInfoSchema>;
@@ -109,3 +117,4 @@ export type ChatMessage = typeof chatMessages.$inferSelect;
 export type BusinessInfo = z.infer<typeof businessInfoSchema>;
 export type KeywordAnalysis = z.infer<typeof keywordAnalysisSchema>;
 export type SEOMetrics = z.infer<typeof seoMetricsSchema>;
+export type ReferenceBlogLink = z.infer<typeof referenceBlogLinkSchema>;

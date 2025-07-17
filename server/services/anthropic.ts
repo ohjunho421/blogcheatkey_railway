@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { BusinessInfo } from "@shared/schema";
+import type { BusinessInfo, ReferenceBlogLink } from "@shared/schema";
+import { fetchAndAnalyzeBlogContent, formatReferenceGuidance } from './webFetcher';
 
 /*
 <important_code_snippet_instructions>
@@ -22,7 +23,8 @@ export async function writeOptimizedBlogPost(
   subtitles: string[],
   researchData: { content: string; citations: string[] },
   businessInfo: BusinessInfo,
-  seoSuggestions?: string[]
+  seoSuggestions?: string[],
+  referenceLinks?: ReferenceBlogLink[]
 ): Promise<string> {
   if (!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY_ENV_VAR) {
     throw new Error("Anthropic API key is not configured");
@@ -102,6 +104,20 @@ export async function writeOptimizedBlogPost(
 
 내용이 계속됩니다...`;
 
+  // Analyze reference blog links if provided
+  let referenceGuidance = '';
+  if (referenceLinks && referenceLinks.length > 0) {
+    try {
+      console.log(`Analyzing ${referenceLinks.length} reference blog links...`);
+      const blogAnalysis = await fetchAndAnalyzeBlogContent(referenceLinks);
+      referenceGuidance = formatReferenceGuidance(blogAnalysis);
+      console.log('Reference blog analysis completed:', referenceGuidance);
+    } catch (error) {
+      console.warn('Reference blog analysis failed:', error.message);
+      // Continue without reference guidance
+    }
+  }
+
   const userPrompt = `정보성 블로그 글을 작성하세요:
 
 키워드: "${keyword}"
@@ -113,6 +129,11 @@ export async function writeOptimizedBlogPost(
 업체: ${businessInfo.businessName}(${businessInfo.businessType}) 
 전문성: ${businessInfo.expertise}
 차별점: ${businessInfo.differentiators}
+
+${referenceGuidance ? `📋 참고 블로그 스타일 분석 결과:
+${referenceGuidance}
+
+위 분석 결과를 참고하여 유사한 어투, 스토리텔링 방식, 후킹 방법, CTA 스타일을 적용해주세요.` : ''}
 
 📝 블로그 글 작성 요구사항:
 - 일반 텍스트 형식으로 1700-1800자 블로그 작성 (절대 1800자 초과 금지)

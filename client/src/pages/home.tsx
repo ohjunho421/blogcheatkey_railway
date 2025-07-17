@@ -14,6 +14,7 @@ import { BlogContentDisplay } from "@/components/BlogContentDisplay";
 import { EditingChat } from "@/components/EditingChat";
 import { ReferenceLinks } from "@/components/ReferenceLinks";
 import { InfographicGallery } from "@/components/InfographicGallery";
+import { ReferenceBlogLinksForm } from "@/components/ReferenceBlogLinksForm";
 import { MessageSquare, FileText, Search, Building2, Sparkles, RotateCw } from "lucide-react";
 
 export default function Home() {
@@ -145,6 +146,14 @@ export default function Home() {
 
           {/* Right Column - Results */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Reference Blog Links Form - Show after data collection */}
+            {project && (project.status === 'business_info' || project.status === 'content_generation' || project.status === 'completed') && (
+              <ReferenceBlogLinksForm 
+                project={project} 
+                onRefresh={refetch}
+              />
+            )}
+
             {/* Business Info Form - Show after data collection */}
             {project && (project.status === 'business_info' || project.status === 'content_generation' || project.status === 'completed') && (
               <BusinessInfoForm 

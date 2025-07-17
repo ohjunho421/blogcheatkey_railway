@@ -15,7 +15,8 @@ export async function generateStrictMorphemeContent(
   keyword: string,
   subtitles: string[],
   researchData: { content: string; citations: string[] },
-  businessInfo: BusinessInfo
+  businessInfo: BusinessInfo,
+  referenceLinks?: any
 ): Promise<StrictGenerationResult> {
   const maxAttempts = 3; // Reduced from 5 to 3
   let attempts = 0;
@@ -37,7 +38,8 @@ export async function generateStrictMorphemeContent(
           `코딩 형태소: 정확히 15-17회`,
           `키워드 형태소가 가장 많이 출현하는 단어가 되어야 함`,
           `공백 제외 1700-1800자 엄수`
-        ] : undefined
+        ] : undefined,
+        referenceLinks
       );
       
       // Analyze morphemes

@@ -97,6 +97,11 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes
 
 ### January 17, 2025
+- **Optional Reference Blog Links Feature**: Implemented user-requested feature for referencing blog writing styles - users can now add reference blog links categorized by purpose (tone, storytelling, hook methods, CTA approaches)
+- **Intelligent Style Analysis**: Created automated web content fetching and analysis system that extracts writing patterns from reference blogs including tone analysis, hook methods, storytelling approaches, and CTA styles
+- **Enhanced Content Generation**: Updated Claude Anthropic service to incorporate reference blog analysis results into content generation prompts for more targeted writing style adaptation
+- **Database Schema Enhancement**: Added `referenceBlogLinks` field to blog projects table with structured link categorization and optional user descriptions
+- **User-Friendly Interface**: Developed comprehensive UI component allowing users to add, categorize, and manage reference links with clear purpose labels and external link validation
 - **Advanced Multi-Stage Optimization**: Implemented Python-inspired 3-stage optimization process (SEO → Readability → Morpheme) for better quality while maintaining speed
 - **Smart Enhancement Process**: Introduction/conclusion enhancement only applied when content already meets morpheme conditions to prevent degradation
 - **Performance Optimization**: Reduced blog generation time by 50% - decreased retry attempts, shorter delays, simplified prompts
