@@ -146,17 +146,17 @@ export default function Home() {
 
           {/* Right Column - Results */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Reference Blog Links Form - Show after data collection */}
+            {/* Business Info Form - Show after data collection */}
             {project && (project.status === 'business_info' || project.status === 'content_generation' || project.status === 'completed') && (
-              <ReferenceBlogLinksForm 
+              <BusinessInfoForm 
                 project={project} 
                 onRefresh={refetch}
               />
             )}
 
-            {/* Business Info Form - Show after data collection */}
+            {/* Reference Blog Links Form - Show after business info */}
             {project && (project.status === 'business_info' || project.status === 'content_generation' || project.status === 'completed') && (
-              <BusinessInfoForm 
+              <ReferenceBlogLinksForm 
                 project={project} 
                 onRefresh={refetch}
               />
@@ -204,6 +204,14 @@ export default function Home() {
               />
             )}
 
+            {/* Editing Chat - Moved above Infographic Gallery */}
+            {project && project.status === 'completed' && (
+              <EditingChat 
+                project={project} 
+                onRefresh={refetch}
+              />
+            )}
+
             {/* Infographic Gallery */}
             {project && project.generatedImages && (
               <InfographicGallery 
@@ -217,14 +225,6 @@ export default function Home() {
               <ReferenceLinks 
                 links={project.researchData.citations} 
                 citationsWithTitles={project.researchData.citationsWithTitles} 
-              />
-            )}
-
-            {/* Editing Chat */}
-            {project && project.status === 'completed' && (
-              <EditingChat 
-                project={project} 
-                onRefresh={refetch}
               />
             )}
           </div>

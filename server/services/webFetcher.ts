@@ -236,23 +236,28 @@ export function formatReferenceGuidance(analysis: BlogAnalysis): string {
   const sections = [];
   
   if (analysis.tone) {
-    sections.push(`어투: ${analysis.tone}`);
+    sections.push(`✅ 좋은 어투 패턴: ${analysis.tone} - 이런 톤을 사용하면 독자에게 더 잘 전달됩니다`);
   }
   
   if (analysis.hookMethod) {
-    sections.push(`서론 후킹: ${analysis.hookMethod}`);
+    sections.push(`✅ 효과적인 서론 전략: ${analysis.hookMethod} - 이 방식으로 독자의 관심을 끌면 좋습니다`);
   }
   
   if (analysis.storytellingApproach) {
-    sections.push(`스토리텔링: ${analysis.storytellingApproach}`);
+    sections.push(`✅ 성공적인 스토리텔링: ${analysis.storytellingApproach} - 이런 구성이 독자에게 인기가 많습니다`);
   }
   
   if (analysis.ctaStyle) {
-    sections.push(`CTA 스타일: ${analysis.ctaStyle}`);
+    sections.push(`✅ 효과적인 마무리: ${analysis.ctaStyle} - 이런 결론이 실제 행동으로 이어집니다`);
   }
   
   if (analysis.keyPhrases.length > 0) {
-    sections.push(`참고 표현: ${analysis.keyPhrases.slice(0, 3).join(', ')}`);
+    sections.push(`✅ 매력적인 표현법: ${analysis.keyPhrases.slice(0, 3).join(', ')} - 이런 표현들이 독자에게 호응도가 높습니다`);
+  }
+  
+  if (sections.length > 0) {
+    sections.unshift('🎯 참고 블로그에서 분석한 성공 패턴들:');
+    sections.push('\n위 패턴들을 참고하여 비슷한 수준의 매력적인 글을 작성해주세요.');
   }
   
   return sections.join('\n');

@@ -130,10 +130,10 @@ export async function writeOptimizedBlogPost(
 전문성: ${businessInfo.expertise}
 차별점: ${businessInfo.differentiators}
 
-${referenceGuidance ? `📋 참고 블로그 스타일 분석 결과:
+${referenceGuidance ? `🎯 AI 학습 데이터 - 성공적인 블로그 패턴 분석:
 ${referenceGuidance}
 
-위 분석 결과를 참고하여 유사한 어투, 스토리텔링 방식, 후킹 방법, CTA 스타일을 적용해주세요.` : ''}
+💡 AI 작성 지침: 위에서 분석한 패턴들은 실제로 독자들에게 좋은 반응을 얻은 성공 사례들입니다. 이런 패턴들을 학습하여 비슷한 수준의 매력적이고 효과적인 블로그를 작성해주세요. 특히 어투, 서론 전략, 스토리텔링 방식, 결론 스타일을 참고하되, 키워드와 업체 정보에 맞게 자연스럽게 적용해주세요.` : ''}
 
 📝 블로그 글 작성 요구사항:
 - 일반 텍스트 형식으로 1700-1800자 블로그 작성 (절대 1800자 초과 금지)
