@@ -113,6 +113,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(401).json({ error: "인증되지 않은 사용자입니다." });
     }
   });
+
+  // ===== SOCIAL LOGIN ROUTES =====
+  
+  // Google OAuth routes
+  app.get('/auth/google',
+    passport.authenticate('google', { scope: ['profile', 'email'] })
+  );
+
+  app.get('/auth/google/callback',
+    passport.authenticate('google', { 
+      successRedirect: '/',
+      failureRedirect: '/login?error=google_login_failed'
+    })
+  );
+
+  // Kakao OAuth routes
+  app.get('/auth/kakao',
+    passport.authenticate('kakao')
+  );
+
+  app.get('/auth/kakao/callback',
+    passport.authenticate('kakao', { 
+      successRedirect: '/',
+      failureRedirect: '/login?error=kakao_login_failed'
+    })
+  );
+
+  // Naver OAuth routes
+  app.get('/auth/naver',
+    passport.authenticate('naver')
+  );
+
+  app.get('/auth/naver/callback',
+    passport.authenticate('naver', { 
+      successRedirect: '/',
+      failureRedirect: '/login?error=naver_login_failed'
+    })
+  );
   
   // ===== PROTECTED ROUTES (require authentication) =====
   
