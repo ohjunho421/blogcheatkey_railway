@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Search, Brain, Edit2, ArrowRight } from "lucide-react";
+import { Search, Brain, Edit2, ArrowRight, GripVertical } from "lucide-react";
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 
 interface KeywordAnalysisFormProps {
   onProjectCreated: (project: any) => void;
@@ -153,6 +154,17 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
     }
   };
 
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    const items = Array.from(project.subtitles || []);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    // Update subtitles immediately
+    updateSubtitles.mutate({ subtitles: items });
+  };
+
   return (
     <div className="space-y-6">
       {/* Keyword Input */}
@@ -238,44 +250,76 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
             {/* Suggested Subtitles */}
             <div className="bg-green-50 dark:bg-green-950 rounded-lg p-4 border-l-4 border-accent">
               <h3 className="font-semibold text-foreground mb-3">추천 소제목</h3>
-              <div className="space-y-2">
-                {project.subtitles?.map((subtitle: string, index: number) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-card rounded border">
-                    {editingSubtitle === index ? (
-                      <Textarea
-                        value={editedSubtitles[index] || subtitle}
-                        onChange={(e) => handleSubtitleEdit(index, e.target.value)}
-                        className="flex-1 mr-2"
-                        rows={2}
-                      />
-                    ) : (
-                      <span className="text-sm flex-1">{index + 1}. {subtitle}</span>
-                    )}
-                    <div className="flex items-center space-x-2">
-                      {editingSubtitle === index ? (
-                        <Button
-                          size="sm"
-                          onClick={handleSaveSubtitles}
-                          disabled={updateSubtitles.isPending}
-                        >
-                          저장
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setEditingSubtitle(index);
-                            setEditedSubtitles([...(project.subtitles || [])]);
-                          }}
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                      )}
+              <p className="text-xs text-muted-foreground mb-3">
+                드래그앤드롭으로 순서를 변경할 수 있습니다
+              </p>
+              <DragDropContext onDragEnd={handleDragEnd}>
+                <Droppable droppableId="subtitles">
+                  {(provided) => (
+                    <div
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className="space-y-2"
+                    >
+                      {project.subtitles?.map((subtitle: string, index: number) => (
+                        <Draggable key={`subtitle-${index}`} draggableId={`subtitle-${index}`} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              className={`flex items-center justify-between p-2 bg-card rounded border transition-colors ${
+                                snapshot.isDragging ? 'bg-primary/10 border-primary' : 'hover:bg-muted/50'
+                              }`}
+                            >
+                              <div className="flex items-center flex-1">
+                                <div
+                                  {...provided.dragHandleProps}
+                                  className="mr-2 p-1 cursor-grab active:cursor-grabbing hover:bg-muted rounded"
+                                >
+                                  <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                                {editingSubtitle === index ? (
+                                  <Textarea
+                                    value={editedSubtitles[index] || subtitle}
+                                    onChange={(e) => handleSubtitleEdit(index, e.target.value)}
+                                    className="flex-1 mr-2"
+                                    rows={2}
+                                  />
+                                ) : (
+                                  <span className="text-sm flex-1">{index + 1}. {subtitle}</span>
+                                )}
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                {editingSubtitle === index ? (
+                                  <Button
+                                    size="sm"
+                                    onClick={handleSaveSubtitles}
+                                    disabled={updateSubtitles.isPending}
+                                  >
+                                    저장
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setEditingSubtitle(index);
+                                      setEditedSubtitles([...(project.subtitles || [])]);
+                                    }}
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
                     </div>
-                  </div>
-                ))}
-              </div>
+                  )}
+                </Droppable>
+              </DragDropContext>
             </div>
 
             {/* Research Data Collection Button */}

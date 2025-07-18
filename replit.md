@@ -105,6 +105,7 @@ Preferred communication style: Simple, everyday language.
 - **Authentication System Completely Disabled**: Removed all isAuthenticated middleware from API routes for immediate service access without login requirement
 - **Default User Account Implementation**: Created default user account (ID: 1) in database to prevent undefined user ID errors
 - **Perplexity Research Enhancement**: Updated Perplexity API to prioritize news articles, academic papers, and statistical data with system prompts and search recency filters
+- **Drag & Drop Subtitle Reordering**: Added drag-and-drop functionality for subtitle reordering using @hello-pangea/dnd library with intuitive visual feedback
 
 ### January 17, 2025
 - **Authentication Temporarily Disabled**: Commented out all social login code (Google, Kakao, Naver) instead of just Google
