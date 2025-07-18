@@ -31,7 +31,7 @@ export async function searchResearch(keyword: string, subtitles: string[]): Prom
     throw new Error("PERPLEXITY_API_KEY is not configured");
   }
 
-  const searchQuery = `${keyword} (${subtitles.join(", ")}): 최신 뉴스기사, 학술논문, 통계자료 위주로 핵심 정보 요약`;
+  const searchQuery = `${keyword} ${subtitles.join(" OR ")} 2024 2023 statistics research data`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
@@ -43,23 +43,33 @@ export async function searchResearch(keyword: string, subtitles: string[]): Prom
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "sonar-pro",
+      model: "llama-3.1-sonar-large-128k-online", // 더 강력한 모델 사용
       messages: [
         {
           role: "system",
-          content: "뉴스기사, 학술논문, 통계자료를 우선적으로 찾아 신뢰할 수 있는 정보를 제공해주세요."
+          content: "You must prioritize academic sources, official statistics, research papers, government data, and credible news articles. Focus on finding data from: .edu, .gov, .org domains, research institutions, academic journals, official statistics bureaus, and established news organizations. Provide specific numbers, percentages, and data points when available."
         },
         {
           role: "user",
-          content: searchQuery
+          content: `Find reliable academic research, official statistics, and credible data about: ${searchQuery}. 
+          
+          Please include:
+          - Official statistics and data
+          - Research findings from academic sources
+          - Government or industry reports
+          - Credible news articles with data
+          - Specific numbers and percentages
+          
+          Prioritize sources from universities, research institutions, government agencies, and established organizations.`
         }
       ],
-      max_tokens: 1000, // Further reduced for speed
-      temperature: 0.5, // Increased for faster generation
-      top_p: 0.6, // More focused responses
+      max_tokens: 1500, // 더 많은 정보를 위해 증가
+      temperature: 0.2, // 더 정확하고 사실적인 정보를 위해 낮춤
+      top_p: 0.9,
       return_images: false,
       return_related_questions: false,
-      search_recency_filter: "month", // 최근 한 달 내 자료 우선
+      search_recency_filter: "year", // 최근 1년 내 자료로 확장
+      search_domain_filter: ["edu", "gov", "org"], // 공식 도메인 우선
       stream: false
     }),
     signal: controller.signal
@@ -90,7 +100,7 @@ export async function getDetailedResearch(keyword: string, subtitle: string): Pr
     throw new Error("PERPLEXITY_API_KEY is not configured");
   }
 
-  const searchQuery = `${keyword} ${subtitle}: 최신 뉴스기사, 학술논문, 통계자료 위주로 핵심 요약`;
+  const searchQuery = `${keyword} ${subtitle} statistics research data 2024 2023`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
@@ -102,23 +112,33 @@ export async function getDetailedResearch(keyword: string, subtitle: string): Pr
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "sonar-pro",
+      model: "llama-3.1-sonar-large-128k-online",
       messages: [
         {
           role: "system",
-          content: "뉴스기사, 학술논문, 통계자료를 우선적으로 찾아 신뢰할 수 있는 정보를 제공해주세요."
+          content: "You must prioritize academic sources, official statistics, research papers, government data, and credible news articles. Focus on finding data from: .edu, .gov, .org domains, research institutions, academic journals, official statistics bureaus, and established news organizations. Provide specific numbers, percentages, and data points when available."
         },
         {
           role: "user",
-          content: searchQuery
+          content: `Find reliable academic research, official statistics, and credible data about: ${searchQuery}. 
+          
+          Please include:
+          - Official statistics and data
+          - Research findings from academic sources
+          - Government or industry reports
+          - Credible news articles with data
+          - Specific numbers and percentages
+          
+          Prioritize sources from universities, research institutions, government agencies, and established organizations.`
         }
       ],
-      max_tokens: 800, // Further reduced for speed
-      temperature: 0.5, // Increased for faster generation
-      top_p: 0.6, // More focused responses
+      max_tokens: 1500, // 더 많은 정보를 위해 증가
+      temperature: 0.2, // 더 정확하고 사실적인 정보를 위해 낮춤
+      top_p: 0.9,
       return_images: false,
       return_related_questions: false,
-      search_recency_filter: "month", // 최근 한 달 내 자료 우선
+      search_recency_filter: "year", // 최근 1년 내 자료로 확장
+      search_domain_filter: ["edu", "gov", "org"], // 공식 도메인 우선
       stream: false
     }),
     signal: controller.signal
