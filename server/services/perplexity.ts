@@ -47,6 +47,11 @@ async function makePerplexityRequest(messages: any[], maxRetries = 2): Promise<P
           return_images: false,
           return_related_questions: false,
           search_recency_filter: "year",
+          search_domain_filter: [
+            "gov", "edu", "org", "reuters.com", "ap.org", "bbc.com", 
+            "cnn.com", "bloomberg.com", "wsj.com", "ft.com", "economist.com",
+            "nature.com", "sciencedirect.com", "ieee.org", "acm.org"
+          ],
           stream: false
         }),
         signal: controller.signal
@@ -94,25 +99,27 @@ export async function searchResearch(keyword: string, subtitles: string[]): Prom
   const messages = [
     {
       role: "system",
-      content: "You must ONLY use credible sources: academic journals, government websites, official industry reports, established news organizations, and research institutions. EXCLUDE social media platforms (Instagram, TikTok, Facebook, Twitter), personal blogs, and non-authoritative websites. Focus on sources from universities, government agencies, professional organizations, and established media outlets."
+      content: "You are a research assistant that ONLY uses authoritative sources. You must NEVER cite or reference social media platforms (Instagram, TikTok, Facebook, Twitter, YouTube, Reddit), personal blogs, forums, or non-official websites. ONLY use: government websites (.gov), academic institutions (.edu), professional organizations (.org), established news organizations (Reuters, AP, BBC, Bloomberg, WSJ), scientific journals, and official industry reports."
     },
     {
       role: "user",
-      content: `Find reliable data about "${keyword}" focusing on ${subtitles.join(", ")}. 
+      content: `Research "${keyword}" with focus on: ${subtitles.join(", ")}
 
-      REQUIRED sources:
-      - Government agencies and official statistics
-      - Academic research and university studies  
-      - Industry associations and professional organizations
-      - Established news organizations (Reuters, AP, major newspapers)
-      - Research institutions and think tanks
+STRICT REQUIREMENTS - ONLY use these source types:
+• Government agencies (.gov domains)
+• Universities and academic research (.edu domains)  
+• Professional organizations (.org domains)
+• Major news outlets (Reuters, AP, BBC, Bloomberg, WSJ, Financial Times)
+• Scientific journals and research publications
+• Official industry association reports
 
-      EXCLUDED sources:
-      - Social media (Instagram, TikTok, Facebook, Twitter)
-      - Personal blogs or opinion sites
-      - Non-authoritative websites
+ABSOLUTELY FORBIDDEN - Do NOT use:
+• Instagram, TikTok, Facebook, Twitter, YouTube, Reddit
+• Personal blogs or individual websites
+• Forums or discussion boards
+• Unofficial or non-authoritative sites
 
-      Provide specific numbers, percentages, and data points with official sources.`
+Provide official statistics, research data, and verified information only.`
     }
   ];
 
@@ -133,25 +140,27 @@ export async function getDetailedResearch(keyword: string, subtitle: string): Pr
   const messages = [
     {
       role: "system",
-      content: "You must ONLY use credible sources: academic journals, government websites, official industry reports, established news organizations, and research institutions. EXCLUDE social media platforms (Instagram, TikTok, Facebook, Twitter), personal blogs, and non-authoritative websites. Focus on sources from universities, government agencies, professional organizations, and established media outlets."
+      content: "You are a research assistant that ONLY uses authoritative sources. You must NEVER cite or reference social media platforms (Instagram, TikTok, Facebook, Twitter, YouTube, Reddit), personal blogs, forums, or non-official websites. ONLY use: government websites (.gov), academic institutions (.edu), professional organizations (.org), established news organizations (Reuters, AP, BBC, Bloomberg, WSJ), scientific journals, and official industry reports."
     },
     {
       role: "user",
-      content: `Find reliable data about "${keyword}" specifically related to "${subtitle}". 
+      content: `Research "${keyword}" specifically about "${subtitle}"
 
-      REQUIRED sources:
-      - Government agencies and official statistics
-      - Academic research and university studies
-      - Industry associations and professional organizations  
-      - Established news organizations (Reuters, AP, major newspapers)
-      - Research institutions and think tanks
+STRICT REQUIREMENTS - ONLY use these source types:
+• Government agencies (.gov domains)
+• Universities and academic research (.edu domains)
+• Professional organizations (.org domains)  
+• Major news outlets (Reuters, AP, BBC, Bloomberg, WSJ, Financial Times)
+• Scientific journals and research publications
+• Official industry association reports
 
-      EXCLUDED sources:
-      - Social media (Instagram, TikTok, Facebook, Twitter)
-      - Personal blogs or opinion sites
-      - Non-authoritative websites
+ABSOLUTELY FORBIDDEN - Do NOT use:
+• Instagram, TikTok, Facebook, Twitter, YouTube, Reddit
+• Personal blogs or individual websites
+• Forums or discussion boards
+• Unofficial or non-authoritative sites
 
-      Provide specific numbers, percentages, and data points with official sources.`
+Provide official statistics, research data, and verified information only.`
     }
   ];
 
