@@ -102,6 +102,9 @@ Preferred communication style: Simple, everyday language.
 - **Intelligent Title Analysis**: Title generator extracts key information from blog content including subtitles, statistics, and keywords to create contextually relevant titles
 - **Enhanced Chatbot Interface**: Updated editing chat UI with new guidance for title generation feature and improved placeholder text
 - **Unified AI Experience**: Both content generation and title generation use the same Claude model ensuring consistent quality and style across all generated content
+- **Authentication System Completely Disabled**: Removed all isAuthenticated middleware from API routes for immediate service access without login requirement
+- **Default User Account Implementation**: Created default user account (ID: 1) in database to prevent undefined user ID errors
+- **Perplexity Research Enhancement**: Updated Perplexity API to prioritize news articles, academic papers, and statistical data with system prompts and search recency filters
 
 ### January 17, 2025
 - **Authentication Temporarily Disabled**: Commented out all social login code (Google, Kakao, Naver) instead of just Google

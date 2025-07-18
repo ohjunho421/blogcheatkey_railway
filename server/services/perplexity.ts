@@ -31,7 +31,7 @@ export async function searchResearch(keyword: string, subtitles: string[]): Prom
     throw new Error("PERPLEXITY_API_KEY is not configured");
   }
 
-  const searchQuery = `${keyword} (${subtitles.join(", ")}): 핵심 정보 요약`;
+  const searchQuery = `${keyword} (${subtitles.join(", ")}): 최신 뉴스기사, 학술논문, 통계자료 위주로 핵심 정보 요약`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
@@ -46,6 +46,10 @@ export async function searchResearch(keyword: string, subtitles: string[]): Prom
       model: "sonar-pro",
       messages: [
         {
+          role: "system",
+          content: "뉴스기사, 학술논문, 통계자료를 우선적으로 찾아 신뢰할 수 있는 정보를 제공해주세요."
+        },
+        {
           role: "user",
           content: searchQuery
         }
@@ -55,6 +59,7 @@ export async function searchResearch(keyword: string, subtitles: string[]): Prom
       top_p: 0.6, // More focused responses
       return_images: false,
       return_related_questions: false,
+      search_recency_filter: "month", // 최근 한 달 내 자료 우선
       stream: false
     }),
     signal: controller.signal
@@ -85,7 +90,7 @@ export async function getDetailedResearch(keyword: string, subtitle: string): Pr
     throw new Error("PERPLEXITY_API_KEY is not configured");
   }
 
-  const searchQuery = `${keyword} ${subtitle}: 핵심 요약`;
+  const searchQuery = `${keyword} ${subtitle}: 최신 뉴스기사, 학술논문, 통계자료 위주로 핵심 요약`;
 
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
@@ -100,6 +105,10 @@ export async function getDetailedResearch(keyword: string, subtitle: string): Pr
       model: "sonar-pro",
       messages: [
         {
+          role: "system",
+          content: "뉴스기사, 학술논문, 통계자료를 우선적으로 찾아 신뢰할 수 있는 정보를 제공해주세요."
+        },
+        {
           role: "user",
           content: searchQuery
         }
@@ -109,6 +118,7 @@ export async function getDetailedResearch(keyword: string, subtitle: string): Pr
       top_p: 0.6, // More focused responses
       return_images: false,
       return_related_questions: false,
+      search_recency_filter: "month", // 최근 한 달 내 자료 우선
       stream: false
     }),
     signal: controller.signal
