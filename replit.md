@@ -108,7 +108,7 @@ Preferred communication style: Simple, everyday language.
 - **Drag & Drop Subtitle Reordering**: Added drag-and-drop functionality for subtitle reordering using @hello-pangea/dnd library with intuitive visual feedback
 - **Enhanced Chatbot UI**: Improved chatbot text readability with automatic line breaks and increased chat area height for better user experience
 - **Plain Text Blog Format**: Changed blog content generation from markdown to plain text format with enhanced readability structure
-- **Enhanced Perplexity Research Quality**: Improved search quality with academic domain filtering (.edu, .gov, .org), English prompts for better source prioritization, and extended search recency to find more credible data while maintaining sonar-pro model
+- **Enhanced Perplexity Research Quality**: Improved search quality with explicit social media exclusion (Instagram, TikTok, Facebook, Twitter), keyword-focused search queries, and strict credible source requirements (government agencies, academic institutions, industry reports) while maintaining sonar-pro model
 
 ### January 17, 2025
 - **Authentication Temporarily Disabled**: Commented out all social login code (Google, Kakao, Naver) instead of just Google

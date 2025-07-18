@@ -89,23 +89,30 @@ export async function searchResearch(keyword: string, subtitles: string[]): Prom
   citations: string[];
   citationsWithTitles?: Array<{url: string, title: string}>;
 }> {
-  const searchQuery = `${keyword} ${subtitles.join(" ")} statistics research data`;
+  const searchQuery = `"${keyword}" ${subtitles.join(" ")} official statistics research academic study government data industry report`;
 
   const messages = [
     {
       role: "system",
-      content: "You must prioritize academic sources, official statistics, research papers, government data, and credible news articles. Provide specific numbers, percentages, and data points when available."
+      content: "You must ONLY use credible sources: academic journals, government websites, official industry reports, established news organizations, and research institutions. EXCLUDE social media platforms (Instagram, TikTok, Facebook, Twitter), personal blogs, and non-authoritative websites. Focus on sources from universities, government agencies, professional organizations, and established media outlets."
     },
     {
       role: "user",
-      content: `Find reliable academic research, official statistics, and credible data about: ${searchQuery}. 
-      
-      Please include:
-      - Official statistics and data
-      - Research findings from academic sources  
-      - Government or industry reports
-      - Credible news articles with data
-      - Specific numbers and percentages`
+      content: `Find reliable data about "${keyword}" focusing on ${subtitles.join(", ")}. 
+
+      REQUIRED sources:
+      - Government agencies and official statistics
+      - Academic research and university studies  
+      - Industry associations and professional organizations
+      - Established news organizations (Reuters, AP, major newspapers)
+      - Research institutions and think tanks
+
+      EXCLUDED sources:
+      - Social media (Instagram, TikTok, Facebook, Twitter)
+      - Personal blogs or opinion sites
+      - Non-authoritative websites
+
+      Provide specific numbers, percentages, and data points with official sources.`
     }
   ];
 
@@ -121,23 +128,30 @@ export async function getDetailedResearch(keyword: string, subtitle: string): Pr
   content: string;
   citations: string[];
 }> {
-  const searchQuery = `${keyword} ${subtitle} statistics research data`;
+  const searchQuery = `"${keyword}" "${subtitle}" official statistics research academic study government data industry report`;
 
   const messages = [
     {
       role: "system",
-      content: "You must prioritize academic sources, official statistics, research papers, government data, and credible news articles. Provide specific numbers, percentages, and data points when available."
+      content: "You must ONLY use credible sources: academic journals, government websites, official industry reports, established news organizations, and research institutions. EXCLUDE social media platforms (Instagram, TikTok, Facebook, Twitter), personal blogs, and non-authoritative websites. Focus on sources from universities, government agencies, professional organizations, and established media outlets."
     },
     {
       role: "user",
-      content: `Find reliable academic research, official statistics, and credible data about: ${searchQuery}. 
-      
-      Please include:
-      - Official statistics and data
-      - Research findings from academic sources
-      - Government or industry reports  
-      - Credible news articles with data
-      - Specific numbers and percentages`
+      content: `Find reliable data about "${keyword}" specifically related to "${subtitle}". 
+
+      REQUIRED sources:
+      - Government agencies and official statistics
+      - Academic research and university studies
+      - Industry associations and professional organizations  
+      - Established news organizations (Reuters, AP, major newspapers)
+      - Research institutions and think tanks
+
+      EXCLUDED sources:
+      - Social media (Instagram, TikTok, Facebook, Twitter)
+      - Personal blogs or opinion sites
+      - Non-authoritative websites
+
+      Provide specific numbers, percentages, and data points with official sources.`
     }
   ];
 
