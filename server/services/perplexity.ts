@@ -41,13 +41,13 @@ async function makePerplexityRequest(messages: any[], maxRetries = 2): Promise<P
         body: JSON.stringify({
           model: "sonar-pro",
           messages,
-          max_tokens: 1200,
-          temperature: 0.3,
-          top_p: 0.9,
+          max_tokens: 1500,
+          temperature: 0.2,
+          top_p: 0.8,
           return_images: false,
           return_related_questions: false,
           search_recency_filter: "year",
-
+          search_domain_filter: ["news", "academic", "government"],
           stream: false
         }),
         signal: controller.signal
@@ -109,25 +109,26 @@ export async function searchResearch(keyword: string, subtitles: string[]): Prom
   citations: string[];
   citationsWithTitles?: Array<{url: string, title: string}>;
 }> {
-  const searchQuery = `"${keyword}" ${subtitles.join(" ")} official statistics research academic study government data industry report`;
+  const searchQuery = `"${keyword}" ${subtitles.join(" ")} academic research paper journal study statistics government report news article`;
 
   const messages = [
     {
       role: "system",
-      content: "You are a professional research analyst. Find authoritative, credible information from official sources. Do not use social media, personal blogs, or unofficial websites. Focus on government data, academic research, industry reports, and established news organizations."
+      content: "You are a research specialist focused on finding academic papers, news articles, and statistical data. Prioritize scholarly publications, government statistics, industry reports, and established news sources. Exclude social media, personal blogs, and unofficial content. Include YouTube only for educational or official channels."
     },
     {
       role: "user",
-      content: `Find authoritative research and official data about "${keyword}" related to: ${subtitles.join(", ")}
+      content: `Research "${keyword}" with focus on: ${subtitles.join(", ")}
 
-Focus on:
-- Government statistics and official data
-- Academic research from universities
-- Industry association reports
-- Major news organizations with verified data
-- Scientific journals and publications
+Priority sources:
+1. Academic papers and scholarly journals (.edu, research institutions)
+2. Government statistics and official reports (.gov, ministry websites)
+3. News articles from established media organizations
+4. Industry research reports and white papers
+5. Statistical databases and official surveys
+6. YouTube educational content from official channels only
 
-Provide specific statistics, data points, and factual information with credible sources.`
+Find specific data points, statistics, research findings, and expert analysis with credible citations.`
     }
   ];
 
@@ -143,25 +144,26 @@ export async function getDetailedResearch(keyword: string, subtitle: string): Pr
   content: string;
   citations: string[];
 }> {
-  const searchQuery = `"${keyword}" "${subtitle}" official statistics research academic study government data industry report`;
+  const searchQuery = `"${keyword}" "${subtitle}" academic paper journal research statistics government report news article data study`;
 
   const messages = [
     {
       role: "system",
-      content: "You are a professional research analyst. Find authoritative, credible information from official sources. Do not use social media, personal blogs, or unofficial websites. Focus on government data, academic research, industry reports, and established news organizations."
+      content: "You are a research specialist focused on finding academic papers, news articles, and statistical data. Prioritize scholarly publications, government statistics, industry reports, and established news sources. Exclude social media, personal blogs, and unofficial content. Include YouTube only for educational or official channels."
     },
     {
       role: "user",
-      content: `Find authoritative research and official data about "${keyword}" specifically related to "${subtitle}"
+      content: `Research "${keyword}" specifically for "${subtitle}"
 
-Focus on:
-- Government statistics and official data
-- Academic research from universities
-- Industry association reports  
-- Major news organizations with verified data
-- Scientific journals and publications
+Priority sources:
+1. Academic papers and scholarly journals (.edu, research institutions)
+2. Government statistics and official reports (.gov, ministry websites)  
+3. News articles from established media organizations
+4. Industry research reports and white papers
+5. Statistical databases and official surveys
+6. YouTube educational content from official channels only
 
-Provide specific statistics, data points, and factual information with credible sources.`
+Find specific data points, statistics, research findings, and expert analysis with credible citations.`
     }
   ];
 

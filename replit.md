@@ -97,6 +97,7 @@ Preferred communication style: Simple, everyday language.
 ## Recent Changes
 
 ### January 18, 2025
+- **Enhanced Perplexity Research Quality**: Improved search quality with explicit social media exclusion (Instagram, TikTok, Facebook, Twitter), keyword-focused search queries, and strict credible source requirements (government agencies, academic institutions, industry reports) while maintaining sonar-pro model
 - **Research Domain Filtering Update**: Modified Perplexity API domain filtering per user request - now excludes Kakao domains (kakao.com, daum.net, cafe.daum.net, blog.kakao.com) while allowing YouTube domains for research data collection
 - **Claude 4.0 Sonnet Model Update**: Both blog content generation and title generation services now use the latest `claude-sonnet-4-20250514` model for improved quality and consistency
 - **Title Generation Feature Added**: Implemented comprehensive title generation functionality in chatbot - users can now request "제목 만들어줘" to generate 10 different types of blog titles (일반 상식 반박형, 인정욕구 자극형, 숨겨진 비밀형, 트렌드 제시형, 실패담 공유형, 비교형, 경고형, 남탓 공감형, 초보자 가이드형, 효과 제시형)
