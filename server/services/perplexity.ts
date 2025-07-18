@@ -47,11 +47,7 @@ async function makePerplexityRequest(messages: any[], maxRetries = 2): Promise<P
           return_images: false,
           return_related_questions: false,
           search_recency_filter: "year",
-          search_domain_filter: [
-            "gov", "edu", "org", "reuters.com", "ap.org", "bbc.com", 
-            "cnn.com", "bloomberg.com", "wsj.com", "ft.com", "economist.com",
-            "nature.com", "sciencedirect.com", "ieee.org", "acm.org"
-          ],
+
           stream: false
         }),
         signal: controller.signal
@@ -72,7 +68,25 @@ async function makePerplexityRequest(messages: any[], maxRetries = 2): Promise<P
         continue;
       }
 
-      return await response.json();
+      const data = await response.json();
+      
+      // Filter out social media and non-authoritative sources from citations
+      if (data.citations) {
+        const filteredCitations = data.citations.filter((citation: string) => {
+          const url = citation.toLowerCase();
+          // Remove social media and non-authoritative sources
+          const blockedDomains = [
+            'instagram.com', 'tiktok.com', 'facebook.com', 'twitter.com', 'x.com',
+            'youtube.com', 'reddit.com', 'quora.com', 'yahoo.com', 'pinterest.com',
+            'linkedin.com', 'medium.com', 'wordpress.com', 'blogspot.com', 'tumblr.com'
+          ];
+          
+          return !blockedDomains.some(domain => url.includes(domain));
+        });
+        data.citations = filteredCitations;
+      }
+      
+      return data;
       
     } catch (error) {
       console.error(`Perplexity request failed (attempt ${attempt + 1}):`, error.message);
@@ -99,27 +113,20 @@ export async function searchResearch(keyword: string, subtitles: string[]): Prom
   const messages = [
     {
       role: "system",
-      content: "You are a research assistant that ONLY uses authoritative sources. You must NEVER cite or reference social media platforms (Instagram, TikTok, Facebook, Twitter, YouTube, Reddit), personal blogs, forums, or non-official websites. ONLY use: government websites (.gov), academic institutions (.edu), professional organizations (.org), established news organizations (Reuters, AP, BBC, Bloomberg, WSJ), scientific journals, and official industry reports."
+      content: "You are a professional research analyst. Find authoritative, credible information from official sources. Do not use social media, personal blogs, or unofficial websites. Focus on government data, academic research, industry reports, and established news organizations."
     },
     {
       role: "user",
-      content: `Research "${keyword}" with focus on: ${subtitles.join(", ")}
+      content: `Find authoritative research and official data about "${keyword}" related to: ${subtitles.join(", ")}
 
-STRICT REQUIREMENTS - ONLY use these source types:
-• Government agencies (.gov domains)
-• Universities and academic research (.edu domains)  
-• Professional organizations (.org domains)
-• Major news outlets (Reuters, AP, BBC, Bloomberg, WSJ, Financial Times)
-• Scientific journals and research publications
-• Official industry association reports
+Focus on:
+- Government statistics and official data
+- Academic research from universities
+- Industry association reports
+- Major news organizations with verified data
+- Scientific journals and publications
 
-ABSOLUTELY FORBIDDEN - Do NOT use:
-• Instagram, TikTok, Facebook, Twitter, YouTube, Reddit
-• Personal blogs or individual websites
-• Forums or discussion boards
-• Unofficial or non-authoritative sites
-
-Provide official statistics, research data, and verified information only.`
+Provide specific statistics, data points, and factual information with credible sources.`
     }
   ];
 
@@ -140,27 +147,20 @@ export async function getDetailedResearch(keyword: string, subtitle: string): Pr
   const messages = [
     {
       role: "system",
-      content: "You are a research assistant that ONLY uses authoritative sources. You must NEVER cite or reference social media platforms (Instagram, TikTok, Facebook, Twitter, YouTube, Reddit), personal blogs, forums, or non-official websites. ONLY use: government websites (.gov), academic institutions (.edu), professional organizations (.org), established news organizations (Reuters, AP, BBC, Bloomberg, WSJ), scientific journals, and official industry reports."
+      content: "You are a professional research analyst. Find authoritative, credible information from official sources. Do not use social media, personal blogs, or unofficial websites. Focus on government data, academic research, industry reports, and established news organizations."
     },
     {
       role: "user",
-      content: `Research "${keyword}" specifically about "${subtitle}"
+      content: `Find authoritative research and official data about "${keyword}" specifically related to "${subtitle}"
 
-STRICT REQUIREMENTS - ONLY use these source types:
-• Government agencies (.gov domains)
-• Universities and academic research (.edu domains)
-• Professional organizations (.org domains)  
-• Major news outlets (Reuters, AP, BBC, Bloomberg, WSJ, Financial Times)
-• Scientific journals and research publications
-• Official industry association reports
+Focus on:
+- Government statistics and official data
+- Academic research from universities
+- Industry association reports  
+- Major news organizations with verified data
+- Scientific journals and publications
 
-ABSOLUTELY FORBIDDEN - Do NOT use:
-• Instagram, TikTok, Facebook, Twitter, YouTube, Reddit
-• Personal blogs or individual websites
-• Forums or discussion boards
-• Unofficial or non-authoritative sites
-
-Provide official statistics, research data, and verified information only.`
+Provide specific statistics, data points, and factual information with credible sources.`
     }
   ];
 
