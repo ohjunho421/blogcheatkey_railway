@@ -574,7 +574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
 
           for (const [type, typeName] of Object.entries(typeNames)) {
-            titleResponse += `**${typeName}**\n`;
+            titleResponse += `${typeName}\n`;
             if (titles[type] && titles[type].length > 0) {
               titles[type].forEach((title: string, index: number) => {
                 titleResponse += `${index + 1}. ${title}\n`;
@@ -583,7 +583,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             titleResponse += "\n";
           }
 
-          titleResponse += "💡 원하는 제목을 복사해서 사용하시거나, 특정 스타일로 더 만들어달라고 요청해주세요!";
+          titleResponse += "💡 원하는 제목을 복사해서 사용하시거나,\n특정 스타일로 더 만들어달라고 요청해주세요!";
 
           await storage.createChatMessage({
             projectId: id,

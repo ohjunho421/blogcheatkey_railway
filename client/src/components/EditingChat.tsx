@@ -18,6 +18,41 @@ export function EditingChat({ project, onRefresh }: EditingChatProps) {
   const [message, setMessage] = useState("");
   const { toast } = useToast();
 
+  // 텍스트 가독성 향상을 위한 줄바꿈 함수
+  const formatTextForReadability = (text: string) => {
+    if (!text) return text;
+    
+    // 긴 문장을 적절히 줄바꿈
+    return text
+      .split('\n')
+      .map(paragraph => {
+        if (paragraph.length <= 80) return paragraph;
+        
+        // 문장 단위로 분리 (.!?로 끝나는 부분)
+        const sentences = paragraph.split(/([.!?]\s+)/).filter(Boolean);
+        let result = '';
+        let currentLine = '';
+        
+        for (let i = 0; i < sentences.length; i += 2) {
+          const sentence = sentences[i] + (sentences[i + 1] || '');
+          
+          if (currentLine.length + sentence.length > 80 && currentLine.length > 0) {
+            result += currentLine.trim() + '\n';
+            currentLine = sentence;
+          } else {
+            currentLine += sentence;
+          }
+        }
+        
+        if (currentLine.trim()) {
+          result += currentLine.trim();
+        }
+        
+        return result;
+      })
+      .join('\n');
+  };
+
   const { data: chatMessages, refetch: refetchChat } = useQuery({
     queryKey: ['/api/projects', project.id, 'chat'],
     enabled: !!project.id,
@@ -93,7 +128,7 @@ export function EditingChat({ project, onRefresh }: EditingChatProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <ScrollArea className="h-40 w-full rounded-lg border p-4">
+          <ScrollArea className="h-80 w-full rounded-lg border p-4">
             {chatMessages && chatMessages.length > 0 ? (
               <div className="space-y-3">
                 {chatMessages.map((msg: any) => (
@@ -114,7 +149,9 @@ export function EditingChat({ project, onRefresh }: EditingChatProps) {
                           {new Date(msg.createdAt).toLocaleTimeString()}
                         </span>
                       </div>
-                      <p className="text-sm">{msg.content}</p>
+                      <div className="text-sm whitespace-pre-line">
+                        {formatTextForReadability(msg.content)}
+                      </div>
                       {msg.imageUrl && (
                         <div className="mt-2">
                           <img 

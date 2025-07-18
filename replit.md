@@ -106,6 +106,8 @@ Preferred communication style: Simple, everyday language.
 - **Default User Account Implementation**: Created default user account (ID: 1) in database to prevent undefined user ID errors
 - **Perplexity Research Enhancement**: Updated Perplexity API to prioritize news articles, academic papers, and statistical data with system prompts and search recency filters
 - **Drag & Drop Subtitle Reordering**: Added drag-and-drop functionality for subtitle reordering using @hello-pangea/dnd library with intuitive visual feedback
+- **Enhanced Chatbot UI**: Improved chatbot text readability with automatic line breaks and increased chat area height for better user experience
+- **Plain Text Blog Format**: Changed blog content generation from markdown to plain text format with enhanced readability structure
 
 ### January 17, 2025
 - **Authentication Temporarily Disabled**: Commented out all social login code (Google, Kakao, Naver) instead of just Google
