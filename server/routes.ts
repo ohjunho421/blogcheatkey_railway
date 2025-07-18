@@ -11,6 +11,7 @@ import { searchResearch, getDetailedResearch } from "./services/perplexity";
 import { generateMultipleImages, generateImage } from "./services/imageGeneration";
 import { analyzeSEOOptimization, formatForMobile } from "./services/seoOptimizer";
 import { enhancedSEOAnalysis } from "./services/morphemeAnalyzer";
+import { TitleGenerator } from "./services/titleGenerator";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -528,13 +529,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: message,
       });
 
-      // Check if user is requesting image generation
-      const imageKeywords = ['그림', '이미지', '그려', '만들어', '생성', 'image', 'draw', 'create', '사진', '인포그래픽'];
-      const isImageRequest = imageKeywords.some(keyword => 
+      // Check if user is requesting title generation
+      const titleKeywords = ['제목', '타이틀', 'title', '제목 만들어', '제목 생성', '제목 추천'];
+      const isTitleRequest = titleKeywords.some(keyword => 
         message.toLowerCase().includes(keyword.toLowerCase())
       );
 
-      if (isImageRequest) {
+      // Check if user is requesting image generation
+      const imageKeywords = ['그림', '이미지', '그려', '만들어', '생성', 'image', 'draw', 'create', '사진', '인포그래픽'];
+      const isImageRequest = !isTitleRequest && imageKeywords.some(keyword => 
+        message.toLowerCase().includes(keyword.toLowerCase())
+      );
+
+      if (isTitleRequest) {
+        // Title generation
+        if (!project.generatedContent) {
+          await storage.createChatMessage({
+            projectId: id,
+            role: "assistant",
+            content: "제목을 생성하려면 먼저 블로그 콘텐츠를 생성해주세요.",
+          });
+          return res.json({ success: true, type: 'error' });
+        }
+
+        try {
+          const titleGenerator = new TitleGenerator();
+          const titles = await titleGenerator.generateTitles(project.keyword, project.generatedContent);
+          
+          // Format titles for display
+          let titleResponse = "📝 **10가지 유형별 제목 추천**\n\n";
+          
+          const typeNames = {
+            general: '🎯 일반 상식 반박형',
+            approval: '👑 인정욕구 자극형',
+            secret: '🔒 숨겨진 비밀형',
+            trend: '📈 트렌드 제시형',
+            failure: '❌ 실패담 공유형',
+            comparison: '⚖️ 비교형',
+            warning: '⚠️ 경고형',
+            blame: '🤝 남탓 공감형',
+            beginner: '🔰 초보자 가이드형',
+            benefit: '✨ 효과 제시형'
+          };
+
+          for (const [type, typeName] of Object.entries(typeNames)) {
+            titleResponse += `**${typeName}**\n`;
+            if (titles[type] && titles[type].length > 0) {
+              titles[type].forEach((title: string, index: number) => {
+                titleResponse += `${index + 1}. ${title}\n`;
+              });
+            }
+            titleResponse += "\n";
+          }
+
+          titleResponse += "💡 원하는 제목을 복사해서 사용하시거나, 특정 스타일로 더 만들어달라고 요청해주세요!";
+
+          await storage.createChatMessage({
+            projectId: id,
+            role: "assistant",
+            content: titleResponse,
+          });
+
+          res.json({ 
+            success: true, 
+            type: 'title',
+            titles: titles,
+            message: titleResponse
+          });
+        } catch (titleError) {
+          console.error("Title generation error:", titleError);
+          await storage.createChatMessage({
+            projectId: id,
+            role: "assistant",
+            content: "죄송합니다. 제목 생성에 실패했습니다. 다시 시도해주세요.",
+          });
+          res.json({ success: true, type: 'error' });
+        }
+      } else if (isImageRequest) {
         // Rate limiting for image generation (1 request per 30 seconds per project)
         const rateLimitKey = `image_${id}`;
         const lastRequest = imageGenerationRateLimit.get(rateLimitKey);
