@@ -1,0 +1,152 @@
+2025-07-17 22:56:23.67
+2b569958
+User
+at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+2025-07-17 22:56:23.67
+2b569958
+User
+at Route.dispatch (/home/runner/workspace/node_modules/express/lib/router/route.js:119:3)
+2025-07-17 22:56:23.67
+2b569958
+User
+at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+2025-07-17 22:56:23.67
+2b569958
+User
+at /home/runner/workspace/node_modules/express/lib/router/index.js:284:15
+2025-07-17 22:56:23.67
+2b569958
+User
+at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+2025-07-19 00:18:36.12
+e3f4e1cb
+User
+Project creation error: TypeError: Cannot read properties of undefined (reading 'id')
+2025-07-19 00:18:36.12
+e3f4e1cb
+User
+at file:///home/runner/workspace/dist/index.js:2320:22
+2025-07-19 00:18:36.12
+e3f4e1cb
+User
+at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+2025-07-19 00:18:36.12
+e3f4e1cb
+User
+at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+2025-07-19 00:18:36.12
+e3f4e1cb
+User
+at isAuthenticated (file:///home/runner/workspace/dist/index.js:1801:10)
+2025-07-19 00:18:36.12
+e3f4e1cb
+User
+at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+2025-07-19 00:18:36.12
+e3f4e1cb
+User
+at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+2025-07-19 00:18:36.12
+e3f4e1cb
+User
+at Route.dispatch (/home/runner/workspace/node_modules/express/lib/router/route.js:119:3)
+2025-07-19 00:18:36.12
+e3f4e1cb
+User
+at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+2025-07-19 00:18:36.12
+e3f4e1cb
+User
+at /home/runner/workspace/node_modules/express/lib/router/index.js:284:15
+2025-07-19 00:18:36.12
+e3f4e1cb
+User
+at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+2025-07-19 00:18:51.72
+e3f4e1cb
+User
+Project creation error: TypeError: Cannot read properties of undefined (reading 'id')
+2025-07-19 00:18:51.72
+e3f4e1cb
+User
+at file:///home/runner/workspace/dist/index.js:2320:22
+2025-07-19 00:18:51.72
+e3f4e1cb
+User
+at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+2025-07-19 00:18:51.72
+e3f4e1cb
+User
+at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+2025-07-19 00:18:51.72
+e3f4e1cb
+User
+at isAuthenticated (file:///home/runner/workspace/dist/index.js:1801:10)
+2025-07-19 00:18:51.72
+e3f4e1cb
+User
+at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+2025-07-19 00:18:51.72
+e3f4e1cb
+User
+at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+2025-07-19 00:18:51.72
+e3f4e1cb
+User
+at Route.dispatch (/home/runner/workspace/node_modules/express/lib/router/route.js:119:3)
+2025-07-19 00:18:51.72
+e3f4e1cb
+User
+at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+2025-07-19 00:18:51.72
+e3f4e1cb
+User
+at /home/runner/workspace/node_modules/express/lib/router/index.js:284:15
+2025-07-19 00:18:51.72
+e3f4e1cb
+User
+at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)
+2025-07-19 00:18:53.71
+e3f4e1cb
+User
+Project creation error: TypeError: Cannot read properties of undefined (reading 'id')
+2025-07-19 00:18:53.71
+e3f4e1cb
+User
+at file:///home/runner/workspace/dist/index.js:2320:22
+2025-07-19 00:18:53.71
+e3f4e1cb
+User
+at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+2025-07-19 00:18:53.71
+e3f4e1cb
+User
+at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+2025-07-19 00:18:53.71
+e3f4e1cb
+User
+at isAuthenticated (file:///home/runner/workspace/dist/index.js:1801:10)
+2025-07-19 00:18:53.71
+e3f4e1cb
+User
+at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+2025-07-19 00:18:53.71
+e3f4e1cb
+User
+at next (/home/runner/workspace/node_modules/express/lib/router/route.js:149:13)
+2025-07-19 00:18:53.71
+e3f4e1cb
+User
+at Route.dispatch (/home/runner/workspace/node_modules/express/lib/router/route.js:119:3)
+2025-07-19 00:18:53.71
+e3f4e1cb
+User
+at Layer.handle [as handle_request] (/home/runner/workspace/node_modules/express/lib/router/layer.js:95:5)
+2025-07-19 00:18:53.71
+e3f4e1cb
+User
+at /home/runner/workspace/node_modules/express/lib/router/index.js:284:15
+2025-07-19 00:18:53.71
+e3f4e1cb
+User
+at Function.process_params (/home/runner/workspace/node_modules/express/lib/router/index.js:346:12)

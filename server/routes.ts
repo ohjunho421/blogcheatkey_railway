@@ -175,7 +175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== PROTECTED ROUTES (require authentication) =====
   
   // Create new blog project
-  app.post("/api/projects", isAuthenticated, async (req, res) => {
+  app.post("/api/projects", async (req, res) => {
     try {
       const { keyword } = req.body;
       
@@ -183,10 +183,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "키워드를 입력해주세요" });
       }
 
-      const user = req.user as any;
+      // 인증 우회: 기본 사용자 ID 사용
+      const defaultUserId = 1;
       const project = await storage.createBlogProject({
         keyword,
-        userId: user.id,
+        userId: defaultUserId,
         status: "keyword_analysis",
         keywordAnalysis: null,
         subtitles: null,
@@ -205,7 +206,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get project
-  app.get("/api/projects/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/projects/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const project = await storage.getBlogProject(id);
@@ -222,7 +223,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Analyze keyword with Gemini
-  app.post("/api/projects/:id/analyze", isAuthenticated, async (req, res) => {
+  app.post("/api/projects/:id/analyze", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const project = await storage.getBlogProject(id);
@@ -247,7 +248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update subtitles
-  app.post("/api/projects/:id/subtitles", isAuthenticated, async (req, res) => {
+  app.post("/api/projects/:id/subtitles", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { subtitles } = req.body;
@@ -268,7 +269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Research with Perplexity
-  app.post("/api/projects/:id/research", isAuthenticated, async (req, res) => {
+  app.post("/api/projects/:id/research", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const project = await storage.getBlogProject(id);
@@ -293,7 +294,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Save business info
-  app.post("/api/projects/:id/business", isAuthenticated, async (req, res) => {
+  app.post("/api/projects/:id/business", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const businessInfo = businessInfoSchema.parse(req.body);
@@ -315,7 +316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate blog content
-  app.post("/api/projects/:id/generate", isAuthenticated, async (req, res) => {
+  app.post("/api/projects/:id/generate", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const project = await storage.getBlogProject(id);
@@ -416,7 +417,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Regenerate blog content
-  app.post("/api/projects/:id/regenerate", isAuthenticated, async (req, res) => {
+  app.post("/api/projects/:id/regenerate", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const project = await storage.getBlogProject(id);
@@ -461,7 +462,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Copy content (normal or mobile)
-  app.post("/api/projects/:id/copy", isAuthenticated, async (req, res) => {
+  app.post("/api/projects/:id/copy", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { format } = req.body; // 'normal' or 'mobile'
@@ -483,7 +484,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update reference blog links
-  app.post("/api/projects/:id/reference-links", isAuthenticated, async (req, res) => {
+  app.post("/api/projects/:id/reference-links", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { links } = req.body;
@@ -508,7 +509,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const imageGenerationRateLimit = new Map<string, number>();
   
   // Chat with Gemini for editing and image generation
-  app.post("/api/projects/:id/chat", isAuthenticated, async (req, res) => {
+  app.post("/api/projects/:id/chat", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { message } = req.body;
@@ -741,7 +742,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get chat messages
-  app.get("/api/projects/:id/chat", isAuthenticated, async (req, res) => {
+  app.get("/api/projects/:id/chat", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const messages = await storage.getChatMessages(id);
@@ -753,7 +754,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Download image
-  app.get("/api/projects/:id/images/:imageIndex", isAuthenticated, async (req, res) => {
+  app.get("/api/projects/:id/images/:imageIndex", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const imageIndex = parseInt(req.params.imageIndex);
@@ -789,10 +790,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get user business info
-  app.get("/api/user/business-info", isAuthenticated, async (req, res) => {
+  app.get("/api/user/business-info", async (req, res) => {
     try {
-      const user = req.user as any;
-      const businessInfos = await storage.getAllUserBusinessInfos(user.id);
+      const userId = 1; // 인증 우회: 기본 사용자 ID 사용
+      const businessInfos = await storage.getAllUserBusinessInfos(userId);
       res.json(businessInfos);
     } catch (error) {
       console.error("Get business info error:", error);
@@ -803,7 +804,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all user business infos for selection
   app.get("/api/user/business-infos", async (req, res) => {
     try {
-      const userId = 1; // Default user for demo
+      const userId = 1; // 인증 우회: 기본 사용자 ID 사용
       const businessInfos = await storage.getAllUserBusinessInfos(userId);
       res.json(businessInfos);
     } catch (error) {
@@ -815,7 +816,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create or update user business info
   app.post("/api/user/business-info", async (req, res) => {
     try {
-      const userId = 1; // Default user for demo
+      const userId = 1; // 인증 우회: 기본 사용자 ID 사용
       const businessInfoData = businessInfoSchema.parse(req.body);
       
       const existingInfo = await storage.getUserBusinessInfo(userId);
