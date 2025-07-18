@@ -63,13 +63,12 @@ export async function searchResearch(keyword: string, subtitles: string[]): Prom
           Prioritize sources from universities, research institutions, government agencies, and established organizations.`
         }
       ],
-      max_tokens: 1500, // 더 많은 정보를 위해 증가
-      temperature: 0.2, // 더 정확하고 사실적인 정보를 위해 낮춤
+      max_tokens: 1500,
+      temperature: 0.2,
       top_p: 0.9,
       return_images: false,
       return_related_questions: false,
-      search_recency_filter: "year", // 최근 1년 내 자료로 확장
-      search_domain_filter: ["edu", "gov", "org"], // 공식 도메인 우선
+      search_recency_filter: "year",
       stream: false
     }),
     signal: controller.signal
@@ -132,13 +131,12 @@ export async function getDetailedResearch(keyword: string, subtitle: string): Pr
           Prioritize sources from universities, research institutions, government agencies, and established organizations.`
         }
       ],
-      max_tokens: 1500, // 더 많은 정보를 위해 증가
-      temperature: 0.2, // 더 정확하고 사실적인 정보를 위해 낮춤
+      max_tokens: 1500,
+      temperature: 0.2,
       top_p: 0.9,
       return_images: false,
       return_related_questions: false,
-      search_recency_filter: "year", // 최근 1년 내 자료로 확장
-      search_domain_filter: ["edu", "gov", "org"], // 공식 도메인 우선
+      search_recency_filter: "year",
       stream: false
     }),
     signal: controller.signal
