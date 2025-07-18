@@ -74,11 +74,12 @@ async function makePerplexityRequest(messages: any[], maxRetries = 2): Promise<P
       if (data.citations) {
         const filteredCitations = data.citations.filter((citation: string) => {
           const url = citation.toLowerCase();
-          // Remove social media and non-authoritative sources
+          // Remove social media and non-authoritative sources (excluding YouTube, but including Kakao domains)
           const blockedDomains = [
             'instagram.com', 'tiktok.com', 'facebook.com', 'twitter.com', 'x.com',
-            'youtube.com', 'reddit.com', 'quora.com', 'yahoo.com', 'pinterest.com',
-            'linkedin.com', 'medium.com', 'wordpress.com', 'blogspot.com', 'tumblr.com'
+            'reddit.com', 'quora.com', 'yahoo.com', 'pinterest.com',
+            'linkedin.com', 'medium.com', 'wordpress.com', 'blogspot.com', 'tumblr.com',
+            'kakao.com', 'daum.net', 'cafe.daum.net', 'blog.kakao.com'
           ];
           
           return !blockedDomains.some(domain => url.includes(domain));
