@@ -276,9 +276,9 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
                     onValueChange={setBusinessName}
                   />
                   <CommandList>
-                    {savedBusinessInfos && savedBusinessInfos.length > 0 && (
+                    {savedBusinessInfos && Array.isArray(savedBusinessInfos) && savedBusinessInfos.length > 0 && (
                       <CommandGroup heading="저장된 업체">
-                        {savedBusinessInfos.map((info: any) => (
+                        {(savedBusinessInfos as any[]).map((info: any) => (
                           <CommandItem
                             key={info.id}
                             value={info.businessName}

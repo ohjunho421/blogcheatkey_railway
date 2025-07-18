@@ -49,11 +49,17 @@ export function useLogin() {
   
   return useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
-      return apiRequest("/auth/login", {
+      const response = await fetch("/auth/login", {
         method: "POST",
         body: JSON.stringify(credentials),
         headers: { "Content-Type": "application/json" },
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/auth/user"] });
@@ -66,11 +72,17 @@ export function useSignup() {
   
   return useMutation({
     mutationFn: async (data: { email: string; password: string; name: string }) => {
-      return apiRequest("/auth/signup", {
+      const response = await fetch("/auth/signup", {
         method: "POST",
         body: JSON.stringify(data),
         headers: { "Content-Type": "application/json" },
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/auth/user"] });
@@ -83,9 +95,16 @@ export function useLogout() {
   
   return useMutation({
     mutationFn: async () => {
-      return apiRequest("/auth/logout", {
+      const response = await fetch("/auth/logout", {
         method: "POST",
+        credentials: "include",
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       queryClient.setQueryData(["/auth/user"], null);

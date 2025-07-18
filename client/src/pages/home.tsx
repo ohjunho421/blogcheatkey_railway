@@ -51,7 +51,7 @@ export default function Home() {
 
   const getCurrentStepIndex = () => {
     if (!project) return 0;
-    switch (project.status) {
+    switch ((project as any).status) {
       case 'keyword_analysis': return 0;
       case 'data_collection': return 1;
       case 'business_info': return 2;
@@ -94,7 +94,7 @@ export default function Home() {
               <a href="#" className="text-muted-foreground hover:text-primary transition-colors">설정</a>
             </nav>
             <div className="flex items-center space-x-3">
-              {project && (
+              {(project as any) && (
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -163,14 +163,14 @@ export default function Home() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">프로젝트 진행 상황</h2>
-            {project && (
+            {(project as any) && (
               <Badge variant="secondary">
-                키워드: {project.keyword}
+                키워드: {(project as any).keyword}
               </Badge>
             )}
           </div>
-          <Progress value={project ? getProgressPercentage() : 0} className="mb-4" />
-          <ProgressStepper currentStep={project ? getCurrentStepIndex() : 0} />
+          <Progress value={(project as any) ? getProgressPercentage() : 0} className="mb-4" />
+          <ProgressStepper currentStep={(project as any) ? getCurrentStepIndex() : 0} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -216,17 +216,17 @@ export default function Home() {
           {/* Right Column - Results */}
           <div className="lg:col-span-2 space-y-6">
             {/* Business Info Form - Show after data collection */}
-            {project && (project.status === 'business_info' || project.status === 'content_generation' || project.status === 'completed') && (
+            {(project as any) && ((project as any).status === 'business_info' || (project as any).status === 'content_generation' || (project as any).status === 'completed') && (
               <BusinessInfoForm 
-                project={project} 
+                project={project as any} 
                 onRefresh={refetch}
               />
             )}
 
             {/* Reference Blog Links Form - Show after business info */}
-            {project && (project.status === 'business_info' || project.status === 'content_generation' || project.status === 'completed') && (
+            {(project as any) && ((project as any).status === 'business_info' || (project as any).status === 'content_generation' || (project as any).status === 'completed') && (
               <ReferenceBlogLinksForm 
-                project={project} 
+                project={project as any} 
                 onRefresh={refetch}
               />
             )}

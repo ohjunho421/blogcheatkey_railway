@@ -129,9 +129,9 @@ export function EditingChat({ project, onRefresh }: EditingChatProps) {
       <CardContent>
         <div className="space-y-4">
           <ScrollArea className="h-80 w-full rounded-lg border p-4">
-            {chatMessages && chatMessages.length > 0 ? (
+            {chatMessages && Array.isArray(chatMessages) && chatMessages.length > 0 ? (
               <div className="space-y-3">
-                {chatMessages.map((msg: any) => (
+                {(chatMessages as any[]).map((msg: any) => (
                   <div key={msg.id} className="flex items-start space-x-2">
                     <div className="flex-shrink-0">
                       {msg.role === 'user' ? (

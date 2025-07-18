@@ -126,7 +126,7 @@ function analyzeTone(content: string): string {
     professional: ['제공', '서비스', '전문', '솔루션']
   };
   
-  let scores = { formal: 0, friendly: 0, casual: 0, professional: 0 };
+  let scores: Record<string, number> = { formal: 0, friendly: 0, casual: 0, professional: 0 };
   
   for (const [tone, words] of Object.entries(indicators)) {
     scores[tone] = words.reduce((sum, word) => 
@@ -227,7 +227,7 @@ function combineAnalyses(analyses: Partial<BlogAnalysis>[]): BlogAnalysis {
   }
   
   // Remove duplicates from key phrases
-  combined.keyPhrases = [...new Set(combined.keyPhrases)];
+  combined.keyPhrases = Array.from(new Set(combined.keyPhrases));
   
   return combined;
 }

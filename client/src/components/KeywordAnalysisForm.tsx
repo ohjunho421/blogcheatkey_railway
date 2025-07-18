@@ -157,7 +157,7 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
 
-    const items = Array.from(project.subtitles || []);
+    const items = Array.from(project.subtitles || []) as string[];
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
 
