@@ -210,7 +210,7 @@ ${referenceGuidance}
             content: userPrompt 
           }
         ],
-        model: DEFAULT_MODEL_STR,
+        model: "claude-sonnet-4-20250514",
         system: systemPrompt,
         temperature: 0.7, // Increased from 0.3 to speed up generation
       });
