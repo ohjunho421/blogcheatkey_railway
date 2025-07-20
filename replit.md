@@ -104,6 +104,9 @@ Preferred communication style: Simple, everyday language.
 - **AI Content Integration**: Modified `strictMorphemeGenerator` and `writeOptimizedBlogPost` to incorporate user-defined morphemes into content generation prompts
 - **Clipboard Copy Fix**: Enhanced clipboard functionality with fallback mechanism for browsers with focus/permission restrictions using temporary textarea method
 - **Content Generation Enhancement**: Custom morphemes are automatically included in SEO suggestions and final content validation passes
+- **Blog Generation Button Repositioning**: Moved blog generation button from BusinessInfoForm to below reference blog links section for better workflow - users can now see all setup complete before generating
+- **Enhanced Custom Morpheme Validation**: Strengthened custom morpheme enforcement in `morphemeAnalyzer.ts` with detailed missing morpheme detection and stricter validation in content generation pipeline
+- **Improved Content Quality Control**: Custom morphemes are now mandatory validation criteria - content generation will retry until all user-defined morphemes are included in final output
 
 ### January 18, 2025
 - **Enhanced Perplexity Research Quality**: Improved search quality with explicit social media exclusion (Instagram, TikTok, Facebook, Twitter), keyword-focused search queries, and strict credible source requirements (government agencies, academic institutions, industry reports) while maintaining sonar-pro model

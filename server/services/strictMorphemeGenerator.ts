@@ -40,11 +40,14 @@ export async function generateStrictMorphemeContent(
         `공백 제외 1700-1800자 엄수`
       ] : [];
       
-      // Add custom morphemes to suggestions
+      // Add custom morphemes to suggestions with stronger emphasis
       if (customMorphemesArray.length > 0) {
         seoSuggestions.push(
-          `다음 단어들을 글에 최소 1회씩 포함: ${customMorphemesArray.join(', ')}`
+          `[필수] 다음 단어들을 글에 반드시 최소 1회씩 포함해야 합니다: ${customMorphemesArray.join(', ')}`
         );
+        if (attempts > 1) {
+          seoSuggestions.push(`이전 시도에서 누락된 추가 형태소가 있었습니다. 반드시 모든 추가 형태소를 포함하세요.`);
+        }
       }
 
       // Generate content with Claude (now has retry logic built-in)
@@ -57,13 +60,15 @@ export async function generateStrictMorphemeContent(
         referenceLinks
       );
       
-      // Analyze morphemes
-      const analysis = analyzeMorphemes(content, keyword);
+      // Analyze morphemes including custom morphemes
+      const analysis = analyzeMorphemes(content, keyword, customMorphemes);
       console.log(`Attempt ${attempts} analysis:`, {
         isOptimized: analysis.isOptimized,
         characterCount: analysis.characterCount,
         keywordMorphemeCount: analysis.keywordMorphemeCount,
-        issues: analysis.issues
+        issues: analysis.issues,
+        customMorphemesUsed: analysis.customMorphemesUsed,
+        customMorphemesMissing: analysis.customMorphemesMissing
       });
       
       // Check if conditions are met
@@ -122,7 +127,7 @@ export async function generateStrictMorphemeContent(
           const morphemeResult = await optimizeMorphemeUsage(content, keyword, targetCounts);
           const optimizedContent = restoreContentStructure(morphemeResult.optimizedContent, subtitles);
           
-          const optimizedAnalysis = analyzeMorphemes(optimizedContent, keyword);
+          const optimizedAnalysis = analyzeMorphemes(optimizedContent, keyword, customMorphemes);
           
           if (optimizedAnalysis.isOptimized) {
             console.log(`SUCCESS: Morpheme optimization successful on attempt ${attempts}`);

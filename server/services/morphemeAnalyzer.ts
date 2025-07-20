@@ -10,6 +10,8 @@ interface MorphemeAnalysis {
   issues: string[];
   suggestions: string[];
   morphemeCounts: Record<string, number>;
+  customMorphemesUsed: string[];
+  customMorphemesMissing: string[];
 }
 
 // Enhanced Korean morpheme extraction with improved accuracy
@@ -75,7 +77,33 @@ function findKeywordMorphemes(morphemes: string[], keyword: string): string[] {
   return foundMorphemes;
 }
 
-export function analyzeMorphemes(content: string, keyword: string): MorphemeAnalysis {
+// Check if custom morphemes are present in content
+function checkCustomMorphemes(content: string, customMorphemes?: string): { used: string[], missing: string[] } {
+  if (!customMorphemes) {
+    return { used: [], missing: [] };
+  }
+  
+  const morphemesArray = customMorphemes.split(' ').filter(m => m.trim().length > 0);
+  const contentLower = content.toLowerCase();
+  const used: string[] = [];
+  const missing: string[] = [];
+  
+  console.log(`Checking custom morphemes:`, morphemesArray);
+  
+  for (const morpheme of morphemesArray) {
+    if (contentLower.includes(morpheme.toLowerCase())) {
+      used.push(morpheme);
+      console.log(`✓ Custom morpheme found: "${morpheme}"`);
+    } else {
+      missing.push(morpheme);
+      console.log(`✗ Custom morpheme missing: "${morpheme}"`);
+    }
+  }
+  
+  return { used, missing };
+}
+
+export function analyzeMorphemes(content: string, keyword: string, customMorphemes?: string): MorphemeAnalysis {
   console.log(`=== Morpheme Analysis for keyword: "${keyword}" ===`);
   
   // Extract keyword morphemes first to understand what we're looking for
@@ -145,7 +173,12 @@ export function analyzeMorphemes(content: string, keyword: string): MorphemeAnal
   
   const keywordMorphemeCount = keywordMorphemes.length;
   const isLengthOptimized = characterCount >= 1700 && characterCount <= 1800;
-  const isOptimized = isKeywordOptimized && isLengthOptimized;
+  
+  // Check custom morphemes
+  const customMorphemeCheck = checkCustomMorphemes(content, customMorphemes);
+  const isCustomMorphemesOptimized = customMorphemeCheck.missing.length === 0;
+  
+  const isOptimized = isKeywordOptimized && isLengthOptimized && isCustomMorphemesOptimized;
   
   // Generate issues and suggestions
   const issues: string[] = [];
@@ -185,6 +218,12 @@ export function analyzeMorphemes(content: string, keyword: string): MorphemeAnal
     }
   }
   
+  // Check custom morphemes
+  if (!isCustomMorphemesOptimized && customMorphemeCheck.missing.length > 0) {
+    issues.push(`추가 형태소 누락: ${customMorphemeCheck.missing.join(', ')}`);
+    suggestions.push(`다음 추가 형태소들을 글에 포함하세요: ${customMorphemeCheck.missing.join(', ')}`);
+  }
+  
   if (isOptimized) {
     suggestions.push('SEO 최적화가 잘 되어 있습니다!');
   }
@@ -197,7 +236,9 @@ export function analyzeMorphemes(content: string, keyword: string): MorphemeAnal
     isOptimized,
     issues,
     suggestions,
-    morphemeCounts: Object.fromEntries(allMorphemeCounts)
+    morphemeCounts: Object.fromEntries(allMorphemeCounts),
+    customMorphemesUsed: customMorphemeCheck.used,
+    customMorphemesMissing: customMorphemeCheck.missing
   };
 }
 
