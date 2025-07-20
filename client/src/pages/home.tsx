@@ -17,6 +17,7 @@ import { EditingChat } from "@/components/EditingChat";
 import { ReferenceLinks } from "@/components/ReferenceLinks";
 import { InfographicGallery } from "@/components/InfographicGallery";
 import { ReferenceBlogLinksForm } from "@/components/ReferenceBlogLinksForm";
+import { GenerateBlogButton } from "@/components/GenerateBlogButton";
 import { MessageSquare, FileText, Search, Building2, Sparkles, RotateCw, LogOut, User, ChevronDown } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -229,6 +230,24 @@ export default function Home() {
                 project={project as any} 
                 onRefresh={refetch}
               />
+            )}
+
+            {/* Blog Generation Button - Below Reference Blog Links Form */}
+            {(project as any) && (project as any).status === 'business_info' && (project as any).businessInfo && !(project as any).generatedContent && (
+              <Card>
+                <CardContent className="py-6">
+                  <div className="text-center space-y-4">
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-semibold">모든 정보가 준비되었습니다!</h3>
+                      <p className="text-sm text-muted-foreground">
+                        업체 정보, 참고 링크, 추가 형태소가 설정되었습니다.
+                        <br />이제 SEO 최적화된 블로그를 생성해보세요.
+                      </p>
+                    </div>
+                    <GenerateBlogButton project={project as any} onRefresh={refetch} />
+                  </div>
+                </CardContent>
+              </Card>
             )}
 
             {/* Content Generation Status */}

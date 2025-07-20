@@ -457,26 +457,7 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
               </Button>
             )}
 
-            {((project.status === 'business_info' && selectedSavedBusiness?.saved) || 
-              project.businessInfo) && !project.generatedContent && (
-              <Button 
-                onClick={handleGenerate}
-                disabled={generateContent.isPending}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                {generateContent.isPending ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    블로그 생성 중...
-                  </>
-                ) : (
-                  <>
-                    <ArrowRight className="h-4 w-4 mr-2" />
-                    블로그 생성
-                  </>
-                )}
-              </Button>
-            )}
+
             
             {(project.status === 'content_generation' || project.status === 'completed') && (
               <Button 
