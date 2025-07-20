@@ -112,7 +112,9 @@ Preferred communication style: Simple, everyday language.
 - **Enhanced Claude Integration**: Modified `anthropic.ts` to prominently display SEO suggestions with warning messages, ensuring AI model prioritizes both keyword frequency and custom morpheme inclusion
 - **Complete Keyword Recognition Fix**: Updated `morphemeAnalyzer.ts` to recognize complete keywords (like "벤츠엔진경고등") as single units instead of splitting into components, ensuring accurate 15-17 count for SEO optimization
 - **SEO Frequency Control**: Enhanced both `anthropic.ts` and `strictMorphemeGenerator.ts` to explicitly instruct AI models to use complete keyword forms, preventing individual components from appearing excessively (~40 times)
-- **Unified Keyword Strategy**: Implemented consistent messaging across all AI services that complete keywords must be used as single morphemes for proper SEO optimization while maintaining custom morpheme inclusion requirements
+- **Individual Component Optimization**: Corrected morpheme analysis to recognize individual keyword components (벤츠, 엔진, 경고등) that must each appear 15-17 times for proper SEO optimization, replacing the previous complete keyword approach
+- **Component-Based SEO Strategy**: Updated both `anthropic.ts` and `strictMorphemeGenerator.ts` to clearly specify that each keyword component must individually appear 15-17 times while maintaining custom morpheme inclusion requirements
+- **Enhanced Component Counting**: Modified `morphemeAnalyzer.ts` with `extractKeywordComponents` function to properly extract and count individual components from compound keywords like "벤츠엔진경고등"
 
 ### January 18, 2025
 - **Enhanced Perplexity Research Quality**: Improved search quality with explicit social media exclusion (Instagram, TikTok, Facebook, Twitter), keyword-focused search queries, and strict credible source requirements (government agencies, academic institutions, industry reports) while maintaining sonar-pro model
