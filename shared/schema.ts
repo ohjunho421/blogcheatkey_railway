@@ -56,6 +56,7 @@ export const blogProjects = pgTable("blog_projects", {
   referenceLinks: jsonb("reference_links"),
   generatedImages: jsonb("generated_images"), // Array of image URLs
   referenceBlogLinks: jsonb("reference_blog_links"), // Array of reference blog URLs for tone/style
+  customMorphemes: text("custom_morphemes"), // User-defined morphemes separated by spaces
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -105,6 +106,7 @@ export const insertBlogProjectSchema = createInsertSchema(blogProjects).pick({
   referenceLinks: true,
   generatedImages: true,
   referenceBlogLinks: true,
+  customMorphemes: true,
 });
 
 export const insertChatMessageSchema = createInsertSchema(chatMessages).pick({

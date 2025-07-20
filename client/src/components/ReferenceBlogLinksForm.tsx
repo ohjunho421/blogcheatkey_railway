@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { X, Plus, ExternalLink, BookOpen } from "lucide-react";
+import { X, Plus, ExternalLink, BookOpen, Hash, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -37,6 +37,7 @@ export function ReferenceBlogLinksForm({ project, onRefresh }: ReferenceBlogLink
     purpose: "" as "tone" | "storytelling" | "hook" | "cta" | "",
     description: ""
   });
+  const [customMorphemes, setCustomMorphemes] = useState(project?.customMorphemes || "");
   const { toast } = useToast();
 
   const existingLinks: ReferenceBlogLink[] = project?.referenceBlogLinks || [];
@@ -51,6 +52,29 @@ export function ReferenceBlogLinksForm({ project, onRefresh }: ReferenceBlogLink
       toast({
         title: "참고 링크 저장 완료",
         description: "참고 블로그 링크가 저장되었습니다.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "저장 실패",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateCustomMorphemes = useMutation({
+    mutationFn: async (morphemes: string) => {
+      const response = await apiRequest("POST", `/api/projects/${project.id}/custom-morphemes`, { 
+        customMorphemes: morphemes 
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      onRefresh();
+      toast({
+        title: "사용자 정의 형태소 저장 완료",
+        description: "추가 형태소가 저장되었습니다.",
       });
     },
     onError: (error) => {
@@ -93,6 +117,14 @@ export function ReferenceBlogLinksForm({ project, onRefresh }: ReferenceBlogLink
     const updatedLinks = existingLinks.filter((_, i) => i !== index);
     updateReferenceLinks.mutate(updatedLinks);
   };
+
+  const saveMorphemes = () => {
+    updateCustomMorphemes.mutate(customMorphemes);
+  };
+
+  const parsedMorphemes = customMorphemes.trim() 
+    ? customMorphemes.split(' ').filter(m => m.trim().length > 0)
+    : [];
 
   return (
     <Card>
@@ -212,6 +244,58 @@ export function ReferenceBlogLinksForm({ project, onRefresh }: ReferenceBlogLink
             여러 링크를 추가하면 다양한 요소를 종합적으로 참고합니다.
           </div>
         )}
+
+        {/* 사용자 정의 형태소 입력 섹션 */}
+        <div className="space-y-3 p-4 border rounded-lg bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950 dark:to-blue-950">
+          <div className="flex items-center gap-2">
+            <Hash className="h-5 w-5 text-primary" />
+            <Label className="text-sm font-medium">추가 형태소 (선택사항)</Label>
+          </div>
+          
+          <p className="text-xs text-muted-foreground">
+            글에 꼭 포함되었으면 하는 단어나 형태소를 띄어쓰기로 구분해서 입력하세요. 
+            각 형태소는 블로그 생성 시 최소 1회씩 포함됩니다.
+          </p>
+
+          <div className="space-y-3">
+            <Textarea
+              placeholder="예: 전문가 신뢰성 효과적인 추천 만족도"
+              value={customMorphemes}
+              onChange={(e) => setCustomMorphemes(e.target.value)}
+              rows={3}
+              className="resize-none"
+            />
+
+            {parsedMorphemes.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">인식된 형태소 ({parsedMorphemes.length}개)</Label>
+                <div className="flex flex-wrap gap-1">
+                  {parsedMorphemes.map((morpheme, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs">
+                      {morpheme}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <Button 
+              onClick={saveMorphemes}
+              disabled={updateCustomMorphemes.isPending}
+              variant="outline"
+              size="sm"
+              className="w-full"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              형태소 저장
+            </Button>
+          </div>
+
+          <div className="text-xs text-muted-foreground bg-amber-50 dark:bg-amber-950 p-2 rounded">
+            ⚡ <strong>활용 팁:</strong> 업체명, 전문용어, 강조하고 싶은 키워드 등을 추가하면 
+            더욱 전문적이고 개성있는 블로그가 생성됩니다.
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
