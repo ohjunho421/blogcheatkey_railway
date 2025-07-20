@@ -110,6 +110,9 @@ Preferred communication style: Simple, everyday language.
 - **Dual Condition Enforcement**: Fixed issue where adding custom morphemes would ignore keyword morpheme frequency requirements (15-17 times) - now both conditions must be satisfied simultaneously
 - **Dynamic SEO Suggestions**: Updated `strictMorphemeGenerator.ts` to provide keyword-specific morpheme frequency suggestions and stronger emphasis on maintaining SEO optimization while including custom morphemes
 - **Enhanced Claude Integration**: Modified `anthropic.ts` to prominently display SEO suggestions with warning messages, ensuring AI model prioritizes both keyword frequency and custom morpheme inclusion
+- **Complete Keyword Recognition Fix**: Updated `morphemeAnalyzer.ts` to recognize complete keywords (like "벤츠엔진경고등") as single units instead of splitting into components, ensuring accurate 15-17 count for SEO optimization
+- **SEO Frequency Control**: Enhanced both `anthropic.ts` and `strictMorphemeGenerator.ts` to explicitly instruct AI models to use complete keyword forms, preventing individual components from appearing excessively (~40 times)
+- **Unified Keyword Strategy**: Implemented consistent messaging across all AI services that complete keywords must be used as single morphemes for proper SEO optimization while maintaining custom morpheme inclusion requirements
 
 ### January 18, 2025
 - **Enhanced Perplexity Research Quality**: Improved search quality with explicit social media exclusion (Instagram, TikTok, Facebook, Twitter), keyword-focused search queries, and strict credible source requirements (government agencies, academic institutions, industry reports) while maintaining sonar-pro model

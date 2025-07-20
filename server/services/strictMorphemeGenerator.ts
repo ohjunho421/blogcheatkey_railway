@@ -32,17 +32,16 @@ export async function generateStrictMorphemeContent(
         ? customMorphemes.split(' ').filter(m => m.trim().length > 0)
         : [];
       
-      // Extract keyword parts for dynamic suggestions
-      const keywordParts = keyword.toLowerCase().match(/[가-힣a-z]+/g) || [keyword];
-      
       const seoSuggestions = attempts > 1 ? [
         `이전 시도에서 형태소 조건을 만족하지 못했습니다`,
-        ...keywordParts.map(part => `"${part}" 형태소: 정확히 15-17회`),
-        `키워드 형태소가 가장 많이 출현하는 단어가 되어야 함`,
+        `키워드 "${keyword}" 완전한 형태로 정확히 15-17회 사용하세요`,
+        `개별 구성요소가 아닌 전체 키워드 "${keyword}"를 하나의 단위로 카운트`,
+        `키워드가 글에서 가장 많이 출현하는 단어가 되어야 함`,
         `공백 제외 1700-1800자 엄수`
       ] : [
-        ...keywordParts.map(part => `"${part}" 형태소를 15-17회 정확히 포함하세요`),
-        `키워드 형태소가 다른 어떤 단어보다 많이 나타나야 합니다`,
+        `키워드 "${keyword}" 완전한 형태로 15-17회 정확히 포함하세요`,
+        `전체 키워드를 하나의 단위로 인식하여 사용`,
+        `키워드가 다른 어떤 단어보다 많이 나타나야 합니다`,
         `글자수 1700-1800자 범위 준수`
       ];
       
@@ -52,10 +51,10 @@ export async function generateStrictMorphemeContent(
           `[필수] 다음 단어들을 글에 반드시 최소 1회씩 포함해야 합니다: ${customMorphemesArray.join(', ')}`
         );
         seoSuggestions.push(
-          `추가 형태소를 포함하면서도 키워드 형태소 출현 횟수 조건(15-17회)을 반드시 맞춰주세요`
+          `추가 형태소를 포함하면서도 키워드 "${keyword}" 완전한 형태로 15-17회 출현 조건을 반드시 맞춰주세요`
         );
         if (attempts > 1) {
-          seoSuggestions.push(`이전 시도에서 누락된 추가 형태소가 있었거나 키워드 형태소 횟수가 부족했습니다. 두 조건을 모두 만족하세요.`);
+          seoSuggestions.push(`이전 시도에서 누락된 추가 형태소가 있었거나 키워드 "${keyword}" 완전한 형태의 출현 횟수가 부족했습니다. 두 조건을 모두 만족하세요.`);
         }
       }
 

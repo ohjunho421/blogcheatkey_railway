@@ -39,37 +39,22 @@ function extractKoreanMorphemes(text: string): string[] {
   return morphemes;
 }
 
-// Enhanced keyword morpheme matching with precise recognition
+// Enhanced keyword morpheme matching - prioritizes complete keyword for SEO
 function findKeywordMorphemes(morphemes: string[], keyword: string): string[] {
-  const keywordMorphemes = extractKoreanMorphemes(keyword.toLowerCase());
   const foundMorphemes: string[] = [];
+  const lowerKeyword = keyword.toLowerCase();
   
-  console.log(`Looking for keyword morphemes:`, keywordMorphemes);
+  console.log(`Target keyword morphemes: [ '${keyword}' ]`);
   console.log(`Sample content morphemes:`, morphemes.slice(0, 30));
   
+  // Look for exact complete keyword matches (highest SEO priority)
   for (const morpheme of morphemes) {
     const lowerMorpheme = morpheme.toLowerCase();
     
-    for (const keywordMorpheme of keywordMorphemes) {
-      const lowerKeywordMorpheme = keywordMorpheme.toLowerCase();
-      
-      // Exact match (case insensitive)
-      if (lowerMorpheme === lowerKeywordMorpheme) {
-        foundMorphemes.push(morpheme);
-        console.log(`✓ Exact match: "${morpheme}" === "${keywordMorpheme}"`);
-      }
-      // BMW specific handling - various cases
-      else if (lowerKeywordMorpheme === 'bmw' && 
-               (lowerMorpheme === 'bmw' || lowerMorpheme === 'BMW' || lowerMorpheme === 'Bmw')) {
-        foundMorphemes.push(morpheme);
-        console.log(`✓ BMW match: "${morpheme}"`);
-      }
-      // 코딩 specific handling - include related terms
-      else if (lowerKeywordMorpheme === '코딩' && 
-               (lowerMorpheme === '코딩' || lowerMorpheme === '튜닝' || lowerMorpheme === '프로그래밍' || lowerMorpheme === '설정')) {
-        foundMorphemes.push(morpheme);
-        console.log(`✓ Coding match: "${morpheme}"`);
-      }
+    // Exact complete keyword match (most important for SEO)
+    if (lowerMorpheme === lowerKeyword) {
+      foundMorphemes.push(morpheme);
+      console.log(`✓ Exact match: "${morpheme}" === "${keyword}"`);
     }
   }
   
