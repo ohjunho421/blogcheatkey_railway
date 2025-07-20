@@ -107,6 +107,9 @@ Preferred communication style: Simple, everyday language.
 - **Blog Generation Button Repositioning**: Moved blog generation button from BusinessInfoForm to below reference blog links section for better workflow - users can now see all setup complete before generating
 - **Enhanced Custom Morpheme Validation**: Strengthened custom morpheme enforcement in `morphemeAnalyzer.ts` with detailed missing morpheme detection and stricter validation in content generation pipeline
 - **Improved Content Quality Control**: Custom morphemes are now mandatory validation criteria - content generation will retry until all user-defined morphemes are included in final output
+- **Dual Condition Enforcement**: Fixed issue where adding custom morphemes would ignore keyword morpheme frequency requirements (15-17 times) - now both conditions must be satisfied simultaneously
+- **Dynamic SEO Suggestions**: Updated `strictMorphemeGenerator.ts` to provide keyword-specific morpheme frequency suggestions and stronger emphasis on maintaining SEO optimization while including custom morphemes
+- **Enhanced Claude Integration**: Modified `anthropic.ts` to prominently display SEO suggestions with warning messages, ensuring AI model prioritizes both keyword frequency and custom morpheme inclusion
 
 ### January 18, 2025
 - **Enhanced Perplexity Research Quality**: Improved search quality with explicit social media exclusion (Instagram, TikTok, Facebook, Twitter), keyword-focused search queries, and strict credible source requirements (government agencies, academic institutions, industry reports) while maintaining sonar-pro model

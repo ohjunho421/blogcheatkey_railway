@@ -142,6 +142,13 @@ BMW 코딩 필수 준비물
 전문성: ${businessInfo.expertise}
 차별점: ${businessInfo.differentiators}
 
+${seoSuggestions && seoSuggestions.length > 0 ? `
+🚨 중요한 SEO 최적화 지침 (반드시 준수):
+${seoSuggestions.map(suggestion => `• ${suggestion}`).join('\n')}
+
+⚠️ 위의 SEO 지침은 절대 무시하지 마세요. 특히 키워드 형태소 출현 횟수와 추가 형태소 포함은 필수 조건입니다.
+` : ''}
+
 ${referenceGuidance ? `🎯 AI 학습 데이터 - 성공적인 블로그 패턴 분석:
 ${referenceGuidance}
 
