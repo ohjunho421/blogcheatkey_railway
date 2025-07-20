@@ -26,12 +26,50 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
       const response = await apiRequest("POST", `/api/projects/${project.id}/copy`, { format });
       return response.json();
     },
-    onSuccess: (data) => {
-      navigator.clipboard.writeText(data.content);
-      toast({
-        title: "복사 완료",
-        description: `${copyFormat === 'mobile' ? '모바일' : '일반'} 형식으로 복사되었습니다.`,
-      });
+    onSuccess: async (data) => {
+      try {
+        // Check if clipboard API is available and document is focused
+        if (navigator.clipboard && document.hasFocus()) {
+          await navigator.clipboard.writeText(data.content);
+          toast({
+            title: "복사 완료",
+            description: `${copyFormat === 'mobile' ? '모바일' : '일반'} 형식으로 복사되었습니다.`,
+          });
+        } else {
+          // Fallback: Create a temporary textarea element
+          const textarea = document.createElement('textarea');
+          textarea.value = data.content;
+          textarea.style.position = 'fixed';
+          textarea.style.opacity = '0';
+          document.body.appendChild(textarea);
+          textarea.focus();
+          textarea.select();
+          
+          try {
+            document.execCommand('copy');
+            toast({
+              title: "복사 완료",
+              description: `${copyFormat === 'mobile' ? '모바일' : '일반'} 형식으로 복사되었습니다.`,
+            });
+          } catch (fallbackError) {
+            console.error('Fallback copy failed:', fallbackError);
+            toast({
+              title: "복사 실패",
+              description: "브라우저에서 클립보드 접근이 제한되었습니다. 텍스트를 수동으로 선택해서 복사해주세요.",
+              variant: "destructive",
+            });
+          } finally {
+            document.body.removeChild(textarea);
+          }
+        }
+      } catch (error) {
+        console.error('Copy operation failed:', error);
+        toast({
+          title: "복사 실패",
+          description: "클립보드에 복사하는 중 오류가 발생했습니다.",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error) => {
       toast({

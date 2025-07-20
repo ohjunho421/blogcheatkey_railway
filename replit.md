@@ -96,6 +96,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### January 20, 2025
+- **User-Defined Morpheme Input Feature**: Added custom morpheme input functionality in reference blog links section - users can input space-separated morphemes that must be included at least once in generated content
+- **Visual Morpheme Display**: Implemented real-time parsing and badge display of custom morphemes with count indicator
+- **Database Schema Enhancement**: Added `customMorphemes` text field to blog projects table for storing user-defined morphemes
+- **API Integration**: Created `/api/projects/:id/custom-morphemes` endpoint for saving user morphemes and integrated them into content generation pipeline
+- **AI Content Integration**: Modified `strictMorphemeGenerator` and `writeOptimizedBlogPost` to incorporate user-defined morphemes into content generation prompts
+- **Clipboard Copy Fix**: Enhanced clipboard functionality with fallback mechanism for browsers with focus/permission restrictions using temporary textarea method
+- **Content Generation Enhancement**: Custom morphemes are automatically included in SEO suggestions and final content validation passes
+
 ### January 18, 2025
 - **Enhanced Perplexity Research Quality**: Improved search quality with explicit social media exclusion (Instagram, TikTok, Facebook, Twitter), keyword-focused search queries, and strict credible source requirements (government agencies, academic institutions, industry reports) while maintaining sonar-pro model
 - **Research Domain Filtering Update**: Modified Perplexity API domain filtering per user request - now excludes Kakao domains (kakao.com, daum.net, cafe.daum.net, blog.kakao.com) while allowing YouTube domains for research data collection
