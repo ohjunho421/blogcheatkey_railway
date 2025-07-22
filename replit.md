@@ -124,6 +124,9 @@ Preferred communication style: Simple, everyday language.
 - **Introduction Writing Styles**: Added two approaches - reader empathy type (storytelling about difficulties) and warning type (emphasizing keyword importance and consequences)
 - **Professional Conclusion Format**: Enhanced conclusion structure with content summary and natural "contact us if you need help" CTA messaging
 - **Business Expertise Integration**: Improved natural integration of business expertise mentions in introduction and conclusion sections
+- **Reference Blog Analysis Enhancement**: Fixed webFetcher.ts with improved HTML parsing, better content extraction, and Korean blog site compatibility
+- **Enhanced Error Handling**: Added comprehensive logging and alternative fetch methods for Korean blog platforms (Naver, Tistory, Daum)
+- **Content Extraction Improvement**: Upgraded text extraction with content-specific selectors and better filtering for meaningful content
 
 ### January 18, 2025
 - **Enhanced Perplexity Research Quality**: Improved search quality with explicit social media exclusion (Instagram, TikTok, Facebook, Twitter), keyword-focused search queries, and strict credible source requirements (government agencies, academic institutions, industry reports) while maintaining sonar-pro model

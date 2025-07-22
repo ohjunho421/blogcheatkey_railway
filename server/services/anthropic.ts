@@ -127,14 +127,22 @@ BMW 코딩 필수 준비물
   let referenceGuidance = '';
   if (referenceLinks && referenceLinks.length > 0) {
     try {
-      console.log(`Analyzing ${referenceLinks.length} reference blog links...`);
+      console.log(`📝 Starting analysis of ${referenceLinks.length} reference blog links...`);
+      console.log('Reference links:', referenceLinks.map(link => `${link.url} (${link.purpose})`));
+      
       const blogAnalysis = await fetchAndAnalyzeBlogContent(referenceLinks);
       referenceGuidance = formatReferenceGuidance(blogAnalysis);
-      console.log('Reference blog analysis completed:', referenceGuidance);
+      
+      console.log('✅ Reference blog analysis completed successfully');
+      console.log('Analysis result length:', referenceGuidance.length);
+      console.log('Analysis preview:', referenceGuidance.substring(0, 200) + '...');
     } catch (error) {
-      console.warn('Reference blog analysis failed:', error instanceof Error ? error.message : String(error));
+      console.error('❌ Reference blog analysis failed:', error instanceof Error ? error.message : String(error));
+      console.error('Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
       // Continue without reference guidance
     }
+  } else {
+    console.log('No reference blog links provided');
   }
 
   const userPrompt = `정보성 블로그 글을 작성하세요:

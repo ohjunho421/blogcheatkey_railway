@@ -13,15 +13,27 @@ export async function fetchAndAnalyzeBlogContent(links: ReferenceBlogLink[]): Pr
   
   for (const link of links) {
     try {
-      console.log(`Fetching content from: ${link.url} for ${link.purpose}`);
+      console.log(`🌐 Fetching content from: ${link.url} for purpose: ${link.purpose}`);
       
-      // Simple fetch with user agent
+      // Enhanced fetch with proper headers and error handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      
       const response = await fetch(link.url, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+          'Accept-Language': 'ko-KR,ko;q=0.8,en-US;q=0.5,en;q=0.3',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'DNT': '1',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1'
         },
-        timeout: 10000 // 10 second timeout
+        signal: controller.signal,
+        redirect: 'follow'
       });
+      
+      clearTimeout(timeoutId);
       
       if (!response.ok) {
         console.warn(`Failed to fetch ${link.url}: ${response.status}`);
@@ -39,11 +51,38 @@ export async function fetchAndAnalyzeBlogContent(links: ReferenceBlogLink[]): Pr
       }
       
       // Analyze based on purpose
+      console.log(`🔍 Analyzing content for purpose: ${link.purpose}, content length: ${textContent.length}`);
       const analysis = analyzeContentByPurpose(textContent, link.purpose);
       analyses.push(analysis);
+      console.log(`✅ Analysis completed for ${link.url}:`, Object.keys(analysis));
       
     } catch (error) {
-      console.warn(`Error fetching ${link.url}:`, error.message);
+      console.warn(`Error fetching ${link.url}:`, error instanceof Error ? error.message : String(error));
+      
+      // Try alternative approach for Korean blog sites
+      if (link.url.includes('blog.naver.com') || link.url.includes('tistory.com') || link.url.includes('daum.net')) {
+        try {
+          console.log(`Attempting alternative fetch for Korean blog: ${link.url}`);
+          const simpleResponse = await fetch(link.url, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+            }
+          });
+          
+          if (simpleResponse.ok) {
+            const html = await simpleResponse.text();
+            const textContent = extractTextFromHtml(html);
+            
+            if (textContent && textContent.length > 100) {
+              const analysis = analyzeContentByPurpose(textContent, link.purpose);
+              analyses.push(analysis);
+              console.log(`Successfully analyzed Korean blog: ${link.url}`);
+            }
+          }
+        } catch (altError) {
+          console.warn(`Alternative fetch also failed for ${link.url}:`, altError instanceof Error ? altError.message : String(altError));
+        }
+      }
       continue;
     }
   }
@@ -53,32 +92,84 @@ export async function fetchAndAnalyzeBlogContent(links: ReferenceBlogLink[]): Pr
 }
 
 function extractTextFromHtml(html: string): string {
-  // Remove script and style tags
-  let text = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-  text = text.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+  console.log(`Extracting text from HTML (${html.length} characters)`);
   
-  // Remove HTML tags
+  // Try to find main content containers first
+  const contentSelectors = [
+    /<article[^>]*>(.*?)<\/article>/gis,
+    /<div[^>]*class[^>]*post[^>]*>(.*?)<\/div>/gis,
+    /<div[^>]*class[^>]*content[^>]*>(.*?)<\/div>/gis,
+    /<div[^>]*id[^>]*content[^>]*>(.*?)<\/div>/gis,
+    /<main[^>]*>(.*?)<\/main>/gis
+  ];
+  
+  let extractedContent = '';
+  for (const selector of contentSelectors) {
+    const matches = html.match(selector);
+    if (matches && matches.length > 0) {
+      extractedContent = matches.join(' ');
+      console.log(`Found content using selector, length: ${extractedContent.length}`);
+      break;
+    }
+  }
+  
+  // Fallback to full HTML if no specific content found
+  if (!extractedContent) {
+    extractedContent = html;
+    console.log('Using full HTML as no specific content containers found');
+  }
+  
+  // Remove script, style, and other non-content tags
+  let text = extractedContent.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+  text = text.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
+  text = text.replace(/<nav\b[^<]*(?:(?!<\/nav>)<[^<]*)*<\/nav>/gi, '');
+  text = text.replace(/<header\b[^<]*(?:(?!<\/header>)<[^<]*)*<\/header>/gi, '');
+  text = text.replace(/<footer\b[^<]*(?:(?!<\/footer>)<[^<]*)*<\/footer>/gi, '');
+  text = text.replace(/<aside\b[^<]*(?:(?!<\/aside>)<[^<]*)*<\/aside>/gi, '');
+  
+  // Remove HTML tags but preserve spacing
   text = text.replace(/<[^>]+>/g, ' ');
   
   // Decode HTML entities
-  text = text.replace(/&nbsp;/g, ' ');
-  text = text.replace(/&amp;/g, '&');
-  text = text.replace(/&lt;/g, '<');
-  text = text.replace(/&gt;/g, '>');
-  text = text.replace(/&quot;/g, '"');
-  text = text.replace(/&#39;/g, "'");
+  const entities = {
+    '&nbsp;': ' ', '&amp;': '&', '&lt;': '<', '&gt;': '>', 
+    '&quot;': '"', '&#39;': "'", '&apos;': "'", '&ldquo;': '"', 
+    '&rdquo;': '"', '&lsquo;': "'", '&rsquo;': "'", '&hellip;': '...'
+  };
+  
+  for (const [entity, replacement] of Object.entries(entities)) {
+    text = text.replace(new RegExp(entity, 'g'), replacement);
+  }
   
   // Clean up whitespace
   text = text.replace(/\s+/g, ' ').trim();
   
-  // Extract main content (try to find article-like content)
-  const sentences = text.split(/[.!?]/).filter(s => s.trim().length > 20);
+  console.log(`Cleaned text length: ${text.length}`);
   
-  // Take middle portion to avoid headers/footers
+  // Extract meaningful sentences
+  const sentences = text.split(/[.!?]/).filter(s => {
+    const trimmed = s.trim();
+    return trimmed.length > 15 && 
+           !trimmed.match(/^(메뉴|로그인|회원가입|검색|더보기|댓글|공유|목록|이전|다음)$/) &&
+           trimmed.includes(' '); // Must have at least one space (likely a sentence)
+  });
+  
+  console.log(`Found ${sentences.length} meaningful sentences`);
+  
+  if (sentences.length === 0) {
+    console.warn('No meaningful sentences found in extracted text');
+    return '';
+  }
+  
+  // Take middle 80% to avoid headers/footers
   const startIndex = Math.floor(sentences.length * 0.1);
   const endIndex = Math.floor(sentences.length * 0.9);
+  const contentSentences = sentences.slice(startIndex, endIndex);
   
-  return sentences.slice(startIndex, endIndex).join('. ').substring(0, 3000);
+  const result = contentSentences.join('. ').substring(0, 4000);
+  console.log(`Final extracted content length: ${result.length}`);
+  
+  return result;
 }
 
 function analyzeContentByPurpose(content: string, purpose: string): Partial<BlogAnalysis> {
