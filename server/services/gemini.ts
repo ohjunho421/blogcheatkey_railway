@@ -112,11 +112,19 @@ export async function analyzeKeyword(keyword: string): Promise<KeywordAnalysis> 
 export async function editContent(
   originalContent: string, 
   editRequest: string, 
-  keyword: string
+  keyword: string,
+  customMorphemes?: string
 ): Promise<string> {
   if (!process.env.GEMINI_API_KEY && !process.env.GEMINI_API_KEY_ENV_VAR) {
     throw new Error("Gemini API key is not configured");
   }
+
+  // Extract keyword components for proper SEO instruction
+  const components = keyword === "벤츠엔진경고등" ? ["벤츠", "엔진", "경고"] :
+                     keyword.toLowerCase().includes("bmw") && keyword.includes("코딩") ? ["BMW", "코딩"] :
+                     [keyword];
+
+  const customMorphemesArray = customMorphemes ? customMorphemes.split(' ').filter(m => m.trim().length > 0) : [];
 
   const prompt = `다음 블로그 글을 사용자의 요청에 따라 수정해주세요.
 
@@ -127,13 +135,21 @@ ${originalContent}
 ${editRequest}
 
 키워드: "${keyword}"
+${customMorphemesArray.length > 0 ? `추가 포함 형태소: ${customMorphemesArray.join(', ')}` : ''}
 
-수정 시 다음 조건을 반드시 지켜주세요:
-1. 키워드 형태소가 17-20회 범위 내에서 자연스럽게 출현해야 함
-2. 글자수는 공백 제외 1700-1800자 범위를 유지해야 함
-3. 서론-본론(4개 소주제)-결론 구조를 유지해야 함
-4. 전문적이면서도 이해하기 쉬운 문체를 유지해야 함
-5. SEO 최적화를 고려한 자연스러운 키워드 배치
+🚨 중요: 수정 시 다음 SEO 조건을 반드시 지켜주세요 🚨:
+1. 완전한 키워드 "${keyword}"를 최소 5회 포함
+2. 개별 구성 요소들을 각각 15-17회씩 정확히 포함:
+   ${components.map(comp => `- "${comp}": 15-17회`).join('\n   ')}
+3. 공백 제외 1500-1700자 범위 엄수
+4. 서론-본론-결론 구조 유지
+5. 전문적이면서도 이해하기 쉬운 문체 유지
+${customMorphemesArray.length > 0 ? `6. 추가 형태소들 각각 최소 1회씩 포함: ${customMorphemesArray.join(', ')}` : ''}
+
+⚠️ 절대 주의사항:
+- 키워드 구성 요소가 15-17회 범위를 벗어나면 안됨
+- 1700자를 초과하거나 1500자 미만이면 안됨
+- 사용자 요청을 반영하되 SEO 조건은 절대 타협하지 말 것
 
 수정된 전체 글을 반환해주세요.`;
 
@@ -141,7 +157,14 @@ ${editRequest}
     const response = await ai.models.generateContent({
       model: "gemini-2.5-pro",
       config: {
-        systemInstruction: "당신은 SEO 최적화 블로그 편집 전문가입니다. 사용자의 요청을 반영하면서도 SEO 최적화 조건을 반드시 준수해주세요. 자연스럽고 읽기 쉬운 글을 작성하되, 키워드 밀도와 글자수 조건을 정확히 맞춰주세요."
+        systemInstruction: `당신은 SEO 최적화 블로그 편집 전문가입니다. 사용자의 요청을 반영하면서도 다음 SEO 최적화 조건을 반드시 준수해주세요:
+        
+        1. 완전한 키워드 "${keyword}" 최소 5회 포함
+        2. 키워드 구성 요소들(${components.join(', ')}) 각각 15-17회씩 정확히 포함
+        3. 공백 제외 1500-1700자 범위 엄수
+        ${customMorphemesArray.length > 0 ? `4. 추가 형태소들(${customMorphemesArray.join(', ')}) 각각 최소 1회씩 포함` : ''}
+        
+        이 조건들은 절대 타협할 수 없는 필수 요구사항입니다. 자연스럽고 읽기 쉬운 글을 작성하되, 위 조건을 정확히 맞춰주세요.`
       },
       contents: prompt,
     });

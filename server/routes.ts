@@ -61,7 +61,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Email login
   app.post("/auth/login", (req, res, next) => {
-    passport.authenticate('local', (err, user, info) => {
+    passport.authenticate('local', (err: any, user: any, info: any) => {
       if (err) {
         return res.status(500).json({ error: "로그인 처리 중 오류가 발생했습니다." });
       }
@@ -69,7 +69,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: info?.message || "로그인에 실패했습니다." });
       }
       
-      req.login(user, (err) => {
+      req.login(user, (err: any) => {
         if (err) {
           return res.status(500).json({ error: "로그인 세션 생성에 실패했습니다." });
         }
@@ -184,10 +184,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // 인증 우회: 기본 사용자 ID 사용
-      const defaultUserId = 1;
       const project = await storage.createBlogProject({
         keyword,
-        userId: defaultUserId,
         status: "keyword_analysis",
         keywordAnalysis: null,
         subtitles: null,
@@ -560,9 +558,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message.toLowerCase().includes(keyword.toLowerCase())
       );
 
-      // Check if user is requesting image generation
-      const imageKeywords = ['그림', '이미지', '그려', '만들어', '생성', 'image', 'draw', 'create', '사진', '인포그래픽'];
-      const isImageRequest = !isTitleRequest && imageKeywords.some(keyword => 
+      // More precise image generation detection
+      const imageKeywords = ['그림', '이미지', '그려줘', '만들어줘', '생성해줘', 'image', 'draw', 'create', '사진', '인포그래픽'];
+      const contentEditKeywords = ['수정', '바꿔', '고쳐', '바꿔줘', '고쳐줘', '서론', '결론', '내용', '문단', '문장', '단어'];
+      
+      // If message contains content editing keywords, prioritize content editing over image generation
+      const isContentEdit = contentEditKeywords.some(keyword => 
+        message.toLowerCase().includes(keyword.toLowerCase())
+      );
+      
+      // Only treat as image request if it has image keywords AND no content editing keywords
+      const isImageRequest = !isTitleRequest && !isContentEdit && imageKeywords.some(keyword => 
         message.toLowerCase().includes(keyword.toLowerCase())
       );
 
@@ -736,18 +742,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).json({ error: "편집할 콘텐츠가 없습니다" });
         }
 
-        // Get edited content from Gemini
+        // Get edited content from Gemini with SEO validation
+        const { editContent } = await import("./services/gemini.js");
         const editedContent = await editContent(
           project.generatedContent,
           message,
-          project.keyword
+          project.keyword,
+          project.customMorphemes || undefined
         );
+
+        // Analyze morphemes to ensure SEO conditions are met
+        const { analyzeMorphemes } = await import("./services/morphemeAnalyzer.js");
+        const morphemeAnalysis = analyzeMorphemes(editedContent, project.keyword, project.customMorphemes || undefined);
+        
+        let responseMessage = "콘텐츠가 수정되었습니다.";
+        if (!morphemeAnalysis.isOptimized) {
+          responseMessage += `\n\n⚠️ SEO 최적화 상태:\n${morphemeAnalysis.issues.join('\n')}`;
+        } else {
+          responseMessage += "\n\n✅ SEO 최적화 조건을 만족합니다.";
+        }
 
         // Save assistant message
         await storage.createChatMessage({
           projectId: id,
           role: "assistant",
-          content: "콘텐츠가 수정되었습니다.",
+          content: responseMessage,
         });
 
         // Update project with edited content
