@@ -116,7 +116,7 @@ export class TitleGenerator {
     return {
       subtopics: subtopics.slice(0, 4),
       statistics: statistics.slice(0, 5),
-      keywords: [...new Set(keywords)].slice(0, 10)
+      keywords: Array.from(new Set(keywords)).slice(0, 10)
     };
   }
 

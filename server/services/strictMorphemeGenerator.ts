@@ -2,6 +2,7 @@ import { writeOptimizedBlogPost, improveBlogPost } from './anthropic';
 import { analyzeMorphemes, extractKoreanMorphemes, extractKeywordComponents, findKeywordComponentMatches } from './morphemeAnalyzer';
 import { optimizeMorphemeUsage, restoreContentStructure } from './morphemeOptimizer';
 import { optimizeContentAdvanced } from './advancedOptimizer';
+import { resolveMorphemeOveruse } from './morphemeOveruseResolver';
 import type { BusinessInfo } from "@shared/schema";
 
 interface StrictGenerationResult {
@@ -111,6 +112,34 @@ export async function generateStrictMorphemeContent(
       
       if (hasOveruse) {
         console.log(`❌ Keyword component overuse detected: ${overuseDetails.join(', ')}`);
+        
+        // 형태소 과다 사용 해결 시도
+        try {
+          console.log('🔧 Attempting to resolve morpheme overuse...');
+          const resolveResult = await resolveMorphemeOveruse(content, keyword);
+          
+          if (resolveResult.success) {
+            console.log('✅ Morpheme overuse resolved successfully');
+            console.log('Adjustments made:', resolveResult.adjustments);
+            
+            // 해결된 콘텐츠로 다시 분석
+            const resolvedAnalysis = analyzeMorphemes(resolveResult.content, keyword, customMorphemes);
+            
+            if (resolvedAnalysis.isOptimized) {
+              console.log(`SUCCESS: All conditions met after morpheme resolution on attempt ${attempts}`);
+              return {
+                content: resolveResult.content,
+                analysis: resolvedAnalysis,
+                attempts,
+                success: true
+              };
+            }
+          } else {
+            console.log('⚠️ Morpheme overuse partially resolved:', resolveResult.adjustments);
+          }
+        } catch (error) {
+          console.error('Morpheme overuse resolution failed:', error);
+        }
       }
       
       // If not optimized, try advanced multi-stage optimization
