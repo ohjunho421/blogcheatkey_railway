@@ -22,6 +22,7 @@ export async function generateStrictMorphemeContent(
 ): Promise<StrictGenerationResult> {
   const maxAttempts = 3; // Reduced from 5 to 3
   let attempts = 0;
+  let previousContent: string | null = null; // 이전 시도 결과 저장
   
   while (attempts < maxAttempts) {
     attempts++;
@@ -75,15 +76,37 @@ export async function generateStrictMorphemeContent(
         }
       }
 
-      // Generate content with Claude (now has retry logic built-in)
-      const content = await writeOptimizedBlogPost(
-        keyword,
-        subtitles,
-        researchData,
-        businessInfo,
-        seoSuggestions.length > 0 ? seoSuggestions : undefined,
-        referenceLinks
-      );
+      // Generate content with Claude (first attempt) or improve existing content (subsequent attempts)
+      let content: string;
+      
+      if (attempts === 1) {
+        // 첫 번째 시도: 새로운 글 생성
+        console.log('Generating new blog content...');
+        content = await writeOptimizedBlogPost(
+          keyword,
+          subtitles,
+          researchData,
+          businessInfo,
+          seoSuggestions.length > 0 ? seoSuggestions : undefined,
+          referenceLinks
+        );
+      } else {
+        // 두 번째 시도부터: 이전 콘텐츠가 있으면 그것을 수정, 없으면 새로 생성
+        if (previousContent) {
+          console.log('Improving existing content based on previous attempt...');
+          content = previousContent; // 이전 콘텐츠를 기반으로 시작
+        } else {
+          console.log('No previous content available, generating new content...');
+          content = await writeOptimizedBlogPost(
+            keyword,
+            subtitles,
+            researchData,
+            businessInfo,
+            seoSuggestions.length > 0 ? seoSuggestions : undefined,
+            referenceLinks
+          );
+        }
+      }
       
       // Analyze morphemes including custom morphemes
       const analysis = analyzeMorphemes(content, keyword, customMorphemes);
@@ -192,21 +215,25 @@ export async function generateStrictMorphemeContent(
               success: true
             };
           } else if (advancedResult.analysis.keywordMorphemeCount > analysis.keywordMorphemeCount || 
-                     Math.abs(advancedResult.analysis.characterCount - 1750) < Math.abs(analysis.characterCount - 1750)) {
+                     Math.abs(advancedResult.analysis.characterCount - 1600) < Math.abs(analysis.characterCount - 1600)) {
             console.log(`Improved content found in advanced optimization, using it for next attempt`);
-            // Use improved content for next attempt
+            // 개선된 콘텐츠를 다음 시도에서 사용
+            previousContent = advancedResult.content;
             continue;
           }
           
-          // Continue with traditional morpheme optimization as fallback
-          console.log(`Fallback to traditional morpheme optimization`);
+          // Continue with morpheme optimization on existing content
+          console.log(`Continuing with morpheme optimization on existing content`);
+          
+          // 기존 콘텐츠를 개선된 버전으로 사용
+          content = advancedResult.content;
           
           // Extract keyword morphemes for target counts
           const keywordParts = keyword.toLowerCase().match(/[가-힣a-z]+/g) || [];
           const targetCounts: Record<string, number> = {};
           
           // Set target to 16 (middle of 15-17 range)
-          keywordParts.forEach(part => {
+          keywordParts.forEach((part: string) => {
             targetCounts[part] = 16;
           });
           
@@ -226,6 +253,8 @@ export async function generateStrictMorphemeContent(
           }
           
           console.log(`Optimization helped but still not perfect:`, optimizedAnalysis.issues);
+          // 개선된 콘텐츠를 다음 시도에 사용
+          previousContent = optimizedContent;
         } catch (optimizationError) {
           console.error(`Morpheme optimization failed on attempt ${attempts}:`, optimizationError);
         }
@@ -233,6 +262,10 @@ export async function generateStrictMorphemeContent(
       
     } catch (error) {
       console.error(`Generation attempt ${attempts} failed:`, error);
+      // 오류가 발생해도 이전에 개선된 콘텐츠가 있다면 보존
+      if (content && !previousContent) {
+        previousContent = content;
+      }
     }
   }
   
