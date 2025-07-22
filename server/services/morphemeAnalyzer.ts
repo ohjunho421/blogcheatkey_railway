@@ -46,13 +46,23 @@ export function extractKeywordComponents(keyword: string): string[] {
     components.push("벤츠", "엔진", "경고");
   } else if (keyword.toLowerCase().includes("bmw") && keyword.includes("코딩")) {
     components.push("BMW", "코딩");
+  } else if (keyword.includes("10W40") && keyword.includes("엔진오일")) {
+    // Handle oil grade keywords like "10W40 엔진오일"
+    components.push("10W40", "엔진오일");
   } else {
     // Fallback: try to extract individual meaningful components
     const koreanPattern = /[가-힣]+/g;
     const englishPattern = /[a-zA-Z]+/g;
+    const numberPattern = /[0-9]+[W][0-9]+/g; // For oil grades like 10W40
     
     const koreanMatches = keyword.match(koreanPattern) || [];
     const englishMatches = keyword.match(englishPattern) || [];
+    const numberMatches = keyword.match(numberPattern) || [];
+    
+    // Add oil grade numbers first
+    for (const match of numberMatches) {
+      components.push(match);
+    }
     
     // Add individual Korean components
     for (const match of koreanMatches) {
@@ -61,9 +71,9 @@ export function extractKeywordComponents(keyword: string): string[] {
       }
     }
     
-    // Add individual English components  
+    // Add individual English components (excluding already added oil grades)
     for (const match of englishMatches) {
-      if (match.length >= 2) {
+      if (match.length >= 2 && !numberMatches.some(num => num.includes(match))) {
         components.push(match);
       }
     }
