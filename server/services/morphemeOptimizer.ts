@@ -1,4 +1,4 @@
-import { analyzeMorphemes } from './morphemeAnalyzer';
+import { analyzeMorphemes, extractKoreanMorphemes, extractKeywordComponents, findKeywordComponentMatches } from './morphemeAnalyzer';
 
 interface MorphemeOptimizationResult {
   optimizedContent: string;
@@ -80,8 +80,14 @@ export async function optimizeMorphemeUsage(
   // 현재 형태소 분석
   const initialAnalysis = analyzeMorphemes(content, keyword);
   
-  for (const morpheme of keywordMorphemes) {
-    const currentCount = initialAnalysis.morphemeCounts[morpheme] || 0;
+  // Extract components from keyword for analysis
+  const keywordComponents = extractKeywordComponents(keyword);
+  
+  for (const morpheme of keywordComponents) {
+    // Re-analyze to get component counts for this specific morpheme
+    const componentMatches = findKeywordComponentMatches(extractKoreanMorphemes(content), keyword);
+    const matches = componentMatches.get(morpheme) || [];
+    const currentCount = matches.length;
     const targetCount = targetCounts[morpheme] || 20; // 기본 최대값 20
 
     if (currentCount > targetCount) {

@@ -13,7 +13,7 @@ interface MorphemeAnalysis {
 }
 
 // Simple Korean morpheme extraction function
-function extractKoreanMorphemes(text: string): string[] {
+export function extractKoreanMorphemes(text: string): string[] {
   const morphemes: string[] = [];
   
   // Split by various Korean delimiters and extract meaningful segments
@@ -38,7 +38,7 @@ function extractKoreanMorphemes(text: string): string[] {
 }
 
 // Extract individual keyword components for SEO optimization
-function extractKeywordComponents(keyword: string): string[] {
+export function extractKeywordComponents(keyword: string): string[] {
   const components = [];
   
   // Manual extraction for compound Korean keywords
@@ -95,7 +95,7 @@ function findCompleteKeywordMatches(morphemes: string[], keyword: string): strin
 }
 
 // Find individual keyword component matches (for 15-17 occurrences each)
-function findKeywordComponentMatches(morphemes: string[], keyword: string): Map<string, string[]> {
+export function findKeywordComponentMatches(morphemes: string[], keyword: string): Map<string, string[]> {
   const keywordComponents = extractKeywordComponents(keyword);
   const componentMatches = new Map<string, string[]>();
   
