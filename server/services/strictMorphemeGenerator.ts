@@ -1,5 +1,5 @@
 import { writeOptimizedBlogPost, improveBlogPost } from './anthropic';
-import { analyzeMorphemes } from './morphemeAnalyzer';
+import { analyzeMorphemes, extractKoreanMorphemes, extractKeywordComponents, findKeywordComponentMatches } from './morphemeAnalyzer';
 import { optimizeMorphemeUsage, restoreContentStructure } from './morphemeOptimizer';
 import { optimizeContentAdvanced } from './advancedOptimizer';
 import type { BusinessInfo } from "@shared/schema";
@@ -35,14 +35,16 @@ export async function generateStrictMorphemeContent(
       const seoSuggestions = attempts > 1 ? [
         `이전 시도에서 형태소 조건을 만족하지 못했습니다`,
         `완전한 키워드 "${keyword}"를 최소 5회 사용하세요`,
-        `개별 구성 요소들을 각각 15-17회씩 사용하세요 (벤츠, 엔진, 경고 등)`,
+        `개별 구성 요소들을 각각 15-17회씩 사용하세요 (절대 17회 초과 금지!)`,
         `키워드가 글에서 가장 많이 출현하는 단어가 되어야 함`,
-        `공백 제외 1500-1700자 엄수`
+        `공백 제외 1500-1700자 엄수`,
+        `⚠️ 경고: 형태소 과다 사용 시 SEO 패널티 발생 위험`
       ] : [
         `완전한 키워드 "${keyword}"를 최소 5회 포함하세요`,
-        `개별 구성 요소들을 각각 15-17회씩 포함하세요`,
+        `개별 구성 요소들을 각각 15-17회씩 포함하세요 (17회 초과 절대 금지)`,
         `키워드가 다른 어떤 단어보다 많이 나타나야 합니다`,
-        `글자수 1500-1700자 범위 준수`
+        `글자수 1500-1700자 범위 준수`,
+        `형태소 균형 유지로 자연스러운 글쓰기`
       ];
       
       // Add custom morphemes to suggestions with stronger emphasis
@@ -75,12 +77,27 @@ export async function generateStrictMorphemeContent(
         characterCount: analysis.characterCount,
         keywordMorphemeCount: analysis.keywordMorphemeCount,
         issues: analysis.issues,
-        customMorphemesUsed: analysis.customMorphemesUsed,
-        customMorphemesMissing: analysis.customMorphemesMissing
+        customMorphemes: analysis.customMorphemes
       });
       
-      // Check if conditions are met
-      if (analysis.isOptimized) {
+      // 키워드 구성 요소들이 17회를 초과하지 않는지 엄격 검증
+      const keywordComponents = extractKeywordComponents(keyword);
+      let hasOveruse = false;
+      const overuseDetails: string[] = [];
+      
+      for (const component of keywordComponents) {
+        const componentMatches = findKeywordComponentMatches(extractKoreanMorphemes(content), keyword);
+        const matches = componentMatches.get(component) || [];
+        const count = matches.length;
+        
+        if (count > 17) {
+          hasOveruse = true;
+          overuseDetails.push(`${component}: ${count}회 (최대 17회 초과)`);
+        }
+      }
+      
+      // Check if conditions are met (including overuse check)
+      if (analysis.isOptimized && !hasOveruse) {
         console.log(`SUCCESS: All morpheme conditions met on attempt ${attempts}`);
         return {
           content,
@@ -88,6 +105,10 @@ export async function generateStrictMorphemeContent(
           attempts,
           success: true
         };
+      }
+      
+      if (hasOveruse) {
+        console.log(`❌ Keyword component overuse detected: ${overuseDetails.join(', ')}`);
       }
       
       // If not optimized, try advanced multi-stage optimization
