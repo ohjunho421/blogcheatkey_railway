@@ -12,6 +12,7 @@ When copying code from this code snippet, ensure you also include this informati
 
 // <important_do_not_delete>
 const DEFAULT_MODEL_STR = "claude-opus-4-20250514";
+const MODEL = 'claude-opus-4-20250514';
 // </important_do_not_delete>
 
 const anthropic = new Anthropic({
@@ -62,11 +63,12 @@ export async function writeOptimizedBlogPost(
 - 서론-본론-결론 구조 유지
 
 🚨 중요: 키워드 사용 방식 🚨:
-- 완전한 키워드 "${keyword}" 최소 5회 출현 필수
-- 개별 구성 요소들 각각 15-17회씩 출현 (절대 17회 초과 금지!)
+- 완전한 키워드 "${keyword}" 정확히 5회만 출현
+- 개별 구성 요소들 각각 정확히 15-17회만 출현 (절대 17회 초과 금지!)
+- ⚠️ 경고: 17회를 초과하면 SEO 패널티로 검색 순위가 떨어집니다
 - 완전한 키워드와 개별 구성 요소 모두 조건을 만족해야 함
 - 공백 제외 1500-1700자 범위 엄수
-- ⚠️ 경고: 각 구성 요소가 17회를 초과하면 SEO에 악영향을 미칩니다
+- 자연스러운 글쓰기로 키워드 과다 반복을 피하세요
 
 매력적인 서론 작성법 (다음 중 하나 선택):
 1. 독자 공감형: 독자의 어려움을 구체적으로 공감하며 스토리텔링으로 시작
@@ -254,7 +256,7 @@ ${referenceGuidance}
             content: userPrompt 
           }
         ],
-        model: "claude-sonnet-4-20250514",
+        model: MODEL,
         system: systemPrompt,
         temperature: 0.7, // Increased from 0.3 to speed up generation
       });

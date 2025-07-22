@@ -127,6 +127,9 @@ Preferred communication style: Simple, everyday language.
 - **Reference Blog Analysis Enhancement**: Fixed webFetcher.ts with improved HTML parsing, better content extraction, and Korean blog site compatibility
 - **Enhanced Error Handling**: Added comprehensive logging and alternative fetch methods for Korean blog platforms (Naver, Tistory, Daum)
 - **Content Extraction Improvement**: Upgraded text extraction with content-specific selectors and better filtering for meaningful content
+- **Claude Opus 4.0 Model Upgrade**: Upgraded all AI services from claude-sonnet-4 to claude-opus-4-20250514 for improved content generation quality
+- **Enhanced Morpheme Overuse Prevention**: Strengthened 17-count maximum enforcement with explicit warnings and detailed guidance to prevent SEO penalties
+- **Stricter Content Generation**: Added specific instructions to prevent keyword component overuse (17+ times) which causes search ranking drops
 
 ### January 18, 2025
 - **Enhanced Perplexity Research Quality**: Improved search quality with explicit social media exclusion (Instagram, TikTok, Facebook, Twitter), keyword-focused search queries, and strict credible source requirements (government agencies, academic institutions, industry reports) while maintaining sonar-pro model
