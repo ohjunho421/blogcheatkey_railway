@@ -47,6 +47,7 @@ export async function generateStrictMorphemeContent(
         
         seoSuggestions.push(`⚠️ 각 형태소가 17회를 초과하면 SEO 패널티 발생`);
         seoSuggestions.push(`공백 제외 1500-1700자 엄수 (현재 범위 벗어남)`);
+        seoSuggestions.push(`서론 비중 35-40%로 대폭 확대하여 독자 몰입도 높이세요`);
         seoSuggestions.push(`자연스럽고 읽기 쉬운 글로 작성하세요`);
       } else {
         seoSuggestions.push(`완전한 키워드 "${keyword}"를 정확히 5회 포함하세요`);
@@ -57,6 +58,7 @@ export async function generateStrictMorphemeContent(
         
         seoSuggestions.push(`⚠️ 중요: 각 형태소는 17회 초과 절대 금지`);
         seoSuggestions.push(`공백 제외 1500-1700자 범위 준수`);
+        seoSuggestions.push(`서론을 전체 글의 35-40%로 작성하여 독자가 끝까지 읽도록 유도`);
         seoSuggestions.push(`키워드가 다른 단어보다 많이 나타나야 함`);
       }
       
