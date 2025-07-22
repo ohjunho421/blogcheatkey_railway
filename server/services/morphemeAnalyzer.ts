@@ -109,42 +109,37 @@ function findKeywordComponentMatches(morphemes: string[], keyword: string): Map<
     for (const morpheme of morphemes) {
       const lowerMorpheme = morpheme.toLowerCase();
       
-      // Strict individual component matching - no overlapping counts
+      // Component matching - includes occurrences within compound words
       let isMatch = false;
       
       if (lowerComponent === 'bmw') {
-        // Only standalone BMW, not inside compound words
-        isMatch = lowerMorpheme === 'bmw';
+        // Exact BMW matches including variations
+        isMatch = lowerMorpheme === 'bmw' || lowerMorpheme === 'BMW' || lowerMorpheme === 'Bmw';
       } else if (lowerComponent === '코딩') {
-        // Only standalone coding terms, not inside compound words
+        // Korean coding-related terms
         isMatch = lowerMorpheme === '코딩' || lowerMorpheme === '튜닝' || lowerMorpheme === '프로그래밍' || lowerMorpheme === '설정';
       } else if (lowerComponent === '벤츠') {
-        // Only standalone 벤츠, not part of 벤츠엔진경고등
-        isMatch = lowerMorpheme === '벤츠';
+        // 벤츠 matches including compound words like 벤츠엔진경고등
+        isMatch = lowerMorpheme.includes('벤츠');
       } else if (lowerComponent === '엔진') {
-        // Only standalone 엔진, not part of 벤츠엔진경고등
-        isMatch = lowerMorpheme === '엔진';
+        // 엔진 matches including compound words like 벤츠엔진경고등
+        isMatch = lowerMorpheme.includes('엔진');
       } else if (lowerComponent === '경고') {
-        // Only standalone 경고 or 경고등 variations, not part of 벤츠엔진경고등
-        isMatch = lowerMorpheme === '경고' || 
-                 lowerMorpheme === '경고등' || 
-                 lowerMorpheme === '경고등이' || 
-                 lowerMorpheme === '경고등을' || 
-                 lowerMorpheme === '경고등의' || 
-                 lowerMorpheme === '경고등으로';
+        // 경고 matches including compound words and variations
+        isMatch = lowerMorpheme.includes('경고');
       } else {
-        // Generic exact matching for other components
-        isMatch = lowerMorpheme === lowerComponent;
+        // Generic matching for other components
+        isMatch = lowerMorpheme === lowerComponent || lowerMorpheme.includes(lowerComponent);
       }
       
       if (isMatch) {
         matches.push(morpheme);
-        console.log(`✓ Component match: "${morpheme}" = "${component}"`);
+        console.log(`✓ Component match: "${morpheme}" contains "${component}"`);
       }
     }
     
     componentMatches.set(component, matches);
-    console.log(`"${component}" appears ${matches.length} times (standalone only)`);
+    console.log(`"${component}" appears ${matches.length} times`);
   }
   
   return componentMatches;
