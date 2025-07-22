@@ -133,6 +133,7 @@ Preferred communication style: Simple, everyday language.
 - **Intelligent Morpheme Overuse Resolution**: Implemented automated system to resolve 17+ count overuse by identifying problematic sentences and naturally adjusting them
 - **Smart Content Adjustment**: Claude Opus analyzes context to determine if sentences/morphemes can be safely removed or replaced with synonyms without affecting readability
 - **Three-Step Resolution Process**: Find overused morpheme sentences → Remove/replace naturally → Verify context maintains flow and meaning
+- **Research Citation Integration**: Added natural research source citation in blog content using phrases like "최근 연구에 따르면", "업계 보고서에서는" to enhance credibility while maintaining natural flow
 
 ### January 18, 2025
 - **Enhanced Perplexity Research Quality**: Improved search quality with explicit social media exclusion (Instagram, TikTok, Facebook, Twitter), keyword-focused search queries, and strict credible source requirements (government agencies, academic institutions, industry reports) while maintaining sonar-pro model
