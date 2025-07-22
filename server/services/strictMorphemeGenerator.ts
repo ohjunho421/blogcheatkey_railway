@@ -33,22 +33,32 @@ export async function generateStrictMorphemeContent(
         ? customMorphemes.split(' ').filter(m => m.trim().length > 0)
         : [];
       
-      const seoSuggestions = attempts > 1 ? [
-        `🚨 중요: 이전 시도에서 형태소가 과다 사용되었습니다`,
-        `완전한 키워드 "${keyword}"를 정확히 5회만 사용하세요`,
-        `개별 구성 요소들을 각각 정확히 15-17회만 사용하세요 (17회 절대 초과 금지!)`,
-        `⚠️ 형태소 과다 사용은 SEO에 악영향을 미칩니다 - 반드시 17회 이하로 제한`,
-        `키워드가 글에서 가장 많이 출현하는 단어가 되어야 함`,
-        `공백 제외 1500-1700자 엄수`,
-        `자연스러운 글쓰기로 키워드 반복을 줄이세요`
-      ] : [
-        `완전한 키워드 "${keyword}"를 정확히 5회 포함하세요`,
-        `개별 구성 요소들을 각각 정확히 15-17회만 포함하세요 (17회 초과 절대 금지)`,
-        `⚠️ 중요: 17회를 초과하면 SEO 패널티가 발생합니다`,
-        `키워드가 다른 어떤 단어보다 많이 나타나야 합니다`,
-        `글자수 1500-1700자 범위 준수`,
-        `형태소 균형 유지로 자연스러운 글쓰기`
-      ];
+      // 이전 시도 분석 결과 기반으로 구체적인 지침 생성
+      const keywordComponents = extractKeywordComponents(keyword);
+      const seoSuggestions = [];
+      
+      if (attempts > 1) {
+        seoSuggestions.push(`🚨 중요: 이전 시도에서 조건을 만족하지 못했습니다`);
+        seoSuggestions.push(`완전한 키워드 "${keyword}"를 정확히 5회 사용하세요`);
+        
+        for (const component of keywordComponents) {
+          seoSuggestions.push(`"${component}" 형태소를 정확히 15-17회 사용하세요`);
+        }
+        
+        seoSuggestions.push(`⚠️ 각 형태소가 17회를 초과하면 SEO 패널티 발생`);
+        seoSuggestions.push(`공백 제외 1500-1700자 엄수 (현재 범위 벗어남)`);
+        seoSuggestions.push(`자연스럽고 읽기 쉬운 글로 작성하세요`);
+      } else {
+        seoSuggestions.push(`완전한 키워드 "${keyword}"를 정확히 5회 포함하세요`);
+        
+        for (const component of keywordComponents) {
+          seoSuggestions.push(`"${component}" 형태소를 각각 15-17회 포함하세요`);
+        }
+        
+        seoSuggestions.push(`⚠️ 중요: 각 형태소는 17회 초과 절대 금지`);
+        seoSuggestions.push(`공백 제외 1500-1700자 범위 준수`);
+        seoSuggestions.push(`키워드가 다른 단어보다 많이 나타나야 함`);
+      }
       
       // Add custom morphemes to suggestions with stronger emphasis
       if (customMorphemesArray.length > 0) {
@@ -84,7 +94,6 @@ export async function generateStrictMorphemeContent(
       });
       
       // 키워드 구성 요소들이 17회를 초과하지 않는지 엄격 검증
-      const keywordComponents = extractKeywordComponents(keyword);
       let hasOveruse = false;
       const overuseDetails: string[] = [];
       
@@ -99,9 +108,24 @@ export async function generateStrictMorphemeContent(
         }
       }
       
+      // 모든 조건 상세 체크
+      const completeKeywordCount = content.toLowerCase().split(keyword.toLowerCase()).length - 1;
+      const characterCount = content.replace(/\s/g, '').length;
+      
+      console.log(`=== Detailed Condition Check (Attempt ${attempts}) ===`);
+      console.log(`Complete keyword "${keyword}": ${completeKeywordCount} times (need 5)`);
+      console.log(`Character count: ${characterCount} chars (need 1500-1700)`);
+      
+      const componentMatches = findKeywordComponentMatches(extractKoreanMorphemes(content), keyword);
+      for (const component of keywordComponents) {
+        const matches = componentMatches.get(component) || [];
+        const count = matches.length;
+        console.log(`Component "${component}": ${count} times (need 15-17)`);
+      }
+      
       // Check if conditions are met (including overuse check)
-      if (analysis.isOptimized && !hasOveruse) {
-        console.log(`SUCCESS: All morpheme conditions met on attempt ${attempts}`);
+      if (analysis.isOptimized && !hasOveruse && completeKeywordCount >= 5 && characterCount >= 1500 && characterCount <= 1700) {
+        console.log(`SUCCESS: All conditions met on attempt ${attempts}`);
         return {
           content,
           analysis,
