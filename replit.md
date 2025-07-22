@@ -116,6 +116,9 @@ Preferred communication style: Simple, everyday language.
 - **Corrected Character Count**: Fixed character count requirement from 1700-1800 to 1500-1700 characters (excluding spaces) as per user specification
 - **Enhanced morphemeAnalyzer.ts**: Complete rewrite with dual tracking system - findCompleteKeywordMatches() for full keyword (5+ times) and findKeywordComponentMatches() for individual components (15-17 times each)
 - **Updated AI Service Instructions**: Modified anthropic.ts and strictMorphemeGenerator.ts to enforce both complete keyword (5+) and component-level (15-17 each) requirements simultaneously
+- **Fixed Component Counting Logic**: Corrected morpheme analysis to count individual components only when they appear as standalone words, preventing over-counting from compound keywords (e.g., "벤츠엔진경고" counts 0 times for each component, only standalone "벤츠", "엔진", "경고" count)
+- **Enhanced Chatbot Intent Recognition**: Improved chatbot to accurately distinguish between content editing requests ("서론 수정해줘") and image generation requests, with priority given to content editing keywords
+- **SEO Validation in Chatbot**: Added real-time morpheme analysis validation when editing content through chatbot, ensuring all SEO conditions (complete keyword 5+, components 15-17 each, 1500-1700 characters) are maintained during edits
 
 ### January 18, 2025
 - **Enhanced Perplexity Research Quality**: Improved search quality with explicit social media exclusion (Instagram, TikTok, Facebook, Twitter), keyword-focused search queries, and strict credible source requirements (government agencies, academic institutions, industry reports) while maintaining sonar-pro model

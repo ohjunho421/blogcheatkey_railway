@@ -109,37 +109,42 @@ function findKeywordComponentMatches(morphemes: string[], keyword: string): Map<
     for (const morpheme of morphemes) {
       const lowerMorpheme = morpheme.toLowerCase();
       
-      // More precise matching to avoid over-counting
+      // Strict individual component matching - no overlapping counts
       let isMatch = false;
       
       if (lowerComponent === 'bmw') {
-        // Exact BMW matches only
-        isMatch = lowerMorpheme === 'bmw' || lowerMorpheme === 'BMW' || lowerMorpheme === 'Bmw';
+        // Only standalone BMW, not inside compound words
+        isMatch = lowerMorpheme === 'bmw';
       } else if (lowerComponent === '코딩') {
-        // Korean coding-related terms
+        // Only standalone coding terms, not inside compound words
         isMatch = lowerMorpheme === '코딩' || lowerMorpheme === '튜닝' || lowerMorpheme === '프로그래밍' || lowerMorpheme === '설정';
       } else if (lowerComponent === '벤츠') {
-        // Only exact 벤츠 matches, not inside compound words
-        isMatch = lowerMorpheme === '벤츠' || lowerMorpheme.startsWith('벤츠') && !lowerMorpheme.includes('엔진');
+        // Only standalone 벤츠, not part of 벤츠엔진경고등
+        isMatch = lowerMorpheme === '벤츠';
       } else if (lowerComponent === '엔진') {
-        // Only exact 엔진 matches, not inside compound words  
-        isMatch = lowerMorpheme === '엔진' || (lowerMorpheme.includes('엔진') && !lowerMorpheme.includes('벤츠') && !lowerMorpheme.includes('경고'));
+        // Only standalone 엔진, not part of 벤츠엔진경고등
+        isMatch = lowerMorpheme === '엔진';
       } else if (lowerComponent === '경고') {
-        // Only exact 경고 matches, not inside compound words
-        isMatch = lowerMorpheme === '경고' || lowerMorpheme === '경고등' || lowerMorpheme === '경고등이' || lowerMorpheme === '경고등을' || lowerMorpheme === '경고등의' || lowerMorpheme === '경고등으로';
+        // Only standalone 경고 or 경고등 variations, not part of 벤츠엔진경고등
+        isMatch = lowerMorpheme === '경고' || 
+                 lowerMorpheme === '경고등' || 
+                 lowerMorpheme === '경고등이' || 
+                 lowerMorpheme === '경고등을' || 
+                 lowerMorpheme === '경고등의' || 
+                 lowerMorpheme === '경고등으로';
       } else {
-        // Generic matching for other components
-        isMatch = lowerMorpheme === lowerComponent || lowerMorpheme.includes(lowerComponent);
+        // Generic exact matching for other components
+        isMatch = lowerMorpheme === lowerComponent;
       }
       
       if (isMatch) {
         matches.push(morpheme);
-        console.log(`✓ Component match: "${morpheme}" contains "${component}"`);
+        console.log(`✓ Component match: "${morpheme}" = "${component}"`);
       }
     }
     
     componentMatches.set(component, matches);
-    console.log(`"${component}" appears ${matches.length} times`);
+    console.log(`"${component}" appears ${matches.length} times (standalone only)`);
   }
   
   return componentMatches;
