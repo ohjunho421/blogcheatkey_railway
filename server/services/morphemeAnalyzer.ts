@@ -47,8 +47,8 @@ export function extractKeywordComponents(keyword: string): string[] {
   } else if (keyword.toLowerCase().includes("bmw") && keyword.includes("코딩")) {
     components.push("BMW", "코딩");
   } else if (keyword.includes("10W40") && keyword.includes("엔진오일")) {
-    // Handle oil grade keywords like "10W40 엔진오일"
-    components.push("10W40", "엔진오일");
+    // Handle oil grade keywords like "10W40 엔진오일" - split 엔진오일 into 엔진 + 오일
+    components.push("10W40", "엔진", "오일");
   } else {
     // Fallback: try to extract individual meaningful components
     const koreanPattern = /[가-힣]+/g;
@@ -137,6 +137,12 @@ export function findKeywordComponentMatches(morphemes: string[], keyword: string
       } else if (lowerComponent === '경고') {
         // 경고 matches including compound words and variations
         isMatch = lowerMorpheme.includes('경고');
+      } else if (lowerComponent === '10w40') {
+        // Oil grade matches including variations
+        isMatch = lowerMorpheme === '10w40' || lowerMorpheme.includes('10w40');
+      } else if (lowerComponent === '오일') {
+        // 오일 matches including compound words like 엔진오일
+        isMatch = lowerMorpheme.includes('오일');
       } else {
         // Generic matching for other components
         isMatch = lowerMorpheme === lowerComponent || lowerMorpheme.includes(lowerComponent);
