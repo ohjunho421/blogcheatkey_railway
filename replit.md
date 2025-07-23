@@ -96,6 +96,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### January 23, 2025
+- **포트원 월구독 결제 시스템 구현**: 3단계 월구독 플랜 (베이직 30,000원, 프리미엄 50,000원, 프로 100,000원) 구현
+- **플랜별 기능 차등화**: 베이직(콘텐츠만), 프리미엄(콘텐츠+이미지), 프로(풀서비스+챗봇) 구조 설계
+- **포트원 API 완전 연동**: 정기결제용 customer_uid 포함한 구독 결제 시스템 구축
+- **결제 검증 시스템**: 서버 측 결제 검증 및 구독 정보 관리 로직 구현
+- **홈페이지 결제 버튼 추가**: 상단 헤더에 구독하기 버튼 및 결제 모달 통합
+- **포트원 PG 설정 필요**: 실제 결제 작동을 위해서는 포트원 관리자 페이지에서 PG(결제대행사) 설정 완료 필요
+- **현재 서비스 상태**: 로그인 기능 비활성화 상태로 모든 기능을 무료로 사용 가능 - 추후 로그인 기능 활성화 시 구독 제한 적용 예정
+
 ### January 20, 2025
 - **User-Defined Morpheme Input Feature**: Added custom morpheme input functionality in reference blog links section - users can input space-separated morphemes that must be included at least once in generated content
 - **Visual Morpheme Display**: Implemented real-time parsing and badge display of custom morphemes with count indicator
