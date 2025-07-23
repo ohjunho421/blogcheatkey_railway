@@ -233,6 +233,9 @@ export default function PaymentModal({ children }: PaymentModalProps) {
         <div className="text-center text-sm text-muted-foreground mt-4">
           <p>안전한 월구독 결제를 위해 포트원(PortOne)을 사용합니다</p>
           <p>카드, 계좌이체, 간편결제 모두 지원 | 언제든지 해지 가능</p>
+          <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800">
+            <p className="text-xs">⚠️ 테스트 환경: PG 설정 완료 후 실제 결제가 가능합니다</p>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
