@@ -9,6 +9,7 @@ import Home from "@/pages/home";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import NotFound from "@/pages/not-found";
+import PricingPage from "@/pages/PricingPage";
 
 function Router() {
   const [authChecked, setAuthChecked] = useState(false);
@@ -58,6 +59,7 @@ function Router() {
         <>
           <Route path="/" component={Home} />
           <Route path="/project/:id" component={Home} />
+          <Route path="/pricing" component={PricingPage} />
         </>
       ) : (
         <Route path="/" component={Login} />

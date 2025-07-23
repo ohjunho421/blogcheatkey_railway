@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { z } from "zod";
 import { businessInfoSchema, keywordAnalysisSchema, seoMetricsSchema, emailSignupSchema, emailLoginSchema } from "@shared/schema";
 import { analyzeKeyword, editContent, enhanceIntroductionAndConclusion } from "./services/gemini";
+import { preparePayment, verifyPayment, cancelPayment, getPaymentHistory } from "./services/portone";
 import passport from 'passport';
 import { setupAuth, isAuthenticated, hashPassword } from './auth';
 import { writeOptimizedBlogPost } from "./services/anthropic";
@@ -942,6 +943,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Image download error:", error);
       res.status(500).json({ error: "이미지 다운로드에 실패했습니다" });
+    }
+  });
+
+  // ===== 결제 관련 라우터 =====
+  
+  // 결제 준비
+  app.post("/api/payment/prepare", async (req, res) => {
+    try {
+      const { amount, name, credits } = req.body;
+      
+      if (!amount || !name || !credits) {
+        return res.status(400).json({ error: "필수 정보가 누락되었습니다." });
+      }
+
+      const paymentData = preparePayment({
+        merchant_uid: `blog_${Date.now()}`,
+        amount: Number(amount),
+        name: String(name),
+        credits: Number(credits),
+      });
+
+      res.json(paymentData);
+    } catch (error) {
+      console.error("Payment preparation error:", error);
+      res.status(500).json({ error: "결제 준비 중 오류가 발생했습니다." });
+    }
+  });
+
+  // 결제 검증
+  app.post("/api/payment/verify", async (req, res) => {
+    try {
+      const { imp_uid, merchant_uid } = req.body;
+      
+      if (!imp_uid || !merchant_uid) {
+        return res.status(400).json({ error: "결제 정보가 누락되었습니다." });
+      }
+
+      const verificationResult = await verifyPayment({ imp_uid, merchant_uid });
+      
+      if (verificationResult.success) {
+        // 여기서 사용자 크레딧 추가 로직을 구현할 수 있습니다
+        // await storage.addUserCredits(userId, credits);
+        
+        res.json({ 
+          success: true, 
+          payment: verificationResult.payment 
+        });
+      } else {
+        res.status(400).json({ 
+          success: false, 
+          error: verificationResult.error 
+        });
+      }
+    } catch (error) {
+      console.error("Payment verification error:", error);
+      res.status(500).json({ error: "결제 검증 중 오류가 발생했습니다." });
+    }
+  });
+
+  // 결제 취소
+  app.post("/api/payment/cancel", async (req, res) => {
+    try {
+      const { imp_uid, reason } = req.body;
+      
+      if (!imp_uid) {
+        return res.status(400).json({ error: "결제 ID가 누락되었습니다." });
+      }
+
+      const cancelResult = await cancelPayment(imp_uid, reason);
+      
+      if (cancelResult.success) {
+        res.json({ success: true, data: cancelResult.data });
+      } else {
+        res.status(400).json({ success: false, error: cancelResult.error });
+      }
+    } catch (error) {
+      console.error("Payment cancellation error:", error);
+      res.status(500).json({ error: "결제 취소 중 오류가 발생했습니다." });
+    }
+  });
+
+  // 결제 내역 조회
+  app.get("/api/payment/history", async (req, res) => {
+    try {
+      const historyResult = await getPaymentHistory();
+      
+      if (historyResult.success) {
+        res.json({ success: true, payments: historyResult.payments });
+      } else {
+        res.status(500).json({ success: false, error: historyResult.error });
+      }
+    } catch (error) {
+      console.error("Payment history error:", error);
+      res.status(500).json({ error: "결제 내역 조회 중 오류가 발생했습니다." });
     }
   });
 
