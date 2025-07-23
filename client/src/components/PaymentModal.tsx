@@ -9,68 +9,66 @@ interface PaymentModalProps {
   children: React.ReactNode;
 }
 
-interface PricingPlan {
+interface SubscriptionPlan {
   name: string;
   price: number;
-  credits: number;
   description: string;
   features: string[];
+  planType: string;
   popular?: boolean;
 }
 
-const pricingPlans: PricingPlan[] = [
+const subscriptionPlans: SubscriptionPlan[] = [
   {
     name: '베이직',
-    price: 9900,
-    credits: 10,
-    description: '개인 블로거를 위한 기본 플랜',
+    price: 30000,
+    description: '기본 블로그 콘텐츠 생성',
     features: [
-      '10개 블로그 생성',
-      'SEO 최적화',
+      '월 30개 블로그 생성',
+      'SEO 최적화 콘텐츠', 
       '키워드 분석',
-      '이미지 생성',
-      '30일 지원'
-    ]
+      '이메일 지원'
+    ],
+    planType: 'content_only'
+  },
+  {
+    name: '프리미엄',
+    price: 50000,
+    description: '블로그 + 이미지 생성',
+    features: [
+      '월 30개 블로그 생성',
+      'SEO 최적화 콘텐츠',
+      '인포그래픽 자동 생성',
+      '키워드 분석',
+      '우선 지원'
+    ],
+    popular: true,
+    planType: 'content_and_images'
   },
   {
     name: '프로',
-    price: 29900,
-    credits: 50,
-    description: '비즈니스를 위한 전문 플랜',
+    price: 100000,
+    description: '올인원 AI 블로그 솔루션',
     features: [
-      '50개 블로그 생성',
-      'SEO 최적화',
+      '월 30개 블로그 생성',
+      'SEO 최적화 콘텐츠',
+      '인포그래픽 자동 생성',
+      'AI 챗봇 편집',
       '키워드 분석',
-      '이미지 생성',
-      '우선 지원',
-      '고급 분석'
+      '전담 지원',
+      'API 접근'
     ],
-    popular: true
-  },
-  {
-    name: '엔터프라이즈',
-    price: 99900,
-    credits: 200,
-    description: '대규모 콘텐츠 제작을 위한 플랜',
-    features: [
-      '200개 블로그 생성',
-      'SEO 최적화',
-      '키워드 분석',
-      '이미지 생성',
-      '24/7 지원',
-      '고급 분석',
-      '전용 계정 매니저'
-    ]
+    planType: 'full_service'
   }
 ];
 
 export default function PaymentModal({ children }: PaymentModalProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  const handlePayment = async (plan: PricingPlan) => {
+  const handleSubscription = async (plan: SubscriptionPlan) => {
     setIsProcessing(true);
     setSelectedPlan(plan);
 
@@ -83,8 +81,8 @@ export default function PaymentModal({ children }: PaymentModalProps) {
         },
         body: JSON.stringify({
           amount: plan.price,
-          name: plan.name,
-          credits: plan.credits
+          name: `${plan.name} 월구독`,
+          planType: plan.planType
         }),
       });
 
@@ -112,10 +110,11 @@ export default function PaymentModal({ children }: PaymentModalProps) {
           pg: 'html5_inicis',
           pay_method: 'card',
           merchant_uid: merchant_uid,
-          name: `블로그치트키 ${plan.name} 플랜`,
+          name: `블로그치트키 ${plan.name} 월구독`,
           amount: amount,
           buyer_email: 'customer@example.com',
           buyer_name: '구매자',
+          customer_uid: `customer_${Date.now()}`, // 정기결제용 고객 식별자
         }, resolve);
       });
 
@@ -179,7 +178,7 @@ export default function PaymentModal({ children }: PaymentModalProps) {
         </DialogHeader>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
-          {pricingPlans.map((plan) => (
+          {subscriptionPlans.map((plan) => (
             <Card 
               key={plan.name} 
               className={`relative ${plan.popular ? 'border-primary shadow-lg' : ''}`}
@@ -200,7 +199,7 @@ export default function PaymentModal({ children }: PaymentModalProps) {
                   <span className="text-muted-foreground ml-1">/월</span>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {plan.credits}개 블로그 생성 가능
+                  매월 자동 갱신
                 </div>
               </CardHeader>
               
@@ -215,15 +214,15 @@ export default function PaymentModal({ children }: PaymentModalProps) {
                 </ul>
                 
                 <Button
-                  onClick={() => handlePayment(plan)}
+                  onClick={() => handleSubscription(plan)}
                   disabled={isProcessing && selectedPlan?.name === plan.name}
                   className="w-full"
                   variant={plan.popular ? 'default' : 'outline'}
                 >
                   <CreditCard className="h-4 w-4 mr-2" />
                   {isProcessing && selectedPlan?.name === plan.name 
-                    ? '결제 진행중...' 
-                    : `${plan.name} 구매하기`
+                    ? '구독 진행중...' 
+                    : `${plan.name} 월구독`
                   }
                 </Button>
               </CardContent>
@@ -232,8 +231,8 @@ export default function PaymentModal({ children }: PaymentModalProps) {
         </div>
         
         <div className="text-center text-sm text-muted-foreground mt-4">
-          <p>안전한 결제를 위해 포트원(PortOne)을 사용합니다</p>
-          <p>카드, 계좌이체, 간편결제 모두 지원</p>
+          <p>안전한 월구독 결제를 위해 포트원(PortOne)을 사용합니다</p>
+          <p>카드, 계좌이체, 간편결제 모두 지원 | 언제든지 해지 가능</p>
         </div>
       </DialogContent>
     </Dialog>

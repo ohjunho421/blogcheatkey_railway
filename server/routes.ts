@@ -948,30 +948,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ===== 결제 관련 라우터 =====
   
-  // 결제 준비
+  // 구독 결제 준비
   app.post("/api/payment/prepare", async (req, res) => {
     try {
-      const { amount, name, credits } = req.body;
+      const { amount, name, planType } = req.body;
       
-      if (!amount || !name || !credits) {
+      if (!amount || !name || !planType) {
         return res.status(400).json({ error: "필수 정보가 누락되었습니다." });
       }
 
       const paymentData = preparePayment({
-        merchant_uid: `blog_${Date.now()}`,
+        merchant_uid: `subscription_${Date.now()}`,
         amount: Number(amount),
         name: String(name),
-        credits: Number(credits),
+        planType: String(planType),
       });
 
       res.json(paymentData);
     } catch (error) {
-      console.error("Payment preparation error:", error);
-      res.status(500).json({ error: "결제 준비 중 오류가 발생했습니다." });
+      console.error("Subscription preparation error:", error);
+      res.status(500).json({ error: "구독 준비 중 오류가 발생했습니다." });
     }
   });
 
-  // 결제 검증
+  // 구독 결제 검증
   app.post("/api/payment/verify", async (req, res) => {
     try {
       const { imp_uid, merchant_uid } = req.body;
@@ -983,12 +983,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const verificationResult = await verifyPayment({ imp_uid, merchant_uid });
       
       if (verificationResult.success) {
-        // 여기서 사용자 크레딧 추가 로직을 구현할 수 있습니다
-        // await storage.addUserCredits(userId, credits);
+        // 구독 정보 저장 로직 구현 예정
+        // - 사용자 구독 플랜 업데이트
+        // - 구독 시작일/만료일 설정
+        // - 월별 사용량 제한 초기화
         
         res.json({ 
           success: true, 
-          payment: verificationResult.payment 
+          payment: verificationResult.payment,
+          subscription: {
+            plan: merchant_uid.includes('content_only') ? 'basic' :
+                  merchant_uid.includes('content_and_images') ? 'premium' : 'pro',
+            startDate: new Date(),
+            nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30일 후
+          }
         });
       } else {
         res.status(400).json({ 
@@ -997,8 +1005,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
     } catch (error) {
-      console.error("Payment verification error:", error);
-      res.status(500).json({ error: "결제 검증 중 오류가 발생했습니다." });
+      console.error("Subscription verification error:", error);
+      res.status(500).json({ error: "구독 검증 중 오류가 발생했습니다." });
     }
   });
 

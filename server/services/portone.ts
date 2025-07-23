@@ -14,7 +14,7 @@ export interface PaymentData {
   merchant_uid: string;
   amount: number;
   name: string;
-  credits: number;
+  planType: string;
 }
 
 export interface PaymentVerification {
@@ -26,13 +26,13 @@ export interface PaymentVerification {
  * 결제 준비 - 고유한 주문번호 생성
  */
 export function preparePayment(paymentData: PaymentData) {
-  const merchant_uid = `blog_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const merchant_uid = `subscription_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   
   return {
     merchant_uid,
     amount: paymentData.amount,
     name: paymentData.name,
-    credits: paymentData.credits,
+    planType: paymentData.planType,
   };
 }
 

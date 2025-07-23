@@ -96,6 +96,13 @@ export default function Home() {
               <a href="#" className="text-muted-foreground hover:text-primary transition-colors">설정</a>
             </nav>
             <div className="flex items-center space-x-3">
+              <PaymentModal>
+                <Button variant="outline" size="sm">
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  구독하기
+                </Button>
+              </PaymentModal>
+              
               {(project as any) && (
                 <Button 
                   variant="outline" 
