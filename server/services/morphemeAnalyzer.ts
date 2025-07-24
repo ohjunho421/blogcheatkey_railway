@@ -41,39 +41,55 @@ export function extractKoreanMorphemes(text: string): string[] {
 export function extractKeywordComponents(keyword: string): string[] {
   const components = [];
   
-  // Manual extraction for compound Korean keywords
+  // Manual extraction for compound Korean keywords - 더 정교한 분석
   if (keyword === "벤츠엔진경고등") {
-    components.push("벤츠", "엔진", "경고");
+    components.push("벤츠", "엔진", "경고등");
+  } else if (keyword.toLowerCase().includes("아우디a6에어컨필터")) {
+    components.push("아우디", "a6", "에어컨", "필터");
   } else if (keyword.toLowerCase().includes("bmw") && keyword.includes("코딩")) {
     components.push("BMW", "코딩");
   } else if (keyword.includes("10W40") && keyword.includes("엔진오일")) {
     // Handle oil grade keywords like "10W40 엔진오일" - split 엔진오일 into 엔진 + 오일
     components.push("10W40", "엔진", "오일");
   } else {
-    // Fallback: try to extract individual meaningful components
+    // Enhanced fallback: try to extract individual meaningful components
+    const cleanKeyword = keyword.toLowerCase();
+    
+    // 특수 패턴들
+    const numberPattern = /[0-9]+[a-z]*[0-9]*/g; // A6, 10W40 등
     const koreanPattern = /[가-힣]+/g;
     const englishPattern = /[a-zA-Z]+/g;
-    const numberPattern = /[0-9]+[W][0-9]+/g; // For oil grades like 10W40
     
-    const koreanMatches = keyword.match(koreanPattern) || [];
-    const englishMatches = keyword.match(englishPattern) || [];
-    const numberMatches = keyword.match(numberPattern) || [];
+    const numberMatches = cleanKeyword.match(numberPattern) || [];
+    const koreanMatches = cleanKeyword.match(koreanPattern) || [];
+    const englishMatches = cleanKeyword.match(englishPattern) || [];
     
-    // Add oil grade numbers first
+    // 숫자+문자 조합 추가 (A6, 10W40 등)
     for (const match of numberMatches) {
-      components.push(match);
-    }
-    
-    // Add individual Korean components
-    for (const match of koreanMatches) {
-      if (match.length >= 2) {
+      if (match.length >= 1) {
         components.push(match);
       }
     }
     
-    // Add individual English components (excluding already added oil grades)
+    // 한국어 형태소 추가 - 복합어 분리
+    for (const match of koreanMatches) {
+      if (match.length >= 2) {
+        // 복합어 분리 시도
+        if (match.includes('에어컨') && match.includes('필터')) {
+          if (!components.includes('에어컨')) components.push('에어컨');
+          if (!components.includes('필터')) components.push('필터');
+        } else if (match.includes('엔진') && match.includes('경고등')) {
+          if (!components.includes('엔진')) components.push('엔진');
+          if (!components.includes('경고등')) components.push('경고등');
+        } else {
+          components.push(match);
+        }
+      }
+    }
+    
+    // 영어 형태소 추가
     for (const match of englishMatches) {
-      if (match.length >= 2 && !numberMatches.some(num => num.includes(match))) {
+      if (match.length >= 1 && !numberMatches.some(num => num.includes(match))) {
         components.push(match);
       }
     }
