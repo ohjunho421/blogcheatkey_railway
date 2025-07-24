@@ -83,9 +83,9 @@ export function extractKeywordComponents(keyword: string): string[] {
   return components;
 }
 
-// Find complete keyword matches (for minimum 5 occurrences)
-function findCompleteKeywordMatches(morphemes: string[], keyword: string): string[] {
-  const foundMatches: string[] = [];
+// Find complete keyword matches - 완전한 키워드의 정확한 출현만 카운트
+export function findCompleteKeywordMatches(morphemes: string[], keyword: string): string[] {
+  const matches: string[] = [];
   const lowerKeyword = keyword.toLowerCase();
   
   console.log(`Looking for complete keyword: "${keyword}"`);
@@ -93,15 +93,17 @@ function findCompleteKeywordMatches(morphemes: string[], keyword: string): strin
   for (const morpheme of morphemes) {
     const lowerMorpheme = morpheme.toLowerCase();
     
-    // Exact match or with suffix (벤츠엔진경고등이, 벤츠엔진경고등을 etc.)
-    if (lowerMorpheme === lowerKeyword || lowerMorpheme.startsWith(lowerKeyword)) {
-      foundMatches.push(morpheme);
+    // 완전한 키워드 자체 또는 조사가 붙은 형태만 인정 (예: 벤츠엔진경고등, 벤츠엔진경고등에, 벤츠엔진경고등을)
+    if (lowerMorpheme === lowerKeyword || 
+        (lowerMorpheme.startsWith(lowerKeyword) && 
+         lowerMorpheme.length <= lowerKeyword.length + 2)) { // 조사 최대 2글자
+      matches.push(morpheme);
       console.log(`✓ Complete keyword match: "${morpheme}"`);
     }
   }
   
-  console.log(`Total complete keyword matches found: ${foundMatches.length}`);
-  return foundMatches;
+  console.log(`Total complete keyword matches found: ${matches.length}`);
+  return matches;
 }
 
 // Find individual keyword component matches (for 15-17 occurrences each)
@@ -205,14 +207,14 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
   const componentMatches = findKeywordComponentMatches(allMorphemes, keyword);
   const keywordComponents = extractKeywordComponents(keyword);
   
-  // Check complete keyword condition (minimum 5 times)
-  const isCompleteKeywordOptimized = completeKeywordCount >= 5;
+  // Check complete keyword condition (5-7 times)
+  const isCompleteKeywordOptimized = completeKeywordCount >= 5 && completeKeywordCount <= 7;
   
   // Check individual component conditions (15-17 times each)
   let areComponentsOptimized = true;
   const componentIssues: string[] = [];
   
-  console.log(`Complete keyword "${keyword}" appears: ${completeKeywordCount} times (minimum 5 required)`);
+  console.log(`Complete keyword "${keyword}" appears: ${completeKeywordCount} times (5-7 times required)`);
   
   for (const component of keywordComponents) {
     const matches = componentMatches.get(component) || [];
@@ -247,8 +249,13 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
   
   // Add specific issues and suggestions
   if (!isCompleteKeywordOptimized) {
-    issues.push(`완전한 키워드 "${keyword}" 출현 횟수 부족: ${completeKeywordCount}회 (최소 5회 필요)`);
-    suggestions.push(`키워드 "${keyword}"를 최소 5회는 사용해주세요`);
+    if (completeKeywordCount < 5) {
+      issues.push(`완전한 키워드 "${keyword}" 출현 횟수 부족: ${completeKeywordCount}회 (5-7회 필요)`);
+      suggestions.push(`키워드 "${keyword}"를 5-7회 사용해주세요`);
+    } else if (completeKeywordCount > 7) {
+      issues.push(`완전한 키워드 "${keyword}" 출현 횟수 과다: ${completeKeywordCount}회 (5-7회 필요)`);
+      suggestions.push(`키워드 "${keyword}"를 7회 이하로 줄여주세요`);
+    }
   }
   
   if (!areComponentsOptimized) {

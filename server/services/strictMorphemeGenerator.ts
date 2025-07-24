@@ -40,10 +40,10 @@ export async function generateStrictMorphemeContent(
       
       if (attempts > 1) {
         seoSuggestions.push(`🔥 CRITICAL: 이전 시도 ${attempts-1}회 모두 SEO 조건 실패 - 다음 조건 절대 준수 필요`);
-        seoSuggestions.push(`🎯 완전한 키워드 "${keyword}"를 정확히 5회 사용 (초과/미달 모두 금지)`);
+        seoSuggestions.push(`🎯 완전한 키워드 "${keyword}"를 정확히 5-7회 사용 (범위 준수 필수)`);
         
         for (const component of keywordComponents) {
-          seoSuggestions.push(`🎯 "${component}" 형태소를 정확히 15-17회 사용 (다른 형태소보다 많아야 함)`);
+          seoSuggestions.push(`🎯 "${component}" 형태소를 정확히 15-17회 사용 (완전한 키워드 "${keyword}" 내 출현 포함하여 계산)`);
         }
         
         seoSuggestions.push(`🚨 키워드 형태소 우위성: "${keywordComponents.join('", "')}" 이외 다른 형태소가 이들보다 많이 나오면 SEO 실패`);
@@ -53,10 +53,10 @@ export async function generateStrictMorphemeContent(
         seoSuggestions.push(`🎭 매력적인 스토리텔링으로 독자가 끝까지 읽게 만드세요`);
         seoSuggestions.push(`🔄 키워드를 서론부터 적극 활용하여 초기에 형태소 출현 빈도 확보`);
       } else {
-        seoSuggestions.push(`🎯 완전한 키워드 "${keyword}"를 정확히 5회 포함 (필수 조건)`);
+        seoSuggestions.push(`🎯 완전한 키워드 "${keyword}"를 정확히 5-7회 포함 (SEO 최적 범위)`);
         
         for (const component of keywordComponents) {
-          seoSuggestions.push(`🎯 "${component}" 형태소를 각각 15-17회 포함 (SEO 최적 범위)`);
+          seoSuggestions.push(`🎯 "${component}" 형태소를 각각 15-17회 포함 (완전한 키워드 "${keyword}" 내 출현 포함하여 계산)`);
         }
         
         seoSuggestions.push(`🚨 키워드 형태소 우위성 확보: "${keywordComponents.join('", "')}" 이외 형태소들이 이들보다 많이 나오면 안됨`);
