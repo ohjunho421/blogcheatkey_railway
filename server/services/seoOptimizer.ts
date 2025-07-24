@@ -48,54 +48,71 @@ export async function analyzeSEOOptimization(content: string, keyword: string): 
 }
 
 export function formatForMobile(content: string): string {
-  // Enhanced mobile formatting with cleaner line breaks for better readability
+  // 모바일용 포맷팅: 15-21자 한글 기준, 문맥상 자연스러운 줄바꿈
   return content
     .split('\n')
     .map(line => {
       if (line.trim() === '') return '';
       
-      // For mobile, break lines at 25-30 characters for optimal readability
-      if (line.length > 28) {
+      // 한글 문자 개수 기준으로 계산 (영어, 숫자, 특수문자는 0.5로 계산)
+      function getKoreanLength(text: string): number {
+        let length = 0;
+        for (const char of text) {
+          if (/[가-힣]/.test(char)) {
+            length += 1; // 한글은 1
+          } else {
+            length += 0.5; // 영어, 숫자, 특수문자는 0.5
+          }
+        }
+        return length;
+      }
+      
+      // 21자를 넘으면 줄바꿈 처리
+      if (getKoreanLength(line) > 21) {
         const segments = [];
         let currentSegment = '';
         
-        // First, try to break at natural Korean phrase boundaries
-        const koreanPhrases = line.split(/([,.\s]+)/);
+        // 문장 부호나 쉼표 기준으로 먼저 나누기
+        const phrases = line.split(/([,.!?])/);
         
-        for (const phrase of koreanPhrases) {
-          if ((currentSegment + phrase).length > 28) {
+        for (let i = 0; i < phrases.length; i++) {
+          const phrase = phrases[i];
+          const testSegment = currentSegment + phrase;
+          
+          if (getKoreanLength(testSegment) > 21) {
             if (currentSegment.trim()) {
               segments.push(currentSegment.trim());
               currentSegment = phrase;
             } else {
-              // If phrase is still too long, break at word boundaries
+              // 구문 자체가 너무 길 경우 단어 단위로 분할
               const words = phrase.split(/(\s+)/);
               let wordSegment = '';
               
               for (const word of words) {
-                if ((wordSegment + word).length > 28) {
+                const testWord = wordSegment + word;
+                
+                if (getKoreanLength(testWord) > 21) {
                   if (wordSegment.trim()) {
                     segments.push(wordSegment.trim());
                     wordSegment = word;
                   } else {
-                    // For very long words, break at appropriate Korean syllable boundaries
-                    if (word.length > 28) {
-                      const syllables = word.match(/./g) || [];
-                      let syllableGroup = '';
+                    // 단어 자체가 너무 길 경우 자연스러운 지점에서 분할
+                    if (getKoreanLength(word) > 21) {
+                      let charSegment = '';
                       
-                      for (const syllable of syllables) {
-                        if ((syllableGroup + syllable).length > 25) {
-                          if (syllableGroup.trim()) {
-                            segments.push(syllableGroup.trim());
-                            syllableGroup = syllable;
+                      for (const char of word) {
+                        if (getKoreanLength(charSegment + char) > 18) { // 15-21 범위 중간값
+                          if (charSegment.trim()) {
+                            segments.push(charSegment.trim());
+                            charSegment = char;
                           }
                         } else {
-                          syllableGroup += syllable;
+                          charSegment += char;
                         }
                       }
                       
-                      if (syllableGroup.trim()) {
-                        wordSegment = syllableGroup;
+                      if (charSegment.trim()) {
+                        wordSegment = charSegment;
                       }
                     } else {
                       wordSegment = word;
@@ -106,9 +123,7 @@ export function formatForMobile(content: string): string {
                 }
               }
               
-              if (wordSegment.trim()) {
-                currentSegment = wordSegment;
-              }
+              currentSegment = wordSegment;
             }
           } else {
             currentSegment += phrase;
@@ -119,25 +134,11 @@ export function formatForMobile(content: string): string {
           segments.push(currentSegment.trim());
         }
         
-        // Join segments with line breaks, ensuring clean spacing
-        return segments.filter(seg => seg.trim()).join('\n');
+        return segments.join('\n');
       }
       
       return line;
     })
-    .filter(line => line !== null)
     .join('\n')
-    // Clean up multiple consecutive line breaks
-    .replace(/\n{3,}/g, '\n\n')
-    // Ensure proper spacing around punctuation for mobile readability
-    .replace(/([.!?])\s*([가-힣A-Za-z])/g, '$1\n$2')
-    // Optimize spacing for Korean text readability
-    .replace(/([가-힣]{15,})/g, (match) => {
-      // Break long Korean text chunks into readable segments
-      const segments = [];
-      for (let i = 0; i < match.length; i += 20) {
-        segments.push(match.substring(i, i + 20));
-      }
-      return segments.join('\n');
-    });
+    .replace(/\n\s*\n/g, '\n\n'); // 불필요한 빈 줄 정리
 }
