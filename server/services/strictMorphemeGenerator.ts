@@ -39,28 +39,31 @@ export async function generateStrictMorphemeContent(
       const seoSuggestions = [];
       
       if (attempts > 1) {
-        seoSuggestions.push(`🚨 중요: 이전 시도에서 조건을 만족하지 못했습니다`);
-        seoSuggestions.push(`완전한 키워드 "${keyword}"를 정확히 5회 사용하세요`);
+        seoSuggestions.push(`🔥 CRITICAL: 이전 시도 ${attempts-1}회 모두 SEO 조건 실패 - 다음 조건 절대 준수 필요`);
+        seoSuggestions.push(`🎯 완전한 키워드 "${keyword}"를 정확히 5회 사용 (초과/미달 모두 금지)`);
         
         for (const component of keywordComponents) {
-          seoSuggestions.push(`"${component}" 형태소를 정확히 15-17회 사용하세요`);
+          seoSuggestions.push(`🎯 "${component}" 형태소를 정확히 15-17회 사용 (다른 형태소보다 많아야 함)`);
         }
         
-        seoSuggestions.push(`⚠️ 각 형태소가 17회를 초과하면 SEO 패널티 발생`);
-        seoSuggestions.push(`공백 제외 1500-1700자 엄수 (현재 범위 벗어남)`);
-        seoSuggestions.push(`서론 비중 35-40%로 대폭 확대하여 독자 몰입도 높이세요`);
-        seoSuggestions.push(`자연스럽고 읽기 쉬운 글로 작성하세요`);
+        seoSuggestions.push(`🚨 키워드 형태소 우위성: "${keywordComponents.join('", "')}" 이외 다른 형태소가 이들보다 많이 나오면 SEO 실패`);
+        seoSuggestions.push(`🔥 각 형태소 17회 초과시 검색 노출 완전 차단`);
+        seoSuggestions.push(`📏 공백 제외 1500-1700자 엄수 (1499자 이하, 1701자 이상 모두 실패)`);
+        seoSuggestions.push(`📖 서론 비중 35-40% (500-700자) 필수 - 미달시 독자 이탈률 증가로 SEO 패널티`);
+        seoSuggestions.push(`🎭 매력적인 스토리텔링으로 독자가 끝까지 읽게 만드세요`);
+        seoSuggestions.push(`🔄 키워드를 서론부터 적극 활용하여 초기에 형태소 출현 빈도 확보`);
       } else {
-        seoSuggestions.push(`완전한 키워드 "${keyword}"를 정확히 5회 포함하세요`);
+        seoSuggestions.push(`🎯 완전한 키워드 "${keyword}"를 정확히 5회 포함 (필수 조건)`);
         
         for (const component of keywordComponents) {
-          seoSuggestions.push(`"${component}" 형태소를 각각 15-17회 포함하세요`);
+          seoSuggestions.push(`🎯 "${component}" 형태소를 각각 15-17회 포함 (SEO 최적 범위)`);
         }
         
-        seoSuggestions.push(`⚠️ 중요: 각 형태소는 17회 초과 절대 금지`);
-        seoSuggestions.push(`공백 제외 1500-1700자 범위 준수`);
-        seoSuggestions.push(`서론을 전체 글의 35-40%로 작성하여 독자가 끝까지 읽도록 유도`);
-        seoSuggestions.push(`키워드가 다른 단어보다 많이 나타나야 함`);
+        seoSuggestions.push(`🚨 키워드 형태소 우위성 확보: "${keywordComponents.join('", "')}" 이외 형태소들이 이들보다 많이 나오면 안됨`);
+        seoSuggestions.push(`⚠️ 각 형태소 17회 초과 절대 금지 (SEO 패널티 발생)`);
+        seoSuggestions.push(`📏 공백 제외 1500-1700자 범위 엄격 준수`);
+        seoSuggestions.push(`📖 서론 35-40% 비중으로 독자 몰입도 최우선`);
+        seoSuggestions.push(`🏆 키워드 형태소가 글에서 가장 중요한 단어로 인식되도록 작성`);
       }
       
       // Add custom morphemes to suggestions with stronger emphasis
