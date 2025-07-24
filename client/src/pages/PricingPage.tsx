@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import PaymentModal from '@/components/PaymentModal';
+import Footer from '@/components/Footer';
 import { ArrowLeft, CreditCard } from 'lucide-react';
 import { Link } from 'wouter';
 
@@ -105,6 +106,7 @@ export default function PricingPage() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

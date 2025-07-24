@@ -20,6 +20,7 @@ import { ReferenceBlogLinksForm } from "@/components/ReferenceBlogLinksForm";
 import { GenerateBlogButton } from "@/components/GenerateBlogButton";
 import { MessageSquare, FileText, Search, Building2, Sparkles, RotateCw, LogOut, User, ChevronDown, CreditCard } from "lucide-react";
 import PaymentModal from "@/components/PaymentModal";
+import Footer from "@/components/Footer";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -327,15 +328,7 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-card border-t mt-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center text-muted-foreground text-sm">
-            <p>© 2024 블로그치트키. AI 기반 SEO 최적화 블로그 작성 도구</p>
-            <p className="mt-2">Powered by Gemini 2.5 Pro, Claude 4, Perplexity Sonar Pro</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
