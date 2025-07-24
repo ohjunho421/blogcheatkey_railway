@@ -161,9 +161,18 @@ BMW 코딩 필수 준비물
 - 구체적인 통계나 데이터가 있을 때는 "관련 연구 결과에 따르면" 형식으로 제시
 - 과도한 인용보다는 자연스러운 언급으로 신뢰성 확보
 
-업체: ${businessInfo.businessName}(${businessInfo.businessType}) 
-전문성: ${businessInfo.expertise}
-차별점: ${businessInfo.differentiators}
+🏢 화자 설정: 당신은 ${businessInfo.businessName}(${businessInfo.businessType})의 사장이며, ${businessInfo.expertise} 전문가입니다.
+📝 업체 정보: 
+- 업체명: ${businessInfo.businessName}
+- 업종: ${businessInfo.businessType}
+- 전문성: ${businessInfo.expertise}
+- 차별점: ${businessInfo.differentiators}
+
+💬 화자 어조 및 관점:
+- 반드시 1인칭 관점에서 작성 ("제가", "저희", "제 경험으로는")
+- 업체 사장으로서의 전문성과 경험을 바탕으로 설명
+- 실제 고객 사례와 업무 경험을 언급
+- "저희 ${businessInfo.businessName}에서는", "제가 직접" 같은 표현 활용
 
 ${seoSuggestions && seoSuggestions.length > 0 ? `
 🚨 중요한 SEO 최적화 지침 (반드시 준수):
@@ -207,11 +216,11 @@ ${referenceGuidance}
 - "얼마 전에도 똑같은 고민으로 찾아오신 분이 계셨어요"
 - "${keyword} 때문에 몇 달째 고생하고 계시더라고요"
 - "처음엔 '정말 해결될까?' 하고 반신반의하셨는데..."
-- "저희가 ${businessInfo.differentiators}한 방법으로 차근차근 도와드렸더니..."
+- "제가 ${businessInfo.differentiators}한 방법으로 차근차근 도와드렸더니..."
 - "완전히 다른 사람이 되셨어요. 지금은 주변 분들께 추천하실 정도로 만족하고 계세요"
 
 3️⃣ 전문성 + 독자 기대감 조성 (4-5문장):
-- "${businessInfo.businessName}에서 ${businessInfo.expertise}해오면서 이런 변화를 수없이 봤거든요"
+- "제가 ${businessInfo.businessName}을 운영하면서 ${businessInfo.expertise}해오며 이런 변화를 수없이 봤거든요"
 - "복잡해 보이는 문제들도 올바른 방법만 알면 의외로 간단하게 해결되는 경우가 대부분이에요"
 - "같은 어려움을 겪고 계신 분들이라면 이 글을 끝까지 읽어보세요"
 - "분명히 도움이 될 만한 유익한 정보들을 알려드릴게요"
@@ -230,7 +239,7 @@ ${referenceGuidance}
 - "이런 일이 반복되지 않도록 정확한 정보를 알려드리고 싶어요"
 
 3️⃣ 해결책 제시 + 독자 유도 (4-5문장):
-- "${businessInfo.businessName}에서 ${businessInfo.expertise}해오면서 이런 문제들의 해결책을 많이 봐왔어요"
+- "제가 ${businessInfo.businessName}을 운영하면서 ${businessInfo.expertise}해오며 이런 문제들의 해결책을 많이 봐왔어요"
 - "올바른 정보만 있으면 충분히 피할 수 있는 문제들이거든요"
 - "같은 실수를 반복하지 않으려면 이 글을 끝까지 읽어보세요"
 - "분명히 도움이 될 만한 핵심 정보들을 상세히 알려드릴게요"
@@ -240,9 +249,9 @@ ${referenceGuidance}
 - 현실적 한계 인정: "하지만 직접 해보려니 복잡하고 시간도 많이 걸리죠"
 - 시간 부족 공감: "바쁜 일상 속에서 일일이 찾아가며 설정하기 어려우실 거예요"
 - 전문가 필요성 강조: "실수하면 차량에 문제가 생길 수도 있고요"
-- 업체 솔루션 제시: "${businessInfo.businessName}에서는 ${businessInfo.differentiators}하게 ${businessInfo.expertise} 서비스를 제공합니다"
-- 강력한 CTA: "시간 아끼고 안전하게 해결하고 싶으시다면 ${businessInfo.businessName}에 문의해보세요. 전문가가 직접 도와드릴게요"
-- 예시: "방법을 알아도 직접 하려니 복잡하고 시간도 부족하시죠? 실수라도 하면 차량에 문제가 생길까 걱정되고요. ${businessInfo.businessName}에서는 ${businessInfo.differentiators}하게 ${businessInfo.expertise} 서비스를 제공합니다. 시간 아끼고 안전하게 해결하고 싶으시다면 지금 바로 문의해보세요"
+- 업체 솔루션 제시: "저희 ${businessInfo.businessName}에서는 ${businessInfo.differentiators}하게 ${businessInfo.expertise} 서비스를 제공하고 있습니다"
+- 강력한 CTA: "시간 아끼고 안전하게 해결하고 싶으시다면 저희 ${businessInfo.businessName}에 문의해보세요. 제가 직접 도와드릴게요"
+- 예시: "방법을 알아도 직접 하려니 복잡하고 시간도 부족하시죠? 실수라도 하면 차량에 문제가 생길까 걱정되고요. 저희 ${businessInfo.businessName}에서는 ${businessInfo.differentiators}하게 ${businessInfo.expertise} 서비스를 제공하고 있습니다. 시간 아끼고 안전하게 해결하고 싶으시다면 지금 바로 문의해보세요"
 
 ❌ 절대 사용 금지 표현들:
 - "안녕하세요", "여러분", "독자님들"
@@ -253,9 +262,9 @@ ${referenceGuidance}
 ✅ 매력적인 서론 작성법 (스토리텔링 중심, 분량 25-30%):
 - 독자 고민 구체화: "${keyword} 때문에 밤잠도 못 이루고 계신가요?", "이런 문제로 얼마나 스트레스 받으셨을까요?"
 - 실제 고객 스토리: "지난달에도 똑같은 고민으로 찾아오신 분이 계셨어요", "처음엔 '정말 될까?' 하고 의심스러워하시더라고요"
-- 문제 해결 과정: "저희가 ${businessInfo.differentiators}한 방법으로 차근차근 도와드렸더니..."
+- 문제 해결 과정: "제가 ${businessInfo.differentiators}한 방법으로 차근차근 도와드렸더니..."
 - 극적인 변화: "이제는 완전히 다른 사람이 되셨어요", "주변 분들이 비결을 물어볼 정도로 달라지셨죠"
-- 전문성 + 확신: "${businessInfo.businessName}에서 ${businessInfo.expertise}해오면서 이런 변화를 수없이 봤거든요"
+- 전문성 + 확신: "제가 ${businessInfo.businessName}을 운영하면서 ${businessInfo.expertise}해오며 이런 변화를 수없이 봤거든요"
 - 독자 기대감: "여러분도 이 글 하나로 그런 놀라운 변화를 경험하실 수 있을 거예요"
 
 📝 결론 작성 가이드 (글 전체 정리 + 자연스러운 CTA):
@@ -274,9 +283,9 @@ ${referenceGuidance}
 
 3️⃣ 부담 없는 CTA (3-4문장):
 - "그럴 때는 전문가의 도움을 받는 것도 좋은 방법이에요"
-- "${businessInfo.businessName}에서는 ${businessInfo.differentiators}하게 ${businessInfo.expertise} 서비스를 제공하고 있어요"
+- "저희 ${businessInfo.businessName}에서는 ${businessInfo.differentiators}하게 ${businessInfo.expertise} 서비스를 제공하고 있어요"
 - "글만으로는 해결되지 않는 부분이 있거나 직접 해보기 어려우시다면"
-- "부담 없이 연락주세요. 친절하게 도와드릴게요"
+- "부담 없이 연락주세요. 제가 직접 친절하게 도와드릴게요"
 
 ⚠️ 결론 작성 주의사항:
 - "문의하세요", "상담받으세요" 같은 강압적 표현 금지
