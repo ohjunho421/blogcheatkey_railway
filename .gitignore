@@ -4,3 +4,24 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# 환경변수 파일
+.env
+.env.local
+.env.production
+
+# 로그 파일
+*.log
+npm-debug.log*
+
+# 에디터 설정
+.vscode/
+.idea/
+
+# 빌드 파일
+build/
+
+# 포트원 및 API 키 (보안)
+PORTONE_API_KEY
+PORTONE_API_SECRET
+VITE_PORTONE_STORE_ID
