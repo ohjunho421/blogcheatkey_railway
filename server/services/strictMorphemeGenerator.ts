@@ -266,8 +266,8 @@ export async function generateStrictMorphemeContent(
     } catch (error) {
       console.error(`Generation attempt ${attempts} failed:`, error);
       // 오류가 발생해도 이전에 개선된 콘텐츠가 있다면 보존
-      if (content && !previousContent) {
-        previousContent = content;
+      if (generatedContent && !previousContent) {
+        previousContent = generatedContent;
       }
     }
   }
