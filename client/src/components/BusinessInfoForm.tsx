@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Building2, ArrowRight, Check, ChevronsUpDown, Save, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import BusinessProfileManager from "./BusinessProfileManager";
+
 
 interface BusinessInfoFormProps {
   project: any;
@@ -89,7 +89,7 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
   const [expertise, setExpertise] = useState("");
   const [differentiators, setDifferentiators] = useState("");
   const [selectedSavedBusiness, setSelectedSavedBusiness] = useState<any>(null);
-  const [selectedBusinessId, setSelectedBusinessId] = useState<number | undefined>();
+
   const { toast } = useToast();
 
   // Get saved business info from user profile
@@ -170,22 +170,7 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
     },
   });
 
-  const handleBusinessSelect = (business: any) => {
-    setSelectedSavedBusiness(business);
-    setSelectedBusinessId(business?.id);
-    if (business) {
-      setBusinessName(business.businessName);
-      setBusinessType(business.businessType);
-      setExpertise(business.expertise);
-      setDifferentiators(business.differentiators);
-    } else {
-      // Clear form when no business is selected
-      setBusinessName("");
-      setBusinessType("");
-      setExpertise("");
-      setDifferentiators("");
-    }
-  };
+
 
   const handleSaveToProfile = () => {
     const finalBusinessType = businessType || customBusinessType;
@@ -256,19 +241,13 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
 
   return (
     <div className="space-y-6">
-      {/* Multi-Business Profile Manager */}
-      <BusinessProfileManager
-        selectedBusinessId={selectedBusinessId}
-        onBusinessSelect={handleBusinessSelect}
-      />
-      
-      {/* Traditional Business Info Form */}
+      {/* Business Info Form */}
       <Card className={isGenerating ? "border-accent" : ""}>
         <CardHeader>
           <CardTitle className="flex items-center justify-between text-lg">
             <div className="flex items-center">
               <Building2 className="h-5 w-5 text-primary mr-2" />
-              현재 프로젝트 업체 정보
+              업체 정보
             </div>
             {isGenerating && (
               <div className="flex items-center text-accent text-sm">
@@ -304,37 +283,43 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
                   />
                   <CommandList>
                     {savedBusinessInfos && Array.isArray(savedBusinessInfos) && savedBusinessInfos.length > 0 ? (
-                      <CommandGroup heading="저장된 업체">
+                      <CommandGroup heading="저장된 업체 목록">
                         {(savedBusinessInfos as any[]).map((info: any) => (
                           <CommandItem
                             key={info.id}
                             value={info.businessName}
                             onSelect={() => handleSelectSavedBusiness(info)}
                           >
-                            <div className="flex flex-col">
-                              <span className="font-medium">{info.businessName}</span>
-                              <span className="text-sm text-muted-foreground">{info.businessType}</span>
+                            <div className="flex flex-col w-full">
+                              <div className="flex items-center justify-between w-full">
+                                <span className="font-medium">{info.businessName}</span>
+                                <Check
+                                  className={cn(
+                                    "h-4 w-4",
+                                    businessName === info.businessName ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                              </div>
+                              <span className="text-sm text-muted-foreground text-left">{info.businessType}</span>
                             </div>
-                            <Check
-                              className={cn(
-                                "ml-auto h-4 w-4",
-                                businessName === info.businessName ? "opacity-100" : "opacity-0"
-                              )}
-                            />
                           </CommandItem>
                         ))}
                       </CommandGroup>
                     ) : null}
                     <CommandEmpty>
-                      <div className="p-2">
+                      <div className="p-2 text-center">
+                        <p className="text-sm text-muted-foreground mb-2">
+                          "{businessName}" 새 업체로 추가됩니다
+                        </p>
                         <Button
                           variant="ghost"
-                          className="w-full justify-start"
+                          size="sm"
+                          className="w-full"
                           onClick={() => {
                             setBusinessNameOpen(false);
                           }}
                         >
-                          "{businessName}" 새로 추가
+                          계속 진행
                         </Button>
                       </div>
                     </CommandEmpty>
