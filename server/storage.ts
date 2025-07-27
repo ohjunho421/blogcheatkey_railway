@@ -14,7 +14,9 @@ export interface IStorage {
   getUserBusinessInfo(userId: number): Promise<UserBusinessInfo | undefined>;
   createUserBusinessInfo(businessInfo: InsertUserBusinessInfo): Promise<UserBusinessInfo>;
   updateUserBusinessInfo(userId: number, updates: Partial<InsertUserBusinessInfo>): Promise<UserBusinessInfo>;
+  updateUserBusinessInfoById(id: number, updates: Partial<InsertUserBusinessInfo>): Promise<UserBusinessInfo>;
   getAllUserBusinessInfos(userId: number): Promise<UserBusinessInfo[]>;
+  deleteUserBusinessInfo(id: number): Promise<boolean>;
   
   // Blog project methods
   createBlogProject(project: InsertBlogProject): Promise<BlogProject>;
@@ -70,6 +72,11 @@ export class DatabaseStorage implements IStorage {
     return businessInfo || undefined;
   }
 
+  async getAllUserBusinessInfos(userId: number): Promise<UserBusinessInfo[]> {
+    const businessInfos = await db.select().from(userBusinessInfo).where(eq(userBusinessInfo.userId, userId));
+    return businessInfos;
+  }
+
   async createUserBusinessInfo(insertBusinessInfo: InsertUserBusinessInfo): Promise<UserBusinessInfo> {
     const [businessInfo] = await db
       .insert(userBusinessInfo)
@@ -90,6 +97,25 @@ export class DatabaseStorage implements IStorage {
     }
     
     return updated;
+  }
+
+  async updateUserBusinessInfoById(id: number, updates: Partial<InsertUserBusinessInfo>): Promise<UserBusinessInfo> {
+    const [updated] = await db
+      .update(userBusinessInfo)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(userBusinessInfo.id, id))
+      .returning();
+    
+    if (!updated) {
+      throw new Error(`Business info with id ${id} not found`);
+    }
+    
+    return updated;
+  }
+
+  async deleteUserBusinessInfo(id: number): Promise<boolean> {
+    const result = await db.delete(userBusinessInfo).where(eq(userBusinessInfo.id, id));
+    return (result.rowCount || 0) > 0;
   }
 
   async createBlogProject(insertProject: InsertBlogProject): Promise<BlogProject> {

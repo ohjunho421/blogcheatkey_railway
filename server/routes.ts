@@ -857,31 +857,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create or update user business info
+  // Create new business info
   app.post("/api/user/business-info", async (req, res) => {
     try {
       const userId = 1; // 인증 우회: 기본 사용자 ID 사용
       const businessInfoData = businessInfoSchema.parse(req.body);
       
-      const existingInfo = await storage.getUserBusinessInfo(userId);
-      
-      let businessInfo;
-      if (existingInfo) {
-        businessInfo = await storage.updateUserBusinessInfo(userId, {
-          ...businessInfoData,
-          userId,
-        });
-      } else {
-        businessInfo = await storage.createUserBusinessInfo({
-          ...businessInfoData,
-          userId,
-        });
-      }
+      const businessInfo = await storage.createUserBusinessInfo({
+        ...businessInfoData,
+        userId,
+      });
       
       res.json(businessInfo);
     } catch (error) {
-      console.error("Save business info error:", error);
-      res.status(500).json({ error: "업체 정보 저장에 실패했습니다" });
+      console.error("Create business info error:", error);
+      res.status(500).json({ error: "업체 정보 생성에 실패했습니다" });
+    }
+  });
+
+  // Update business info by ID
+  app.put("/api/user/business-info/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const businessInfoData = businessInfoSchema.parse(req.body);
+      
+      const businessInfo = await storage.updateUserBusinessInfoById(id, businessInfoData);
+      res.json(businessInfo);
+    } catch (error) {
+      console.error("Update business info error:", error);
+      res.status(500).json({ error: "업체 정보 수정에 실패했습니다" });
+    }
+  });
+
+  // Delete business info by ID
+  app.delete("/api/user/business-info/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteUserBusinessInfo(id);
+      res.json({ success });
+    } catch (error) {
+      console.error("Delete business info error:", error);
+      res.status(500).json({ error: "업체 정보 삭제에 실패했습니다" });
     }
   });
 

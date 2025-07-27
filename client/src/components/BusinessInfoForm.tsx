@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Building2, ArrowRight, Check, ChevronsUpDown, Save, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import BusinessProfileManager from "./BusinessProfileManager";
 
 interface BusinessInfoFormProps {
   project: any;
@@ -88,6 +89,7 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
   const [expertise, setExpertise] = useState("");
   const [differentiators, setDifferentiators] = useState("");
   const [selectedSavedBusiness, setSelectedSavedBusiness] = useState<any>(null);
+  const [selectedBusinessId, setSelectedBusinessId] = useState<number | undefined>();
   const { toast } = useToast();
 
   // Get saved business info from user profile
@@ -168,6 +170,23 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
     },
   });
 
+  const handleBusinessSelect = (business: any) => {
+    setSelectedSavedBusiness(business);
+    setSelectedBusinessId(business?.id);
+    if (business) {
+      setBusinessName(business.businessName);
+      setBusinessType(business.businessType);
+      setExpertise(business.expertise);
+      setDifferentiators(business.differentiators);
+    } else {
+      // Clear form when no business is selected
+      setBusinessName("");
+      setBusinessType("");
+      setExpertise("");
+      setDifferentiators("");
+    }
+  };
+
   const handleSaveToProfile = () => {
     const finalBusinessType = businessType || customBusinessType;
     if (!businessName.trim() || !finalBusinessType.trim() || !expertise.trim() || !differentiators.trim()) {
@@ -236,23 +255,31 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
   const isGenerating = generateContent.isPending;
 
   return (
-    <Card className={isGenerating ? "border-accent" : ""}>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between text-lg">
-          <div className="flex items-center">
-            <Building2 className="h-5 w-5 text-primary mr-2" />
-            업체 정보 입력
-          </div>
-          {isGenerating && (
-            <div className="flex items-center text-accent text-sm">
-              <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
-              블로그 생성 중...
+    <div className="space-y-6">
+      {/* Multi-Business Profile Manager */}
+      <BusinessProfileManager
+        selectedBusinessId={selectedBusinessId}
+        onBusinessSelect={handleBusinessSelect}
+      />
+      
+      {/* Traditional Business Info Form */}
+      <Card className={isGenerating ? "border-accent" : ""}>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between text-lg">
+            <div className="flex items-center">
+              <Building2 className="h-5 w-5 text-primary mr-2" />
+              현재 프로젝트 업체 정보
             </div>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {isGenerating && (
+              <div className="flex items-center text-accent text-sm">
+                <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                블로그 생성 중...
+              </div>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="businessName">업체명</Label>
             <Popover open={businessNameOpen} onOpenChange={setBusinessNameOpen}>
@@ -482,5 +509,6 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 }
