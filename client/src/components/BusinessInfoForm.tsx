@@ -303,7 +303,7 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
                     onValueChange={setBusinessName}
                   />
                   <CommandList>
-                    {savedBusinessInfos && Array.isArray(savedBusinessInfos) && savedBusinessInfos.length > 0 && (
+                    {savedBusinessInfos && Array.isArray(savedBusinessInfos) && savedBusinessInfos.length > 0 ? (
                       <CommandGroup heading="저장된 업체">
                         {(savedBusinessInfos as any[]).map((info: any) => (
                           <CommandItem
@@ -324,7 +324,7 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
                           </CommandItem>
                         ))}
                       </CommandGroup>
-                    )}
+                    ) : null}
                     <CommandEmpty>
                       <div className="p-2">
                         <Button
