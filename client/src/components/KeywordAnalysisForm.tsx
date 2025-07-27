@@ -142,9 +142,15 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
   };
 
   const handleSaveSubtitles = () => {
-    if (editedSubtitles.length === 4) {
+    if (editedSubtitles.length > 0 && editedSubtitles.every(subtitle => subtitle.trim().length > 0)) {
       updateSubtitles.mutate({ subtitles: editedSubtitles });
       setEditingSubtitle(null);
+    } else {
+      toast({
+        title: "수정 실패",
+        description: "모든 소제목을 입력해주세요.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -284,6 +290,8 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
                                     onChange={(e) => handleSubtitleEdit(index, e.target.value)}
                                     className="flex-1 mr-2"
                                     rows={2}
+                                    placeholder="소제목을 입력하세요"
+                                    autoFocus
                                   />
                                 ) : (
                                   <span className="text-sm flex-1">{index + 1}. {subtitle}</span>
@@ -291,13 +299,26 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
                               </div>
                               <div className="flex items-center space-x-2">
                                 {editingSubtitle === index ? (
-                                  <Button
-                                    size="sm"
-                                    onClick={handleSaveSubtitles}
-                                    disabled={updateSubtitles.isPending}
-                                  >
-                                    저장
-                                  </Button>
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      onClick={handleSaveSubtitles}
+                                      disabled={updateSubtitles.isPending}
+                                    >
+                                      {updateSubtitles.isPending ? "저장 중..." : "저장"}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        setEditingSubtitle(null);
+                                        setEditedSubtitles([]);
+                                      }}
+                                      disabled={updateSubtitles.isPending}
+                                    >
+                                      취소
+                                    </Button>
+                                  </>
                                 ) : (
                                   <Button
                                     size="sm"
