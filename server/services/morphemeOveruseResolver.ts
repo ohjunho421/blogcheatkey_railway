@@ -23,28 +23,37 @@ export async function resolveMorphemeOveruse(
   
   const keywordComponents = extractKeywordComponents(keyword);
   const contentMorphemes = extractKoreanMorphemes(content);
-  const componentMatches = findKeywordComponentMatches(contentMorphemes, keyword);
+  
+  // 모든 형태소의 출현 빈도 계산
+  const morphemeFrequency = new Map<string, number>();
+  contentMorphemes.forEach(morpheme => {
+    const cleanMorpheme = morpheme.toLowerCase();
+    morphemeFrequency.set(cleanMorpheme, (morphemeFrequency.get(cleanMorpheme) || 0) + 1);
+  });
   
   const overusedComponents: OveruseAnalysis[] = [];
   
-  // 과다 사용된 형태소 식별
-  for (const component of keywordComponents) {
-    const matches = componentMatches.get(component) || [];
-    const currentCount = matches.length;
-    
-    if (currentCount > 17) {
-      const excessCount = currentCount - 17;
-      const sentences = findSentencesWithComponent(content, component);
+  // 모든 형태소 검사 (17회 초과 방지)
+  for (const [morpheme, count] of Array.from(morphemeFrequency.entries())) {
+    if (count > 17) {
+      const excessCount = count - 17;
+      const sentences = findSentencesWithComponent(content, morpheme);
       
-      overusedComponents.push({
-        component,
-        currentCount,
-        targetCount: 17,
-        excessCount,
-        sentences
-      });
+      // 키워드 형태소가 아닌 것들은 더 엄격하게 (14회 이하로 제한)
+      const isKeywordComponent = keywordComponents.some(comp => comp.toLowerCase() === morpheme);
+      const targetCount = isKeywordComponent ? 17 : 14;
       
-      console.log(`❌ "${component}" 과다 사용: ${currentCount}회 (17회 초과 ${excessCount}회)`);
+      if (count > targetCount) {
+        overusedComponents.push({
+          component: morpheme,
+          currentCount: count,
+          targetCount,
+          excessCount: count - targetCount,
+          sentences
+        });
+        
+        console.log(`❌ "${morpheme}" 과다 사용: ${count}회 (${targetCount}회 초과 ${count - targetCount}회) ${isKeywordComponent ? '[키워드 형태소]' : '[일반 형태소]'}`);
+      }
     }
   }
   
