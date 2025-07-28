@@ -364,70 +364,54 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
       </Card>
 
       {/* 외부 이미지 생성 도구 */}
-      {subtitles.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center text-lg">
-              <ImageIcon className="h-5 w-5 text-primary mr-2" />
-              이미지 생성 도구
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              소제목별로 이미지나 인포그래픽을 생성하려면 아래 외부 도구를 사용해주세요
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* 이미지 생성하러 가기 버튼 */}
-                <Button
-                  variant="outline"
-                  className="h-auto p-6 flex flex-col items-center space-y-3 hover:bg-green-50 dark:hover:bg-green-900/20"
-                  onClick={handleOpenWhisk}
-                >
-                  <div className="flex items-center space-x-2">
-                    <Camera className="h-5 w-5 text-green-600" />
-                    <span className="font-medium text-lg">이미지 생성하러 가기</span>
-                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm text-muted-foreground text-center">
-                    Google Whisk에서 AI 이미지를 생성하세요<br/>
-                    소제목에 맞는 이미지를 만들 수 있습니다
-                  </p>
-                </Button>
-
-                {/* 인포그래픽 생성하러 가기 버튼 */}
-                <Button
-                  variant="outline"
-                  className="h-auto p-6 flex flex-col items-center space-y-3 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                  onClick={handleOpenNapkin}
-                >
-                  <div className="flex items-center space-x-2">
-                    <ImageIcon className="h-5 w-5 text-blue-600" />
-                    <span className="font-medium text-lg">인포그래픽 생성하러 가기</span>
-                    <ExternalLink className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm text-muted-foreground text-center">
-                    Napkin AI에서 인포그래픽을 생성하세요<br/>
-                    데이터 시각화와 설명 그래픽을 만들 수 있습니다
-                  </p>
-                </Button>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center text-lg">
+            <ImageIcon className="h-5 w-5 text-primary mr-2" />
+            이미지 생성 도구
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            블로그에 사용할 이미지나 인포그래픽을 생성하려면 아래 외부 도구를 사용해주세요
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* 이미지 생성하러 가기 버튼 */}
+            <Button
+              variant="outline"
+              className="h-auto p-6 flex flex-col items-center space-y-3 hover:bg-green-50 dark:hover:bg-green-900/20"
+              onClick={handleOpenWhisk}
+            >
+              <div className="flex items-center space-x-2">
+                <Camera className="h-5 w-5 text-green-600" />
+                <span className="font-medium text-lg">이미지 생성하러 가기</span>
+                <ExternalLink className="h-4 w-4 text-muted-foreground" />
               </div>
+              <p className="text-sm text-muted-foreground text-center">
+                Google Whisk에서 AI 이미지를 생성하세요<br/>
+                키워드에 맞는 고품질 이미지를 만들 수 있습니다
+              </p>
+            </Button>
 
-              {/* 소제목 목록 표시 */}
-              <div className="mt-6 p-4 bg-muted/30 rounded-lg">
-                <h5 className="font-medium mb-2 text-sm text-muted-foreground">📝 생성된 소제목들:</h5>
-                <div className="space-y-1">
-                  {subtitles.map((subtitle: string, index: number) => (
-                    <div key={index} className="text-sm">
-                      <span className="text-muted-foreground">{index + 1}.</span> {subtitle}
-                    </div>
-                  ))}
-                </div>
+            {/* 인포그래픽 생성하러 가기 버튼 */}
+            <Button
+              variant="outline"
+              className="h-auto p-6 flex flex-col items-center space-y-3 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+              onClick={handleOpenNapkin}
+            >
+              <div className="flex items-center space-x-2">
+                <ImageIcon className="h-5 w-5 text-blue-600" />
+                <span className="font-medium text-lg">인포그래픽 생성하러 가기</span>
+                <ExternalLink className="h-4 w-4 text-muted-foreground" />
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              <p className="text-sm text-muted-foreground text-center">
+                Napkin AI에서 인포그래픽을 생성하세요<br/>
+                데이터 시각화와 설명 그래픽을 만들 수 있습니다
+              </p>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
