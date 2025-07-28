@@ -40,12 +40,15 @@ export async function generateImage(prompt: string, style: string = "infographic
       // Enhanced prompt generation based on style and content
       let enhancedPrompt = "";
       
+      // Extract the core topic from the prompt without overly specific terms
+      const cleanedPrompt = prompt.replace(/관련|때문에|문제|해결|방법|정보|가이드|완벽|필수|중요한/g, '').trim();
+      
       if (style === "photo") {
-        enhancedPrompt = `Professional, high-quality photo of ${prompt}. Clear, well-lit, and visually appealing. Modern photography style.`;
+        enhancedPrompt = `Professional, high-quality photo illustrating the concept of "${cleanedPrompt}". Clean, modern, well-lit photography. Focus on the main subject with neutral background. Professional business photography style.`;
       } else if (style === "infographic") {
-        enhancedPrompt = `Clean, modern infographic about ${prompt}. Use clear typography, relevant icons, and professional design. Business-appropriate with informative visual elements.`;
+        enhancedPrompt = `Clean, modern infographic design about "${cleanedPrompt}". Use clear typography, relevant icons, charts, and professional visual elements. Business-appropriate design with informative graphics. Modern color scheme with clear information hierarchy.`;
       } else {
-        enhancedPrompt = `High-quality visual representation of ${prompt}. Professional, clear, and engaging design.`;
+        enhancedPrompt = `High-quality visual representation of "${cleanedPrompt}". Professional, clear, and engaging design with modern aesthetics.`;
       }
       
       console.log(`Enhanced prompt: "${enhancedPrompt}" (attempt ${attempt + 1})`);
@@ -106,7 +109,7 @@ export async function generateImage(prompt: string, style: string = "infographic
       console.error("Image generation error:", error?.message || error);
       
       // Handle 429 errors from fetch-level errors
-      if (error instanceof Error && error.message.includes('429')) {
+      if (error instanceof Error && error.message && error.message.includes('429')) {
         attempt++;
         if (attempt < maxRetries) {
           const waitTime = Math.pow(2, attempt) * 1000;
@@ -117,7 +120,7 @@ export async function generateImage(prompt: string, style: string = "infographic
       }
       
       // For permission errors, provide a helpful message
-      if (error instanceof Error && error.message.includes('403')) {
+      if (error instanceof Error && error.message && error.message.includes('403')) {
         throw new Error('Google Cloud 권한이 필요합니다. 서비스 계정에 Vertex AI User 역할을 추가해주세요.');
       }
       
@@ -133,10 +136,13 @@ export async function generateInfographic(subtitle: string, keyword: string): Pr
     throw new Error("Google Cloud credentials are not configured");
   }
 
-  const prompt = `Create a clean, professional infographic about "${subtitle}" related to "${keyword}". 
-  The image should be informative, visually appealing, and suitable for a blog post. 
-  Use a modern, clean design with clear typography and relevant icons. 
-  Style should be business-appropriate and professional.`;
+  // Create more specific prompt based on subtitle content
+  const cleanSubtitle = subtitle.replace(/관련|때문에|문제|해결|방법|정보|가이드|완벽|필수|중요한/g, '').trim();
+  
+  const prompt = `Create a clean, professional infographic about "${cleanSubtitle}". 
+  Focus on the main concept with clear visual elements, icons, and typography. 
+  Use modern design principles with informative graphics and professional color scheme.
+  The design should be business-appropriate and visually engaging for blog content.`;
 
   try {
     const accessToken = await getAccessToken();
@@ -179,9 +185,9 @@ export async function generateInfographic(subtitle: string, keyword: string): Pr
     }
     throw new Error("No image data in response");
   } catch (error) {
-    console.error("Infographic generation error:", error?.message || error);
+    console.error("Infographic generation error:", error instanceof Error ? error.message : error);
     // For permission errors, provide a helpful message
-    if (error instanceof Error && error.message.includes('403')) {
+    if (error instanceof Error && error.message && error.message.includes('403')) {
       throw new Error('Google Cloud 권한이 필요합니다. 서비스 계정에 Vertex AI User 역할을 추가해주세요.');
     }
     throw new Error("Failed to generate infographic");

@@ -917,9 +917,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { generateInfographic } = await import("./services/imageGeneration.js");
         imageUrl = await generateInfographic(subtitle, project.keyword);
       } else {
-        // Generate photo-style image
+        // Generate photo-style image focused on subtitle content, not keyword
         const { generateImage } = await import("./services/imageGeneration.js");
-        imageUrl = await generateImage(`${subtitle} 관련 ${project.keyword} 사진`, "photo");
+        imageUrl = await generateImage(subtitle, "photo");
       }
 
       res.json({ imageUrl, subtitle, type });
