@@ -45,7 +45,7 @@ export function extractKeywordComponents(keyword: string): string[] {
   if (keyword === "벤츠엔진경고등") {
     components.push("벤츠", "엔진", "경고등");
   } else if (keyword === "영어학원블로그") {
-    components.push("영어학원", "블로그");
+    components.push("영어", "학원", "블로그");
   } else if (keyword.toLowerCase().includes("아우디a6에어컨필터")) {
     components.push("아우디", "a6", "에어컨", "필터");
   } else if (keyword.toLowerCase().includes("bmw") && keyword.includes("코딩")) {
@@ -163,6 +163,15 @@ export function findKeywordComponentMatches(morphemes: string[], keyword: string
       } else if (lowerComponent === '오일') {
         // 오일 matches including compound words like 엔진오일
         isMatch = lowerMorpheme.includes('오일');
+      } else if (lowerComponent === '영어') {
+        // 영어 matches including compound words like 영어학원블로그
+        isMatch = lowerMorpheme.includes('영어');
+      } else if (lowerComponent === '학원') {
+        // 학원 matches including compound words like 영어학원블로그
+        isMatch = lowerMorpheme.includes('학원');
+      } else if (lowerComponent === '블로그') {
+        // 블로그 matches including compound words like 영어학원블로그
+        isMatch = lowerMorpheme.includes('블로그');
       } else {
         // Generic matching for other components
         isMatch = lowerMorpheme === lowerComponent || lowerMorpheme.includes(lowerComponent);
