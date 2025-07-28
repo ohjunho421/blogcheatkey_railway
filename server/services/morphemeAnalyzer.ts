@@ -46,6 +46,8 @@ export function extractKeywordComponents(keyword: string): string[] {
     components.push("벤츠", "엔진", "경고등");
   } else if (keyword === "영어학원블로그") {
     components.push("영어", "학원", "블로그");
+  } else if (keyword === "수학과외블로그") {
+    components.push("수학", "과외", "블로그");
   } else if (keyword.toLowerCase().includes("아우디a6에어컨필터")) {
     components.push("아우디", "a6", "에어컨", "필터");
   } else if (keyword.toLowerCase().includes("bmw") && keyword.includes("코딩")) {
