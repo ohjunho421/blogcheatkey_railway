@@ -265,10 +265,7 @@ export async function generateStrictMorphemeContent(
       
     } catch (error) {
       console.error(`Generation attempt ${attempts} failed:`, error);
-      // 오류가 발생해도 이전에 개선된 콘텐츠가 있다면 보존
-      if (generatedContent && !previousContent) {
-        previousContent = generatedContent;
-      }
+      // 오류가 발생해도 다음 시도를 위해 계속 진행
     }
   }
   
@@ -285,7 +282,7 @@ export async function generateStrictMorphemeContent(
       `🚨 절대 필수 조건 🚨`,
       `BMW 형태소: 정확히 15-17회 (개수를 세면서 작성)`,
       `코딩 형태소: 정확히 15-17회 (개수를 세면서 작성)`,
-      `공백 제외 1700-1800자`,
+      `공백 제외 1500-1700자`,
       `키워드 형태소가 가장 빈번한 단어가 되어야 함`,
       `조건을 만족하지 않으면 검색 엔진에서 패널티를 받습니다`
     ];
