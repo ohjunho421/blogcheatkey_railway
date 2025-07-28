@@ -44,6 +44,8 @@ export function extractKeywordComponents(keyword: string): string[] {
   // Manual extraction for compound Korean keywords - 더 정교한 분석
   if (keyword === "벤츠엔진경고등") {
     components.push("벤츠", "엔진", "경고등");
+  } else if (keyword === "영어학원블로그") {
+    components.push("영어학원", "블로그");
   } else if (keyword.toLowerCase().includes("아우디a6에어컨필터")) {
     components.push("아우디", "a6", "에어컨", "필터");
   } else if (keyword.toLowerCase().includes("bmw") && keyword.includes("코딩")) {
