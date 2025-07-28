@@ -67,10 +67,10 @@ export function EditingChat({ project, onRefresh }: EditingChatProps) {
       setMessage("");
       refetchChat();
       
-      if (data.type === 'image') {
+      if (data.type === 'external_tool_guide') {
         toast({
-          title: "이미지 생성 완료",
-          description: `${data.prompt}에 대한 이미지를 생성했습니다.`,
+          title: "외부 도구 안내",
+          description: "이미지 생성은 Google Whisk나 Napkin AI를 사용해주세요.",
         });
       } else if (data.type === 'title') {
         toast({
@@ -170,8 +170,9 @@ export function EditingChat({ project, onRefresh }: EditingChatProps) {
               <div className="text-center py-8">
                 <MessageSquare className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">
-                  수정 요청을 입력하거나 "그림을 그려줘"라고 말하면 이미지를 생성합니다.<br/>
-                  "제목 만들어줘"라고 말하면 10가지 유형별 제목을 생성합니다.
+                  콘텐츠 수정 요청을 입력하거나<br/>
+                  "제목 만들어줘"라고 말하면 10가지 유형별 제목을 생성합니다.<br/>
+                  <span className="text-xs">이미지 생성은 Google Whisk/Napkin AI를 사용해주세요.</span>
                 </p>
               </div>
             )}
@@ -182,7 +183,7 @@ export function EditingChat({ project, onRefresh }: EditingChatProps) {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="예: 두 번째 단락을 더 자세히 설명해주세요 또는 BMW 그림을 그려줘 또는 제목 만들어줘"
+              placeholder="예: 두 번째 단락을 더 자세히 설명해주세요 또는 제목 만들어줘"
               disabled={sendMessage.isPending}
             />
             <Button 

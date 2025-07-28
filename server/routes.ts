@@ -9,7 +9,7 @@ import passport from 'passport';
 import { setupAuth, isAuthenticated, hashPassword } from './auth';
 import { writeOptimizedBlogPost } from "./services/anthropic";
 import { searchResearch, getDetailedResearch } from "./services/perplexity";
-import { generateMultipleImages, generateImage } from "./services/imageGeneration";
+// 이미지 생성 서비스 제거됨 - 외부 도구 사용
 import { analyzeSEOOptimization, formatForMobile } from "./services/seoOptimizer";
 import { enhancedSEOAnalysis } from "./services/morphemeAnalyzer";
 import { TitleGenerator } from "./services/titleGenerator";
@@ -528,10 +528,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Simple rate limiting for image generation
-  const imageGenerationRateLimit = new Map<string, number>();
-  
-  // Chat with Gemini for editing and image generation
+  // Chat with Gemini for content editing and title generation
   app.post("/api/projects/:id/chat", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -559,19 +556,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message.toLowerCase().includes(keyword.toLowerCase())
       );
 
-      // More precise image generation detection
-      const imageKeywords = ['그림', '이미지', '그려줘', '만들어줘', '생성해줘', 'image', 'draw', 'create', '사진', '인포그래픽'];
-      const contentEditKeywords = ['수정', '바꿔', '고쳐', '바꿔줘', '고쳐줘', '서론', '결론', '내용', '문단', '문장', '단어'];
-      
-      // If message contains content editing keywords, prioritize content editing over image generation
-      const isContentEdit = contentEditKeywords.some(keyword => 
-        message.toLowerCase().includes(keyword.toLowerCase())
-      );
-      
-      // Only treat as image request if it has image keywords AND no content editing keywords
-      const isImageRequest = !isTitleRequest && !isContentEdit && imageKeywords.some(keyword => 
-        message.toLowerCase().includes(keyword.toLowerCase())
-      );
+      // 이미지 생성 기능 제거됨 - 외부 도구 사용
+      const isImageRequest = false;
 
       if (isTitleRequest) {
         // Title generation
@@ -638,105 +624,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           res.json({ success: true, type: 'error' });
         }
       } else if (isImageRequest) {
-        // Rate limiting for image generation (1 request per 30 seconds per project)
-        const rateLimitKey = `image_${id}`;
-        const lastRequest = imageGenerationRateLimit.get(rateLimitKey);
-        const now = Date.now();
-        
-        if (lastRequest && (now - lastRequest) < 30000) {
-          const remainingTime = Math.ceil((30000 - (now - lastRequest)) / 1000);
-          return res.json({
-            success: true,
-            type: 'rate_limit',
-            message: `이미지 생성은 30초마다 1회만 가능합니다. ${remainingTime}초 후 다시 시도해주세요.`
-          });
-        }
-        
-        imageGenerationRateLimit.set(rateLimitKey, now);
-        
-        try {
-          // Enhanced image prompt extraction
-          let cleanPrompt = message;
-          
-          // Remove common request phrases but preserve the core content
-          cleanPrompt = cleanPrompt
-            // Remove leading image request words
-            .replace(/^(그림을?\s*|이미지를?\s*|사진을?\s*)/gi, '')
-            // Remove trailing action words first
-            .replace(/\s*(그려|만들어|생성해?|해봐?)(줘|주세요|라)?\s*$/gi, '')
-            // Remove middle action words
-            .replace(/\s*(그려|만들어|생성해?|해봐?)?(줘|주세요|라)\s*/gi, '')
-            // Remove English equivalents
-            .replace(/\s*(image|draw|create|generate)\s*/gi, '')
-            // Remove remaining "그림을" patterns
-            .replace(/\s*그림을?\s*/gi, ' ')
-            // Remove remaining "이미지를" patterns
-            .replace(/\s*이미지를?\s*/gi, ' ')
-            // Remove remaining "사진을" patterns
-            .replace(/\s*사진을?\s*/gi, ' ')
-            // Remove "에 대한" patterns
-            .replace(/\s*에 대한\s*/gi, ' ')
-            // Remove Korean particles at the end (multiple passes to ensure removal)
-            .replace(/을$/gi, '')
-            .replace(/를$/gi, '')
-            .replace(/이$/gi, '')
-            .replace(/가$/gi, '')
-            .replace(/는$/gi, '')
-            .replace(/은$/gi, '')
-            .replace(/의$/gi, '')
-            .replace(/을$/gi, '')
-            .replace(/를$/gi, '')
-            // Clean up multiple spaces
-            .replace(/\s+/g, ' ')
-            .trim();
+        // 이미지 생성 기능 제거됨 - 외부 도구 안내
+        await storage.createChatMessage({
+          projectId: id,
+          role: "assistant",
+          content: "이미지 생성은 이제 외부 도구를 사용해주세요!\n\n📸 **Google Whisk**: https://labs.google/fx/tools/whisk\n📊 **Napkin AI**: https://www.napkin.ai/\n\n콘텐츠 수정이나 제목 제안이 필요하시면 말씀해주세요.",
+        });
 
-          // If prompt is empty or too short, use keyword as fallback
-          if (!cleanPrompt || cleanPrompt.length < 2) {
-            cleanPrompt = project.keyword;
-          }
-
-          // Determine style based on request keywords
-          let style = 'photo'; // default to photo
-          
-          if (message.includes('인포그래픽') || message.includes('infographic')) {
-            style = 'infographic';
-          } else if (message.includes('설명') || message.includes('도표') || message.includes('차트') || message.includes('그래프')) {
-            style = 'infographic';
-          } else if (message.includes('사진') || message.includes('photo') || message.includes('이미지')) {
-            style = 'photo';
-          } else if (message.includes('그림') || message.includes('draw') || message.includes('illustration')) {
-            style = 'photo';
-          }
-
-          console.log(`Original message: "${message}"`);
-          console.log(`Cleaned prompt: "${cleanPrompt}"`);
-          console.log(`Style: ${style}`);
-
-          const imageUrl = await generateImage(cleanPrompt, style);
-
-          // Save AI response with image
-          await storage.createChatMessage({
-            projectId: id,
-            role: "assistant",
-            content: `"${cleanPrompt}"에 대한 ${style === 'infographic' ? '인포그래픽' : '이미지'}를 생성했습니다.`,
-            imageUrl: imageUrl,
-          });
-
-          res.json({ 
-            success: true, 
-            type: 'image',
-            imageUrl: imageUrl,
-            prompt: cleanPrompt
-          });
-        } catch (imageError) {
-          console.error("Image generation error:", imageError);
-          await storage.createChatMessage({
-            projectId: id,
-            role: "assistant",
-            content: "죄송합니다. 이미지 생성에 실패했습니다. 다시 시도해주세요.",
-          });
-          res.json({ success: true, type: 'error' });
-        }
+        res.json({ 
+          success: true, 
+          type: 'external_tool_guide'
+        });
       } else {
         // Regular content editing
         if (!project.generatedContent) {
