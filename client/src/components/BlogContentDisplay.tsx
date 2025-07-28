@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { FileText, Copy, Smartphone, CheckCircle2, AlertCircle, Download, ImageIcon, Camera, RefreshCw, Eye, EyeOff } from "lucide-react";
+import { FileText, Copy, Smartphone, CheckCircle2, AlertCircle, Download, ImageIcon, Camera, RefreshCw, Eye, EyeOff, ExternalLink } from "lucide-react";
 
 interface BlogContentDisplayProps {
   project: any;
@@ -15,8 +15,7 @@ interface BlogContentDisplayProps {
 
 export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayProps) {
   const [copyFormat, setCopyFormat] = useState<'normal' | 'mobile'>('normal');
-  const [generatedImages, setGeneratedImages] = useState<{[key: string]: string}>({});
-  const [generatingImages, setGeneratingImages] = useState<{[key: string]: boolean}>({});
+  // Removed image generation state - now using external tools
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [mobilePreviewContent, setMobilePreviewContent] = useState<string>('');
   const { toast } = useToast();
@@ -80,30 +79,24 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
     },
   });
 
-  const generateImage = useMutation({
-    mutationFn: async ({ subtitle, type }: { subtitle: string; type: 'infographic' | 'photo' }) => {
-      const response = await apiRequest("POST", `/api/projects/${project.id}/generate-image`, { subtitle, type });
-      return response.json();
-    },
-    onSuccess: (data, variables) => {
-      const key = `${variables.subtitle}-${variables.type}`;
-      setGeneratedImages(prev => ({ ...prev, [key]: data.imageUrl }));
-      setGeneratingImages(prev => ({ ...prev, [key]: false }));
-      toast({
-        title: "이미지 생성 완료",
-        description: `${variables.type === 'infographic' ? '인포그래픽' : '사진'}이 생성되었습니다.`,
-      });
-    },
-    onError: (error, variables) => {
-      const key = `${variables.subtitle}-${variables.type}`;
-      setGeneratingImages(prev => ({ ...prev, [key]: false }));
-      toast({
-        title: "이미지 생성 실패",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  // External image generation links
+  const openWhisk = (subtitle: string) => {
+    const prompt = `${subtitle} 관련 이미지`;
+    window.open(`https://labs.google/fx/tools/whisk`, '_blank');
+    toast({
+      title: "Google Whisk 열기",
+      description: "새 탭에서 Google Whisk로 이동했습니다.",
+    });
+  };
+
+  const openNapkin = (subtitle: string) => {
+    const prompt = `${subtitle} 인포그래픽`;
+    window.open(`https://www.napkin.ai/`, '_blank');
+    toast({
+      title: "Napkin AI 열기", 
+      description: "새 탭에서 Napkin AI로 이동했습니다.",
+    });
+  };
 
   const handleCopy = (format: 'normal' | 'mobile') => {
     setCopyFormat(format);
@@ -153,11 +146,7 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
     setShowMobilePreview(!showMobilePreview);
   };
 
-  const handleGenerateImage = (subtitle: string, type: 'infographic' | 'photo') => {
-    const key = `${subtitle}-${type}`;
-    setGeneratingImages(prev => ({ ...prev, [key]: true }));
-    generateImage.mutate({ subtitle, type });
-  };
+  // Removed image generation functionality - now using external tools
 
   const parseContentSections = (content: string) => {
     if (!content) return [];
@@ -190,37 +179,13 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
     return parsedSections;
   };
 
-  const handleImageDownload = async (imageUrl: string, subtitle: string, type: string) => {
-    try {
-      const filename = `${type}-${project.keyword}-${subtitle.replace(/\s+/g, '-')}.png`;
-      const downloadUrl = `/api/projects/${project.id}/download-image?imageUrl=${encodeURIComponent(imageUrl)}&filename=${encodeURIComponent(filename)}`;
-      
-      const a = document.createElement('a');
-      a.href = downloadUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      
-      toast({
-        title: "다운로드 완료",
-        description: "이미지가 다운로드되었습니다.",
-      });
-    } catch (error) {
-      toast({
-        title: "다운로드 실패",
-        description: "이미지 다운로드에 실패했습니다.",
-        variant: "destructive",
-      });
-    }
-  };
+  // Removed image download functionality - now using external tools
 
   if (!project.generatedContent) {
     return null;
   }
 
-  // Extract subtitles from project for image generation
-  const subtitles = project.subtitles || [];
+  // Removed subtitle extraction for image generation
 
   return (
     <div className="space-y-6">
@@ -288,75 +253,29 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-7 w-7 p-0 hover:bg-blue-100 dark:hover:bg-blue-900"
-                                onClick={() => handleGenerateImage(section.text, 'infographic')}
-                                disabled={generatingImages[`${section.text}-infographic`]}
-                                title="인포그래픽 생성"
+                                className="h-8 px-2 py-1 hover:bg-blue-100 dark:hover:bg-blue-900 text-xs"
+                                onClick={() => openNapkin(section.text)}
+                                title="Napkin AI에서 인포그래픽 생성"
                               >
-                                {generatingImages[`${section.text}-infographic`] ? (
-                                  <RefreshCw className="h-3 w-3 animate-spin" />
-                                ) : (
-                                  <ImageIcon className="h-3 w-3" />
-                                )}
+                                <ImageIcon className="h-3 w-3 mr-1" />
+                                인포그래픽
+                                <ExternalLink className="h-2 w-2 ml-1" />
                               </Button>
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-7 w-7 p-0 hover:bg-green-100 dark:hover:bg-green-900"
-                                onClick={() => handleGenerateImage(section.text, 'photo')}
-                                disabled={generatingImages[`${section.text}-photo`]}
-                                title="사진 생성"
+                                className="h-8 px-2 py-1 hover:bg-green-100 dark:hover:bg-green-900 text-xs"
+                                onClick={() => openWhisk(section.text)}
+                                title="Google Whisk에서 이미지 생성"
                               >
-                                {generatingImages[`${section.text}-photo`] ? (
-                                  <RefreshCw className="h-3 w-3 animate-spin" />
-                                ) : (
-                                  <Camera className="h-3 w-3" />
-                                )}
+                                <Camera className="h-3 w-3 mr-1" />
+                                이미지
+                                <ExternalLink className="h-2 w-2 ml-1" />
                               </Button>
                             </div>
                           </div>
                           
-                          {/* Show generated images for this subtitle */}
-                          <div className="flex gap-2 mb-3">
-                            {generatedImages[`${section.text}-infographic`] && (
-                              <div className="relative">
-                                <img 
-                                  src={generatedImages[`${section.text}-infographic`]} 
-                                  alt={`${section.text} 인포그래픽`}
-                                  className="w-24 h-24 object-cover rounded border cursor-pointer hover:scale-105 transition-transform"
-                                  onClick={() => window.open(generatedImages[`${section.text}-infographic`], '_blank')}
-                                />
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  className="absolute -top-2 -right-2 h-6 w-6 p-0 rounded-full"
-                                  onClick={() => handleImageDownload(generatedImages[`${section.text}-infographic`], section.text, 'infographic')}
-                                  title="다운로드"
-                                >
-                                  <Download className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            )}
-                            {generatedImages[`${section.text}-photo`] && (
-                              <div className="relative">
-                                <img 
-                                  src={generatedImages[`${section.text}-photo`]} 
-                                  alt={`${section.text} 사진`}
-                                  className="w-24 h-24 object-cover rounded border cursor-pointer hover:scale-105 transition-transform"
-                                  onClick={() => window.open(generatedImages[`${section.text}-photo`], '_blank')}
-                                />
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  className="absolute -top-2 -right-2 h-6 w-6 p-0 rounded-full"
-                                  onClick={() => handleImageDownload(generatedImages[`${section.text}-photo`], section.text, 'photo')}
-                                  title="다운로드"
-                                >
-                                  <Download className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            )}
-                          </div>
+
                         </div>
                       ) : section.type === 'title' ? (
                         <div className="font-bold text-xl mb-3">
