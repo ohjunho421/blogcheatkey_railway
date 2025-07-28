@@ -179,13 +179,20 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
     return parsedSections;
   };
 
-  // Removed image download functionality - now using external tools
+  // External image generation tool handlers
+  const openNapkin = (subtitle: string) => {
+    const searchQuery = encodeURIComponent(`${project.keyword} ${subtitle}`);
+    window.open(`https://www.napkin.ai/?q=${searchQuery}`, '_blank');
+  };
+
+  const openWhisk = (subtitle: string) => {
+    // Google Whisk doesn't support URL parameters, so just open the tool
+    window.open('https://labs.google/fx/tools/whisk', '_blank');
+  };
 
   if (!project.generatedContent) {
     return null;
   }
-
-  // Removed subtitle extraction for image generation
 
   return (
     <div className="space-y-6">
