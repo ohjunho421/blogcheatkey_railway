@@ -33,27 +33,45 @@ export async function resolveMorphemeOveruse(
   
   const overusedComponents: OveruseAnalysis[] = [];
   
-  // 모든 형태소 검사 (17회 초과 방지)
+  // 키워드 형태소의 최소 출현 횟수 확인 (15회 이상이어야 함)
+  const keywordMorphemeCounts = keywordComponents.map(comp => {
+    const lowerComp = comp.toLowerCase();
+    return morphemeFrequency.get(lowerComp) || 0;
+  });
+  
+  const minKeywordCount = Math.min(...keywordMorphemeCounts);
+  const maxAllowedForNonKeyword = Math.max(14, minKeywordCount - 1); // 키워드 형태소보다 1회 적게
+  
+  console.log(`키워드 형태소 최소 출현: ${minKeywordCount}회, 일반 형태소 최대 허용: ${maxAllowedForNonKeyword}회`);
+  
+  // 모든 형태소 검사
   for (const [morpheme, count] of Array.from(morphemeFrequency.entries())) {
-    if (count > 17) {
-      const excessCount = count - 17;
+    const isKeywordComponent = keywordComponents.some(comp => comp.toLowerCase() === morpheme);
+    let targetCount: number;
+    let shouldProcess = false;
+    
+    if (isKeywordComponent) {
+      // 키워드 형태소: 17회 초과 금지
+      targetCount = 17;
+      shouldProcess = count > 17;
+    } else {
+      // 일반 형태소: 키워드 형태소보다 적어야 함 (최대 maxAllowedForNonKeyword)
+      targetCount = maxAllowedForNonKeyword;
+      shouldProcess = count > maxAllowedForNonKeyword;
+    }
+    
+    if (shouldProcess) {
       const sentences = findSentencesWithComponent(content, morpheme);
       
-      // 키워드 형태소가 아닌 것들은 더 엄격하게 (14회 이하로 제한)
-      const isKeywordComponent = keywordComponents.some(comp => comp.toLowerCase() === morpheme);
-      const targetCount = isKeywordComponent ? 17 : 14;
+      overusedComponents.push({
+        component: morpheme,
+        currentCount: count,
+        targetCount,
+        excessCount: count - targetCount,
+        sentences
+      });
       
-      if (count > targetCount) {
-        overusedComponents.push({
-          component: morpheme,
-          currentCount: count,
-          targetCount,
-          excessCount: count - targetCount,
-          sentences
-        });
-        
-        console.log(`❌ "${morpheme}" 과다 사용: ${count}회 (${targetCount}회 초과 ${count - targetCount}회) ${isKeywordComponent ? '[키워드 형태소]' : '[일반 형태소]'}`);
-      }
+      console.log(`❌ "${morpheme}" 과다 사용: ${count}회 (${targetCount}회 초과 ${count - targetCount}회) ${isKeywordComponent ? '[키워드 형태소]' : '[일반 형태소]'}`);
     }
   }
   
@@ -66,17 +84,34 @@ export async function resolveMorphemeOveruse(
   
   // 조정 결과 검증
   const newMorphemes = extractKoreanMorphemes(adjustedContent);
-  const newMatches = findKeywordComponentMatches(newMorphemes, keyword);
+  
+  // 새로운 형태소 빈도 계산
+  const newMorphemeFrequency = new Map<string, number>();
+  newMorphemes.forEach(morpheme => {
+    const cleanMorpheme = morpheme.toLowerCase();
+    newMorphemeFrequency.set(cleanMorpheme, (newMorphemeFrequency.get(cleanMorpheme) || 0) + 1);
+  });
+  
+  // 새로운 키워드 형태소 최소값 계산
+  const newKeywordMorphemeCounts = keywordComponents.map(comp => {
+    const lowerComp = comp.toLowerCase();
+    return newMorphemeFrequency.get(lowerComp) || 0;
+  });
+  const newMinKeywordCount = Math.min(...newKeywordMorphemeCounts);
+  const newMaxAllowedForNonKeyword = Math.max(14, newMinKeywordCount - 1);
   
   const adjustments: string[] = [];
   let allResolved = true;
   
   for (const analysis of overusedComponents) {
-    const newCount = (newMatches.get(analysis.component) || []).length;
-    if (newCount <= 17) {
+    const newCount = newMorphemeFrequency.get(analysis.component.toLowerCase()) || 0;
+    const isKeywordComponent = keywordComponents.some(comp => comp.toLowerCase() === analysis.component.toLowerCase());
+    const expectedTarget = isKeywordComponent ? 17 : newMaxAllowedForNonKeyword;
+    
+    if (newCount <= expectedTarget) {
       adjustments.push(`✅ "${analysis.component}": ${analysis.currentCount}회 → ${newCount}회`);
     } else {
-      adjustments.push(`❌ "${analysis.component}": ${analysis.currentCount}회 → ${newCount}회 (아직 초과)`);
+      adjustments.push(`❌ "${analysis.component}": ${analysis.currentCount}회 → ${newCount}회 (목표: ${expectedTarget}회 이하)`);
       allResolved = false;
     }
   }
