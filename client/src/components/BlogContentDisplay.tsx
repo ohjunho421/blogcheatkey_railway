@@ -79,19 +79,17 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
     },
   });
 
-  // External image generation links
-  const openWhisk = (subtitle: string) => {
-    const prompt = `${subtitle} 관련 이미지`;
-    window.open(`https://labs.google/fx/tools/whisk`, '_blank');
+  // External image generation handlers
+  const handleOpenWhisk = () => {
+    window.open('https://labs.google/fx/tools/whisk', '_blank');
     toast({
       title: "Google Whisk 열기",
       description: "새 탭에서 Google Whisk로 이동했습니다.",
     });
   };
 
-  const openNapkin = (subtitle: string) => {
-    const prompt = `${subtitle} 인포그래픽`;
-    window.open(`https://www.napkin.ai/`, '_blank');
+  const handleOpenNapkin = () => {
+    window.open('https://www.napkin.ai/', '_blank');
     toast({
       title: "Napkin AI 열기", 
       description: "새 탭에서 Napkin AI로 이동했습니다.",
@@ -179,16 +177,8 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
     return parsedSections;
   };
 
-  // External image generation tool handlers
-  const openNapkin = (subtitle: string) => {
-    const searchQuery = encodeURIComponent(`${project.keyword} ${subtitle}`);
-    window.open(`https://www.napkin.ai/?q=${searchQuery}`, '_blank');
-  };
-
-  const openWhisk = (subtitle: string) => {
-    // Google Whisk doesn't support URL parameters, so just open the tool
-    window.open('https://labs.google/fx/tools/whisk', '_blank');
-  };
+  // Extract subtitles for image generation tools
+  const subtitles = project.subtitles || [];
 
   if (!project.generatedContent) {
     return null;
@@ -252,37 +242,9 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
                     <div key={index} className="relative group">
                       {section.type === 'subtitle' && section.isMainSubtitle ? (
                         <div className="mb-4">
-                          <div className="flex items-start justify-between group">
-                            <div className="flex-1 font-semibold text-lg mb-2">
-                              {section.text}
-                            </div>
-                            <div className="flex gap-1 ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 px-2 py-1 hover:bg-blue-100 dark:hover:bg-blue-900 text-xs"
-                                onClick={() => openNapkin(section.text)}
-                                title="Napkin AI에서 인포그래픽 생성"
-                              >
-                                <ImageIcon className="h-3 w-3 mr-1" />
-                                인포그래픽
-                                <ExternalLink className="h-2 w-2 ml-1" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-8 px-2 py-1 hover:bg-green-100 dark:hover:bg-green-900 text-xs"
-                                onClick={() => openWhisk(section.text)}
-                                title="Google Whisk에서 이미지 생성"
-                              >
-                                <Camera className="h-3 w-3 mr-1" />
-                                이미지
-                                <ExternalLink className="h-2 w-2 ml-1" />
-                              </Button>
-                            </div>
+                          <div className="font-semibold text-lg mb-2">
+                            {section.text}
                           </div>
-                          
-
                         </div>
                       ) : section.type === 'title' ? (
                         <div className="font-bold text-xl mb-3">
@@ -401,7 +363,65 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
         </CardContent>
       </Card>
 
-      {/* 이미지 생성 섹션 제거됨 - 외부 도구 사용 */}
+      {/* 외부 이미지 생성 도구 */}
+      {subtitles.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center text-lg">
+              <ImageIcon className="h-5 w-5 text-primary mr-2" />
+              이미지 생성 도구
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              소제목별로 이미지나 인포그래픽을 생성하려면 아래 외부 도구를 사용해주세요
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {subtitles.map((subtitle: string, index: number) => (
+                <div key={index} className="border rounded-lg p-4">
+                  <h4 className="font-medium mb-3">{index + 1}. {subtitle}</h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Google Whisk 버튼 */}
+                    <Button
+                      variant="outline"
+                      className="h-auto p-4 flex flex-col items-center space-y-2 hover:bg-green-50 dark:hover:bg-green-900/20"
+                      onClick={handleOpenWhisk}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Camera className="h-4 w-4 text-green-600" />
+                        <span className="font-medium">Google Whisk</span>
+                        <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                      </div>
+                      <p className="text-xs text-muted-foreground text-center">
+                        AI 이미지 생성 도구<br/>
+                        "{subtitle}" 관련 이미지 생성
+                      </p>
+                    </Button>
+
+                    {/* Napkin AI 버튼 */}
+                    <Button
+                      variant="outline"
+                      className="h-auto p-4 flex flex-col items-center space-y-2 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                      onClick={handleOpenNapkin}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <ImageIcon className="h-4 w-4 text-blue-600" />
+                        <span className="font-medium">Napkin AI</span>
+                        <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                      </div>
+                      <p className="text-xs text-muted-foreground text-center">
+                        인포그래픽 생성 도구<br/>
+                        "{subtitle}" 관련 인포그래픽 생성
+                      </p>
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
