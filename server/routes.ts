@@ -473,9 +473,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "생성된 콘텐츠를 찾을 수 없습니다" });
       }
 
-      const content = format === 'mobile' 
-        ? formatForMobile(project.generatedContent)
-        : project.generatedContent;
+      let content = project.generatedContent;
+      
+      if (format === 'mobile') {
+        // 모바일용 포맷팅: 15-21자 한글 기준, 문맥상 자연스러운 줄바꿈
+        content = formatContentForMobile(project.generatedContent);
+      }
 
       res.json({ content });
     } catch (error) {
@@ -483,6 +486,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "콘텐츠 복사에 실패했습니다" });
     }
   });
+
+  // 모바일용 콘텐츠 포맷팅 함수
+  function formatContentForMobile(content: string): string {
+    return content
+      .split('\n')
+      .map(line => {
+        if (line.trim() === '') return '';
+        
+        // 한글 문자 개수 기준으로 계산 (영어, 숫자, 특수문자는 0.5로 계산)
+        function getKoreanLength(text: string): number {
+          let length = 0;
+          for (const char of text) {
+            if (/[가-힣]/.test(char)) {
+              length += 1; // 한글은 1
+            } else {
+              length += 0.5; // 영어, 숫자, 특수문자는 0.5
+            }
+          }
+          return length;
+        }
+        
+        // 21자를 넘으면 줄바꿈 처리
+        if (getKoreanLength(line) > 21) {
+          const segments = [];
+          let currentSegment = '';
+          
+          // 문장 부호나 쉼표 기준으로 먼저 나누기
+          const phrases = line.split(/([,.!?])/);
+          
+          for (let i = 0; i < phrases.length; i++) {
+            const phrase = phrases[i];
+            const testSegment = currentSegment + phrase;
+            
+            if (getKoreanLength(testSegment) > 21) {
+              if (currentSegment.trim()) {
+                segments.push(currentSegment.trim());
+                currentSegment = phrase;
+              } else {
+                // 구문 자체가 너무 길 경우 단어 단위로 분할
+                const words = phrase.split(/(\s+)/);
+                let wordSegment = '';
+                
+                for (const word of words) {
+                  const testWord = wordSegment + word;
+                  
+                  if (getKoreanLength(testWord) > 21) {
+                    if (wordSegment.trim()) {
+                      segments.push(wordSegment.trim());
+                      wordSegment = word;
+                    } else {
+                      // 단어 자체가 너무 길 경우 자연스러운 지점에서 분할
+                      if (getKoreanLength(word) > 21) {
+                        let charSegment = '';
+                        
+                        for (const char of word) {
+                          if (getKoreanLength(charSegment + char) > 18) { // 15-21 범위 중간값
+                            if (charSegment.trim()) {
+                              segments.push(charSegment.trim());
+                              charSegment = char;
+                            }
+                          } else {
+                            charSegment += char;
+                          }
+                        }
+                        
+                        if (charSegment.trim()) {
+                          wordSegment = charSegment;
+                        }
+                      } else {
+                        wordSegment = word;
+                      }
+                    }
+                  } else {
+                    wordSegment += word;
+                  }
+                }
+                
+                currentSegment = wordSegment;
+              }
+            } else {
+              currentSegment += phrase;
+            }
+          }
+          
+          if (currentSegment.trim()) {
+            segments.push(currentSegment.trim());
+          }
+          
+          return segments.join('\n');
+        }
+        
+        return line;
+      })
+      .join('\n')
+      .replace(/\n\s*\n/g, '\n\n'); // 불필요한 빈 줄 정리
+  }
 
   // Update reference blog links
   app.post("/api/projects/:id/reference-links", async (req, res) => {
