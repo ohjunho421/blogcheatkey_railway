@@ -126,32 +126,87 @@ export async function editContent(
 
   const customMorphemesArray = customMorphemes ? customMorphemes.split(' ').filter(m => m.trim().length > 0) : [];
 
-  const prompt = `다음 블로그 글을 사용자의 요청에 따라 수정해주세요.
+  // Analyze user request to understand intent better
+  const analysisPrompt = `다음 사용자 요청을 분석하여 구체적인 수정 의도를 파악해주세요:
 
-원본 글:
+사용자 요청: "${editRequest}"
+
+분석해야 할 내용:
+1. 수정 대상 (서론/본론/결론/전체/특정 부분)
+2. 수정 유형 (내용 추가/삭제/변경/톤 조정/구조 변경)
+3. 구체적인 요구사항
+4. 설득력 강화 요소 (감정적 어필/논리적 근거/신뢰성 강화 등)
+
+JSON으로 응답:
+{
+  "target": "수정 대상",
+  "type": "수정 유형", 
+  "requirements": "구체적 요구사항",
+  "persuasionElements": "설득력 강화 요소"
+}`;
+
+  // First, analyze the user request
+  let requestAnalysis;
+  try {
+    const analysisResponse = await ai.models.generateContent({
+      model: "gemini-2.5-pro",
+      config: {
+        systemInstruction: "사용자의 요청을 정확히 분석하여 수정 의도를 파악하는 전문가입니다.",
+        responseMimeType: "application/json"
+      },
+      contents: analysisPrompt,
+    });
+    requestAnalysis = JSON.parse(analysisResponse.text);
+  } catch (error) {
+    console.log("Request analysis failed, proceeding with original request");
+    requestAnalysis = {
+      target: "전체",
+      type: "내용 변경",
+      requirements: editRequest,
+      persuasionElements: "신뢰성 강화"
+    };
+  }
+
+  const prompt = `다음 블로그 글을 사용자의 세부 요청에 따라 정교하게 수정해주세요.
+
+=== 원본 글 ===
 ${originalContent}
 
-수정 요청:
+=== 사용자 요청 ===
 ${editRequest}
 
+=== 요청 분석 결과 ===
+- 수정 대상: ${requestAnalysis.target}
+- 수정 유형: ${requestAnalysis.type}  
+- 구체적 요구사항: ${requestAnalysis.requirements}
+- 설득력 강화 요소: ${requestAnalysis.persuasionElements}
+
+=== 키워드 정보 ===
 키워드: "${keyword}"
+키워드 구성요소: ${components.join(', ')}
 ${customMorphemesArray.length > 0 ? `추가 포함 형태소: ${customMorphemesArray.join(', ')}` : ''}
 
-🚨 중요: 수정 시 다음 SEO 조건을 반드시 지켜주세요 🚨:
-1. 완전한 키워드 "${keyword}"를 최소 5회 포함
-2. 개별 구성 요소들을 각각 15-17회씩 정확히 포함:
-   ${components.map(comp => `- "${comp}": 15-17회`).join('\n   ')}
-3. 공백 제외 1500-1700자 범위 엄수
-4. 서론-본론-결론 구조 유지
-5. 전문적이면서도 이해하기 쉬운 문체 유지
-${customMorphemesArray.length > 0 ? `6. 추가 형태소들 각각 최소 1회씩 포함: ${customMorphemesArray.join(', ')}` : ''}
+=== 🚨 절대 준수 조건 🚨 ===
+1. 완전한 키워드 "${keyword}" 최소 5회 자연스럽게 포함
+2. 개별 키워드 구성요소들을 각각 정확히 15-17회 포함:
+   ${components.map(comp => `   • "${comp}": 15-17회 (정확히)`).join('\n')}
+3. 공백 제외 1500-1700자 범위 엄수 (초과/미달 절대 금지)
+4. 서론-본론-결론 구조 완전 유지
+5. 설득력 있는 글쓰기 기법 적용:
+   - 독자의 감정에 어필하는 스토리텔링
+   - 구체적인 사례와 근거 제시
+   - 신뢰감을 주는 전문적 어조
+   - 자연스러운 행동 유도 문구
+${customMorphemesArray.length > 0 ? `6. 추가 형태소들 각각 최소 1회씩 자연스럽게 포함: ${customMorphemesArray.join(', ')}` : ''}
 
-⚠️ 절대 주의사항:
-- 키워드 구성 요소가 15-17회 범위를 벗어나면 안됨
-- 1700자를 초과하거나 1500자 미만이면 안됨
-- 사용자 요청을 반영하되 SEO 조건은 절대 타협하지 말 것
+=== 📝 수정 가이드라인 ===
+- 사용자 요청을 100% 반영하되 SEO 조건 절대 타협 금지
+- ${requestAnalysis.target} 부분에 집중하여 수정
+- ${requestAnalysis.persuasionElements} 요소를 강화하여 설득력 향상
+- 자연스럽고 흥미로운 문체로 독자 몰입도 향상
+- 전문성과 친근함의 적절한 균형 유지
 
-수정된 전체 글을 반환해주세요.`;
+수정된 완전한 블로그 글을 반환해주세요. 조건을 모두 만족하는지 내부적으로 검증 후 응답하세요.`;
 
   try {
     const response = await ai.models.generateContent({
