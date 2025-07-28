@@ -37,65 +37,106 @@ export function extractKoreanMorphemes(text: string): string[] {
   return morphemes;
 }
 
+// 자동 한국어 복합어 분해 함수
+function autoDecomposeKoreanKeyword(koreanText: string): string[] {
+  // 일반적인 한국어 단어 패턴들을 정의
+  const commonWords = [
+    // 교육 관련
+    '수학', '영어', '국어', '과학', '사회', '역사', '물리', '화학', '생물', '지구과학',
+    '학원', '과외', '교육', '학습', '공부', '시험', '성적', '학생', '선생님', '강사',
+    '초등', '중등', '고등', '대학', '입시', '수능',
+    
+    // 자동차 관련
+    '벤츠', '아우디', '비엠더블유', 'bmw', '현대', '기아', '삼성', 'lg',
+    '엔진', '경고등', '에어컨', '필터', '오일', '타이어', '브레이크', '배터리',
+    '수리', '정비', '점검', '교체', '부품', '센서',
+    
+    // 일반 명사
+    '블로그', '사이트', '웹사이트', '홈페이지', '카페', '커뮤니티',
+    '방법', '가격', '비용', '추천', '후기', '리뷰', '정보', '소식', '뉴스',
+    '서비스', '업체', '회사', '전문', '맞춤', '개인', '그룹',
+    '온라인', '오프라인', '화상', '대면', '비대면',
+    
+    // 기술 관련
+    '코딩', '프로그래밍', '개발', '웹', '앱', '소프트웨어', '시스템', '데이터베이스',
+    '인공지능', 'ai', '머신러닝', '딥러닝', '빅데이터'
+  ];
+  
+  const result: string[] = [];
+  let remaining = koreanText;
+  
+  // 가장 긴 단어부터 매칭 시도 (탐욕적 접근법)
+  const sortedWords = commonWords.sort((a, b) => b.length - a.length);
+  
+  while (remaining.length > 0) {
+    let found = false;
+    
+    for (const word of sortedWords) {
+      if (remaining.startsWith(word)) {
+        result.push(word);
+        remaining = remaining.substring(word.length);
+        found = true;
+        break;
+      }
+    }
+    
+    // 매칭되는 단어가 없으면 2-3글자씩 분할
+    if (!found) {
+      if (remaining.length >= 3) {
+        result.push(remaining.substring(0, 3));
+        remaining = remaining.substring(3);
+      } else if (remaining.length >= 2) {
+        result.push(remaining.substring(0, 2));
+        remaining = remaining.substring(2);
+      } else {
+        result.push(remaining);
+        remaining = '';
+      }
+    }
+  }
+  
+  return result.filter(component => component.length >= 2); // 2글자 이상만 유효
+}
+
 // Extract individual keyword components for SEO optimization
 export function extractKeywordComponents(keyword: string): string[] {
   const components = [];
   
-  // Manual extraction for compound Korean keywords - 더 정교한 분석
-  if (keyword === "벤츠엔진경고등") {
-    components.push("벤츠", "엔진", "경고등");
-  } else if (keyword === "영어학원블로그") {
-    components.push("영어", "학원", "블로그");
-  } else if (keyword === "수학과외블로그") {
-    components.push("수학", "과외", "블로그");
-  } else if (keyword.toLowerCase().includes("아우디a6에어컨필터")) {
-    components.push("아우디", "a6", "에어컨", "필터");
-  } else if (keyword.toLowerCase().includes("bmw") && keyword.includes("코딩")) {
-    components.push("BMW", "코딩");
-  } else if (keyword.includes("10W40") && keyword.includes("엔진오일")) {
-    // Handle oil grade keywords like "10W40 엔진오일" - split 엔진오일 into 엔진 + 오일
-    components.push("10W40", "엔진", "오일");
-  } else {
-    // Enhanced fallback: try to extract individual meaningful components
-    const cleanKeyword = keyword.toLowerCase();
-    
-    // 특수 패턴들
-    const numberPattern = /[0-9]+[a-z]*[0-9]*/g; // A6, 10W40 등
-    const koreanPattern = /[가-힣]+/g;
-    const englishPattern = /[a-zA-Z]+/g;
-    
-    const numberMatches = cleanKeyword.match(numberPattern) || [];
-    const koreanMatches = cleanKeyword.match(koreanPattern) || [];
-    const englishMatches = cleanKeyword.match(englishPattern) || [];
-    
-    // 숫자+문자 조합 추가 (A6, 10W40 등)
-    for (const match of numberMatches) {
-      if (match.length >= 1) {
-        components.push(match);
-      }
+  // 자동 한국어 복합어 분해 시스템으로 통일
+  const cleanKeyword = keyword.toLowerCase();
+  
+  // 특수 패턴들
+  const numberPattern = /[0-9]+[a-z]*[0-9]*/g; // A6, 10W40 등
+  const koreanPattern = /[가-힣]+/g;
+  const englishPattern = /[a-zA-Z]+/g;
+  
+  const numberMatches = cleanKeyword.match(numberPattern) || [];
+  const koreanMatches = cleanKeyword.match(koreanPattern) || [];
+  const englishMatches = cleanKeyword.match(englishPattern) || [];
+  
+  // 숫자+문자 조합 추가 (A6, 10W40 등)
+  for (const match of numberMatches) {
+    if (match.length >= 1) {
+      components.push(match);
     }
-    
-    // 한국어 형태소 추가 - 복합어 분리
-    for (const match of koreanMatches) {
-      if (match.length >= 2) {
-        // 복합어 분리 시도
-        if (match.includes('에어컨') && match.includes('필터')) {
-          if (!components.includes('에어컨')) components.push('에어컨');
-          if (!components.includes('필터')) components.push('필터');
-        } else if (match.includes('엔진') && match.includes('경고등')) {
-          if (!components.includes('엔진')) components.push('엔진');
-          if (!components.includes('경고등')) components.push('경고등');
-        } else {
-          components.push(match);
+  }
+  
+  // 한국어 형태소 자동 분해
+  for (const match of koreanMatches) {
+    if (match.length >= 2) {
+      const decomposed = autoDecomposeKoreanKeyword(match);
+      for (const comp of decomposed) {
+        if (!components.includes(comp)) {
+          components.push(comp);
         }
       }
     }
-    
-    // 영어 형태소 추가
-    for (const match of englishMatches) {
-      if (match.length >= 1 && !numberMatches.some(num => num.includes(match))) {
-        components.push(match);
-      }
+  }
+  
+  // 영어 형태소 추가
+  for (const match of englishMatches) {
+    if (match.length >= 1 && !numberMatches.some(num => num.includes(match))) {
+      components.push(match);
     }
   }
   
