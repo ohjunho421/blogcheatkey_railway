@@ -16,6 +16,12 @@ function Router() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
+    // 임시로 인증 우회 - Google OAuth 설정 완료 후 활성화 예정
+    setIsAuthenticated(true);
+    setAuthChecked(true);
+    
+    // Google OAuth 설정 완료 후 활성화할 코드:
+    /*
     fetch('/api/auth/user')
       .then(res => {
         if (res.ok) {
@@ -30,6 +36,7 @@ function Router() {
       .finally(() => {
         setAuthChecked(true);
       });
+    */
   }, []);
 
   // 인증 확인 중이면 로딩 표시
