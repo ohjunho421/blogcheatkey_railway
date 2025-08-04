@@ -11,6 +11,7 @@ import { searchResearch, getDetailedResearch } from "./services/perplexity";
 import { analyzeSEOOptimization } from "./services/seoOptimizer";
 import { enhancedSEOAnalysis } from "./services/morphemeAnalyzer";
 import { TitleGenerator } from "./services/titleGenerator";
+import bcrypt from "bcryptjs";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   
@@ -111,6 +112,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get user error:", error);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Signup endpoint
+  app.post("/api/auth/signup", async (req, res) => {
+    try {
+      const { email, password, name } = req.body;
+      
+      // 입력 검증
+      if (!email || !password || !name) {
+        return res.status(400).json({ message: "모든 필드를 입력해주세요" });
+      }
+      
+      // 이메일 중복 확인
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "이미 등록된 이메일입니다" });
+      }
+      
+      // 비밀번호 해시화
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      // 슈퍼유저 계정 확인 (wnsghcoswp@gmail.com)
+      const isSuper = email === "wnsghcoswp@gmail.com";
+      
+      // 사용자 생성
+      const user = await storage.createUser({
+        email,
+        password: hashedPassword,
+        name: isSuper ? "슈퍼 관리자" : name,
+        isAdmin: isSuper,
+        subscriptionTier: isSuper ? "premium" : "free",
+        canGenerateContent: true,
+        canGenerateImages: isSuper,
+        canUseChatbot: isSuper,
+      });
+      
+      // 세션에 사용자 정보 저장
+      (req.session as any).userId = user.id;
+      console.log("Signup - Session set:", req.session);
+      console.log("Signup - Session ID:", req.sessionID);
+      
+      // 세션 저장 완료 대기
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) {
+            console.error("Signup - Session save error:", err);
+            reject(err);
+          } else {
+            console.log("Signup - Session saved successfully");
+            resolve();
+          }
+        });
+      });
+      
+      // 비밀번호 제외하고 응답 (세션 ID 포함)
+      const { password: _, ...userWithoutPassword } = user;
+      res.json({
+        ...userWithoutPassword,
+        sessionId: req.sessionID
+      });
+    } catch (error) {
+      console.error("Signup error:", error);
+      res.status(500).json({ message: "회원가입 처리 중 오류가 발생했습니다" });
     }
   });
 

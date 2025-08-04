@@ -113,20 +113,32 @@ export function useSignup() {
   
   return useMutation({
     mutationFn: async (data: { email: string; password: string; name: string }) => {
-      const response = await fetch("/auth/signup", {
+      const response = await fetch("/api/auth/signup", {
         method: "POST",
         body: JSON.stringify(data),
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
       
       return response.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/auth/user"] });
+    onSuccess: (data) => {
+      // localStorage를 사용하여 로그인 상태 저장
+      if (data.sessionId) {
+        console.log("서버에서 받은 세션 ID:", data.sessionId);
+        localStorage.setItem('sessionId', data.sessionId);
+        localStorage.setItem('user', JSON.stringify(data));
+        console.log("localStorage에 세션 저장 완료");
+      }
+      
+      // 로그아웃 상태 해제
+      setLoggedOut(false);
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
     },
   });
 }
