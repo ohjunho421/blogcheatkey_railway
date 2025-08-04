@@ -58,9 +58,9 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     cookie: {
       secure: false,
-      httpOnly: false, // 개발용으로 false
-      maxAge: 24 * 60 * 60 * 1000, // 24시간
-      sameSite: false // 개발용으로 제거
+      httpOnly: false,
+      maxAge: 24 * 60 * 60 * 1000,
+      sameSite: 'lax'
     }
   }));
 

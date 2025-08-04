@@ -66,12 +66,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get current user
   app.get("/api/auth/user", async (req, res) => {
     try {
-      console.log("Request headers:", req.headers.cookie);
-      console.log("Session ID:", req.sessionID);
-      console.log("Full session:", req.session);
+      console.log("=== AUTH USER DEBUG ===");
+      console.log("Request headers cookie:", req.headers.cookie);
+      console.log("Session ID from request:", req.sessionID);
+      console.log("Session object:", JSON.stringify(req.session, null, 2));
+      console.log("Session store:", !!req.sessionStore);
+      
       const userId = (req.session as any)?.userId;
-      console.log("Session userId:", userId);
+      console.log("Extracted userId:", userId);
+      
       if (!userId) {
+        console.log("No userId found, returning 401");
         return res.status(401).json({ error: "Not authenticated" });
       }
 
