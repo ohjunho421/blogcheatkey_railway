@@ -65,6 +65,16 @@ export default function Login() {
       console.log("로그인 성공:", userData);
       console.log("현재 쿠키:", document.cookie);
       
+      // 수동으로 쿠키 설정 시도 (디버깅용) - connect.sid 사용
+      const setCookieHeader = response.headers.get('set-cookie');
+      console.log("Set-Cookie 헤더:", setCookieHeader);
+      const sessionMatch = setCookieHeader?.match(/connect\.sid=([^;]+)/);
+      if (sessionMatch) {
+        console.log("서버에서 받은 세션 ID:", sessionMatch[1]);
+        document.cookie = `connect.sid=${sessionMatch[1]}; path=/; max-age=86400`;
+        console.log("수동 설정 후 쿠키:", document.cookie);
+      }
+      
       toast({
         title: "로그인 성공",
         description: "블로그치트키에 오신 것을 환영합니다!",
@@ -74,7 +84,7 @@ export default function Login() {
       setTimeout(() => {
         console.log("리다이렉트 전 쿠키:", document.cookie);
         window.location.href = "/";
-      }, 1000);
+      }, 1500);
     } catch (error: any) {
       toast({
         title: "로그인 실패",

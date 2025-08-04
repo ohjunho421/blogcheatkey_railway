@@ -47,6 +47,9 @@ passport.deserializeUser(async (id: number, done) => {
 });
 
 export function setupAuth(app: Express) {
+  // Trust proxy for cookie settings
+  app.set('trust proxy', 1);
+  
   // Session configuration
   app.use(session({
     store: new pgStore({
@@ -56,11 +59,13 @@ export function setupAuth(app: Express) {
     secret: process.env.SESSION_SECRET!,
     resave: false,
     saveUninitialized: false,
+    name: 'connect.sid',
     cookie: {
       secure: false,
-      httpOnly: false,
+      httpOnly: false, // 개발용
       maxAge: 24 * 60 * 60 * 1000,
-      sameSite: 'lax'
+      sameSite: 'lax',
+      domain: undefined
     }
   }));
 
