@@ -27,15 +27,15 @@ function Router() {
     return () => clearTimeout(timeout);
   }, []);
 
-  // 3초 후에도 로딩 중이면 로그인 페이지로 리다이렉트
-  if (isLoading && showLoading) {
+  // 로딩 중이면 바로 로그인 페이지로 이동 (무한 루프 방지)
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">인증 확인 중...</p>
-        </div>
-      </div>
+      <Switch>
+        <Route path="/login" component={Login} />
+        <Route path="/signup" component={Signup} />
+        <Route path="/privacy-policy" component={PrivacyPolicy} />
+        <Route path="*" component={Login} />
+      </Switch>
     );
   }
 

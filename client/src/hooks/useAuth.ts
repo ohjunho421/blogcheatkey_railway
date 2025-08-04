@@ -29,17 +29,9 @@ export interface User {
 }
 
 export function useAuth() {
-  // localStorage에서 로그아웃 상태 확인
-  if (getLoggedOut()) {
-    return {
-      user: undefined,
-      isLoading: false,
-      isAuthenticated: false,
-      error: null
-    };
-  }
-
-  // 실제 사용자 정보를 서버에서 가져오기
+  const isLoggedOut = getLoggedOut();
+  
+  // 실제 사용자 정보를 서버에서 가져오기 - 항상 실행하되 조건부 활성화
   const { data: user, isLoading, error, isError } = useQuery({
     queryKey: ["/api/auth/user"],
     retry: false,
@@ -47,8 +39,18 @@ export function useAuth() {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchInterval: false, // 자동 새로고침 비활성화
-    enabled: !getLoggedOut(), // 로그아웃 상태일 때는 쿼리 비활성화
+    enabled: !isLoggedOut, // 로그아웃 상태일 때는 쿼리 비활성화
   });
+
+  // 로그아웃 상태이면 인증되지 않은 것으로 처리
+  if (isLoggedOut) {
+    return {
+      user: undefined,
+      isLoading: false,
+      isAuthenticated: false,
+      error: null
+    };
+  }
 
   // 401 오류가 발생하면 인증되지 않은 것으로 처리
   const isAuthenticated = !!user && !isError;
@@ -70,6 +72,7 @@ export function useLogin() {
         method: "POST",
         body: JSON.stringify(credentials),
         headers: { "Content-Type": "application/json" },
+        credentials: 'include', // 쿠키 포함
       });
       
       if (!response.ok) {
