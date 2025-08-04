@@ -82,7 +82,10 @@ export function useLogin() {
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/auth/user"] });
+      // 로그아웃 상태 해제
+      setLoggedOut(false);
+      // 올바른 쿼리 키로 캐시 무효화
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
     },
   });
 }

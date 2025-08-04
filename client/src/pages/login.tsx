@@ -48,13 +48,33 @@ export default function Login() {
     try {
       // 로그인 시도시 로그아웃 상태 해제
       setLoggedOut(false);
-      await loginMutation.mutateAsync(data);
+      
+      // 로그인 API 직접 호출
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: { "Content-Type": "application/json" },
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error("로그인에 실패했습니다.");
+      }
+      
+      const userData = await response.json();
+      console.log("로그인 성공:", userData);
+      console.log("현재 쿠키:", document.cookie);
+      
       toast({
         title: "로그인 성공",
         description: "블로그치트키에 오신 것을 환영합니다!",
       });
-      // 강제로 페이지 새로고침하여 인증 상태 업데이트
-      window.location.href = "/";
+      
+      // 쿠키 확인 후 리다이렉트
+      setTimeout(() => {
+        console.log("리다이렉트 전 쿠키:", document.cookie);
+        window.location.href = "/";
+      }, 1000);
     } catch (error: any) {
       toast({
         title: "로그인 실패",
