@@ -81,9 +81,8 @@ export default function AdminPage() {
 
   const getSubscriptionBadgeColor = (tier: string) => {
     switch (tier) {
-      case "pro": return "bg-purple-500";
-      case "premium": return "bg-blue-500";
-      case "basic": return "bg-green-500";
+      case "premium": return "bg-purple-500";
+      case "basic": return "bg-blue-500";
       default: return "bg-gray-500";
     }
   };
@@ -139,11 +138,9 @@ export default function AdminPage() {
                           )}
                         </div>
                         <div className="flex gap-2">
-                          <Badge className={getSubscriptionBadgeColor(user.subscriptionTier || "none")}>
-                            {user.subscriptionTier === "none" ? "무료" : 
-                             user.subscriptionTier === "basic" ? "베이직" :
-                             user.subscriptionTier === "premium" ? "프리미엄" : 
-                             user.subscriptionTier === "pro" ? "프로" : "무료"}
+                          <Badge className={getSubscriptionBadgeColor(user.subscriptionTier || "basic")}>
+                            {user.subscriptionTier === "basic" ? "베이직 (5만원)" : 
+                             user.subscriptionTier === "premium" ? "프리미엄 (10만원)" : "미설정"}
                           </Badge>
                           {!user.isActive && (
                             <Badge variant="destructive">비활성</Badge>
@@ -163,10 +160,10 @@ export default function AdminPage() {
                       <div className="space-y-2">
                         <Label className="text-sm font-medium">구독 등급</Label>
                         <Select
-                          value={user.subscriptionTier || "none"}
+                          value={user.subscriptionTier || "basic"}
                           onValueChange={(value) => 
                             handlePermissionUpdate(user.id, { 
-                              subscriptionTier: value as "none" | "basic" | "premium" | "pro" 
+                              subscriptionTier: value as "basic" | "premium"
                             })
                           }
                         >
@@ -174,10 +171,8 @@ export default function AdminPage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">무료</SelectItem>
-                            <SelectItem value="basic">베이직 (3만원)</SelectItem>
-                            <SelectItem value="premium">프리미엄 (5만원)</SelectItem>
-                            <SelectItem value="pro">프로 (10만원)</SelectItem>
+                            <SelectItem value="basic">베이직 (5만원) - 콘텐츠 생성</SelectItem>
+                            <SelectItem value="premium">프리미엄 (10만원) - 콘텐츠 + 챗봇</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

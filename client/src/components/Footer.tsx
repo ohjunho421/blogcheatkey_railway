@@ -1,4 +1,4 @@
-import { Building2, User, Phone, FileText } from "lucide-react";
+import { Building2, User, Phone, FileText, CreditCard } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Footer() {
@@ -54,16 +54,24 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* 고객지원 */}
+          {/* 결제 정보 */}
           <div className="space-y-4">
             <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-              고객지원
+              결제 안내
             </h4>
             <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-              <div>평일 09:00 - 18:00</div>
-              <div>주말 및 공휴일 휴무</div>
               <div className="flex items-center gap-2">
-                <Phone className="h-4 w-4" />
+                <CreditCard className="h-4 w-4" />
+                <span>무통장 입금</span>
+              </div>
+              <div className="font-medium text-primary">카카오뱅크</div>
+              <div className="font-mono text-xs">3333-17-9948665</div>
+              <div>예금주: 블로그치트키</div>
+              <div className="text-xs text-orange-600 dark:text-orange-400">
+                ※ 입금 후 연락주세요
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <Phone className="h-3 w-3" />
                 <span>010-5001-2143</span>
               </div>
             </div>

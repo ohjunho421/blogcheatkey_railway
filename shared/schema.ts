@@ -18,7 +18,7 @@ export const users = pgTable("users", {
   isActive: boolean("is_active").default(true),
   // Admin and subscription fields
   isAdmin: boolean("is_admin").default(false),
-  subscriptionTier: text("subscription_tier").default("none"), // none, basic, premium, pro
+  subscriptionTier: text("subscription_tier").default("basic"), // basic, premium
   subscriptionExpiresAt: timestamp("subscription_expires_at"),
   // Feature permissions (can be individually granted by admin)
   canGenerateContent: boolean("can_generate_content").default(false),
@@ -161,7 +161,7 @@ export const referenceBlogLinkSchema = z.object({
 // Admin schemas
 export const updateUserPermissionsSchema = z.object({
   isAdmin: z.boolean().optional(),
-  subscriptionTier: z.enum(["none", "basic", "premium", "pro"]).optional(),
+  subscriptionTier: z.enum(["basic", "premium"]).optional(),
   subscriptionExpiresAt: z.string().datetime().optional().nullable(),
   canGenerateContent: z.boolean().optional(),
   canGenerateImages: z.boolean().optional(),
