@@ -71,6 +71,9 @@ export default function Login() {
         localStorage.setItem('sessionId', userData.sessionId);
         localStorage.setItem('user', JSON.stringify(userData));
         console.log("localStorage에 세션 저장 완료");
+        
+        // 로그아웃 상태 해제
+        setLoggedOut(false);
       }
       
       toast({

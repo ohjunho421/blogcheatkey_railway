@@ -32,7 +32,7 @@ export function useAuth() {
   const isLoggedOut = getLoggedOut();
   const hasStoredSession = localStorage.getItem('sessionId') !== null;
   
-  // localStorage에 세션이 있고 로그아웃 상태가 아닐 때만 서버에서 사용자 정보 가져오기
+  // 임시로 서버 인증 비활성화하고 localStorage만 사용
   const { data: user, isLoading, error, isError } = useQuery({
     queryKey: ["/api/auth/user"],
     retry: false,
@@ -40,7 +40,7 @@ export function useAuth() {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchInterval: false,
-    enabled: !isLoggedOut && hasStoredSession,
+    enabled: false, // 서버 인증 완전 비활성화
   });
 
   // 로그아웃 상태이거나 저장된 세션이 없으면 인증되지 않은 것으로 처리
@@ -53,12 +53,13 @@ export function useAuth() {
     };
   }
 
-  // localStorage에서 사용자 정보 백업 사용
-  if (!user && !isLoading && !isError) {
+  // localStorage에서 사용자 정보 백업 사용 (서버 인증 실패 시)
+  if (!user && !isLoading && hasStoredSession) {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
+        console.log("Using stored user data:", parsedUser);
         return {
           user: parsedUser as User,
           isLoading: false,
@@ -67,6 +68,9 @@ export function useAuth() {
         };
       } catch (e) {
         console.error('Failed to parse stored user:', e);
+        // 잘못된 데이터 정리
+        localStorage.removeItem('user');
+        localStorage.removeItem('sessionId');
       }
     }
   }
