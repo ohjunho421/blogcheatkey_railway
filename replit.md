@@ -1,258 +1,53 @@
 # Blog Content Generation System
 
 ## Overview
-
-This is a full-stack TypeScript application that helps users generate SEO-optimized blog content through AI-powered analysis and content creation. The system uses multiple AI models (Gemini, Claude, Perplexity, OpenAI) to create high-quality, keyword-optimized blog posts with proper SEO metrics, citations, and infographic images. Users can copy text content separately and download individual infographics for their marketing needs.
+This is a full-stack TypeScript application for generating SEO-optimized blog content using multiple AI models (Gemini, Claude, Perplexity, OpenAI). It aims to produce high-quality, keyword-optimized blog posts with proper SEO metrics, citations, and infographic images. Users can copy text content and download individual infographics. The project's vision is to leverage AI for efficient and effective content creation, addressing market needs for scalable and high-quality digital marketing assets.
 
 ## User Preferences
-
 Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
 ### Frontend Architecture
 - **Framework**: React 18 with TypeScript
-- **Routing**: Wouter for lightweight client-side routing
-- **State Management**: TanStack Query for server state management
+- **Routing**: Wouter
+- **State Management**: TanStack Query
 - **UI Components**: Radix UI components with shadcn/ui styling
-- **Styling**: Tailwind CSS with CSS variables for theming
-- **Build Tool**: Vite for fast development and optimized builds
+- **Styling**: Tailwind CSS with CSS variables
+- **Build Tool**: Vite
 
 ### Backend Architecture
 - **Runtime**: Node.js with Express.js
 - **Language**: TypeScript with ES modules
-- **Database**: PostgreSQL with Drizzle ORM
-- **Database Provider**: Neon Database (@neondatabase/serverless)
+- **Database**: PostgreSQL with Drizzle ORM, utilizing Neon Database
 - **API Design**: RESTful API with JSON responses
 
-## Key Components
-
-### AI Service Integration
-- **Gemini 2.5 Pro**: Keyword analysis, content editing, and introduction/conclusion enhancement
-- **Claude Sonnet 4**: Blog post generation and optimization
-- **Perplexity Sonar Pro**: Research data collection and fact-checking
-- **Imagen 3.0**: Infographic generation for each subtitle/section
-
-### Database Schema
-- **users**: User authentication and management
-- **userBusinessInfo**: User-specific business information storage (reusable across projects)
-- **blogProjects**: Main project entity with workflow status tracking
-- **chatMessages**: Chat-based content editing system
-
-### Project Workflow States
-1. `keyword_analysis` - Initial keyword research and intent analysis
-2. `data_collection` - Research data gathering from external sources
-3. `business_info` - Business information collection for personalization
-4. `content_generation` - AI-powered blog post creation
-5. `completed` - Final content with SEO optimization complete
-
-## Data Flow
-
-1. **Project Creation**: User inputs keyword, system creates project with initial status
-2. **Keyword Analysis**: Gemini analyzes search intent and suggests subtitles
-3. **Research Phase**: Perplexity gathers relevant data and citations
-4. **Business Integration**: User provides business information for personalization
-5. **Content Generation**: Claude creates SEO-optimized blog post
-6. **Image Generation**: Imagen 3.0 creates infographics for each subtitle
-7. **Optimization**: System analyzes SEO metrics and provides suggestions
-8. **Content Export**: Users can copy text separately and download individual images
-9. **Editing**: Chat-based interface allows iterative content refinement
+### Core Architectural Decisions
+- **AI Service Integration**: Uses multiple AI models (Gemini 2.5 Pro, Claude Sonnet 4 / Opus 4.0, Perplexity Sonar Pro, Imagen 3.0) for distinct tasks like keyword analysis, content generation, research, and image creation.
+- **Project Workflow**: Structured through defined states (`keyword_analysis`, `data_collection`, `business_info`, `content_generation`, `completed`) for clear progress tracking.
+- **SEO Optimization**: Integrates a strict morpheme generation system ensuring keyword frequency (15-17 counts per component, 5+ for full keywords), character count (1500-1700), and keyword dominance. Includes intelligent morpheme overuse resolution.
+- **Content Quality**: Focuses on natural blog tone, engaging introductions (35-40% of content, empathy or warning types), professional conclusions, and natural integration of business expertise and research citations.
+- **UI/UX**: Features include drag-and-drop subtitle reordering, interactive AI image generation buttons, chat-based content editing with SEO validation, and a mobile-first responsive design with enhanced line breaking for readability.
+- **Authentication**: Authentication system is temporarily disabled, allowing immediate service access.
+- **Deployment**: Utilizes Vite for frontend builds, esbuild for backend bundling, and Drizzle for database migrations.
 
 ## External Dependencies
 
 ### AI Services
-- **Anthropic API**: Claude 4 for content generation
-- **Google Gemini API**: Gemini 2.5 Pro for analysis and editing
-- **Perplexity API**: Sonar Pro for research and fact-checking
-- **Google Vertex AI**: Imagen 3.0 for image generation
+- **Anthropic API**: Claude (Sonnet 4 and Opus 4.0) for blog post and title generation, content optimization.
+- **Google Gemini API**: Gemini 2.5 Pro for keyword analysis, content editing, introduction/conclusion enhancement.
+- **Perplexity API**: Sonar Pro for research data collection and fact-checking, with strict source filtering (excluding social media and specific Kakao domains).
+- **Google Vertex AI**: Imagen 3.0 for infographic and general image generation.
 
 ### Database & Infrastructure
-- **PostgreSQL Database**: Local PostgreSQL instance for persistent storage
-- **Drizzle ORM**: Type-safe database operations with @neondatabase/serverless driver
-- **Drizzle Kit**: Database migrations and schema management
+- **PostgreSQL Database**: Persistent storage for user, business, project, and chat message data.
+- **Drizzle ORM**: Type-safe database operations with `@neondatabase/serverless` driver.
+- **Drizzle Kit**: Database migrations and schema management.
 
 ### Frontend Libraries
-- **TanStack Query**: Server state management and caching
-- **Radix UI**: Accessible component primitives
-- **Tailwind CSS**: Utility-first styling framework
-- **React Hook Form**: Form validation and handling
-
-## Deployment Strategy
-
-### Development Environment
-- **Vite Dev Server**: Hot module replacement for frontend
-- **tsx**: TypeScript execution for backend development
-- **Concurrent Development**: Frontend and backend run simultaneously
-
-### Production Build
-- **Frontend**: Vite builds to `dist/public` with asset optimization
-- **Backend**: esbuild bundles server code to `dist/index.js`
-- **Database**: Drizzle migrations handle schema deployment
-
-### Environment Configuration
-- **Database**: `DATABASE_URL` for PostgreSQL connection
-- **AI APIs**: Separate API keys for each service
-- **Session Management**: PostgreSQL session store with connect-pg-simple
-
-## Recent Changes
-
-### January 28, 2025
-- **서론 다양성 대폭 개선**: 기존 고정된 패턴에서 자유도 높은 창의적 서론 작성 시스템으로 전환
-- **높은 자유도 서론 작성**: 패턴을 참고하되 매번 완전히 다른 접근법, 톤, 표현 방식으로 서론 생성하여 반복감 완전 제거
-- **창의적 표현 가이드**: 감정적 어조 변화, 시작 문장 다양화, 창의적 연결 방식 등 다양한 표현 기법 제공으로 서론의 획일화 방지
-- **자연스러운 스타일링**: 딱딱한 형식 대신 키워드 특성과 맥락에 맞는 맞춤형 접근으로 독자 몰입도 극대화
-- **업체 정보 관리 UI 통합**: BusinessProfileManager 컴포넌트 제거하고 기본 폼에 통합, 업체명 드롭다운에서 저장된 업체 목록 직접 표시
-- **외부 이미지 도구 연동**: 이미지 생성 기능을 Google Whisk(이미지)와 Napkin.ai(인포그래픽) 외부 도구로 대체하여 더 안정적이고 고품질의 이미지 생성 환경 제공
-- **간소화된 이미지 도구 블록**: 소제목별 버튼 대신 전체 2개 버튼(이미지 생성하러 가기, 인포그래픽 생성하러 가기)으로 단순화
-- **챗봇 기능 전면 개편**: 이미지 생성 기능 완전 제거하고 콘텐츠 수정과 제목 제안에 집중, 외부 도구(Google Whisk, Napkin AI) 안내로 대체
-- **SEO 유지 수정 시스템**: 기존 글의 구조와 흐름 보존하면서 요청된 부분만 집중 수정, 전체 재작성 대신 부분 개선으로 자연스러운 수정
-- **정량적 표현 제한**: 퍼플렉시티 연구 자료에 없는 통계나 수치 사용 금지, 연구 자료에 명시된 내용만 정확히 인용하도록 Claude 프롬프트 강화
-
-### January 25, 2025
-- **PRD(Product Requirements Document) 작성**: 블로그치트키의 완전한 제품 요구사항 문서 생성 - 프로젝트 개요, 핵심 기능, 기술 사양, 비즈니스 모델, 성공 지표 등 포함
-- **제품 문서화 체계 구축**: 향후 제품 개발과 사업 확장을 위한 체계적인 문서 기반 마련
-
-### January 23, 2025
-- **포트원 월구독 결제 시스템 구현**: 3단계 월구독 플랜 (베이직 30,000원, 프리미엄 50,000원, 프로 100,000원) 구현
-- **플랜별 기능 차등화**: 베이직(콘텐츠만), 프리미엄(콘텐츠+이미지), 프로(풀서비스+챗봇) 구조 설계
-- **포트원 API 완전 연동**: 정기결제용 customer_uid 포함한 구독 결제 시스템 구축
-- **결제 검증 시스템**: 서버 측 결제 검증 및 구독 정보 관리 로직 구현
-- **홈페이지 결제 버튼 추가**: 상단 헤더에 구독하기 버튼 및 결제 모달 통합
-- **포트원 PG 설정 필요**: 실제 결제 작동을 위해서는 포트원 관리자 페이지에서 PG(결제대행사) 설정 완료 필요
-- **현재 서비스 상태**: 로그인 기능 비활성화 상태로 모든 기능을 무료로 사용 가능 - 추후 로그인 기능 활성화 시 구독 제한 적용 예정
-
-### January 20, 2025
-- **User-Defined Morpheme Input Feature**: Added custom morpheme input functionality in reference blog links section - users can input space-separated morphemes that must be included at least once in generated content
-- **Visual Morpheme Display**: Implemented real-time parsing and badge display of custom morphemes with count indicator
-- **Database Schema Enhancement**: Added `customMorphemes` text field to blog projects table for storing user-defined morphemes
-- **API Integration**: Created `/api/projects/:id/custom-morphemes` endpoint for saving user morphemes and integrated them into content generation pipeline
-- **AI Content Integration**: Modified `strictMorphemeGenerator` and `writeOptimizedBlogPost` to incorporate user-defined morphemes into content generation prompts
-- **Clipboard Copy Fix**: Enhanced clipboard functionality with fallback mechanism for browsers with focus/permission restrictions using temporary textarea method
-- **Content Generation Enhancement**: Custom morphemes are automatically included in SEO suggestions and final content validation passes
-- **Blog Generation Button Repositioning**: Moved blog generation button from BusinessInfoForm to below reference blog links section for better workflow - users can now see all setup complete before generating
-- **Enhanced Custom Morpheme Validation**: Strengthened custom morpheme enforcement in `morphemeAnalyzer.ts` with detailed missing morpheme detection and stricter validation in content generation pipeline
-- **Improved Content Quality Control**: Custom morphemes are now mandatory validation criteria - content generation will retry until all user-defined morphemes are included in final output
-- **Dual Condition Enforcement**: Fixed issue where adding custom morphemes would ignore keyword morpheme frequency requirements (15-17 times) - now both conditions must be satisfied simultaneously
-- **Dynamic SEO Suggestions**: Updated `strictMorphemeGenerator.ts` to provide keyword-specific morpheme frequency suggestions and stronger emphasis on maintaining SEO optimization while including custom morphemes
-- **Enhanced Claude Integration**: Modified `anthropic.ts` to prominently display SEO suggestions with warning messages, ensuring AI model prioritizes both keyword frequency and custom morpheme inclusion
-- **Complete Keyword Recognition Fix**: Updated `morphemeAnalyzer.ts` to recognize complete keywords (like "벤츠엔진경고등") as single units instead of splitting into components, ensuring accurate 15-17 count for SEO optimization
-- **SEO Frequency Control**: Enhanced both `anthropic.ts` and `strictMorphemeGenerator.ts` to explicitly instruct AI models to use complete keyword forms, preventing individual components from appearing excessively (~40 times)
-- **Dual Keyword Optimization System**: Implemented complete keyword optimization requirements - full keyword minimum 5 times + individual components 15-17 times each
-- **Corrected Character Count**: Fixed character count requirement from 1700-1800 to 1500-1700 characters (excluding spaces) as per user specification
-- **Enhanced morphemeAnalyzer.ts**: Complete rewrite with dual tracking system - findCompleteKeywordMatches() for full keyword (5+ times) and findKeywordComponentMatches() for individual components (15-17 times each)
-- **Updated AI Service Instructions**: Modified anthropic.ts and strictMorphemeGenerator.ts to enforce both complete keyword (5+) and component-level (15-17 each) requirements simultaneously
-- **Restored Component Counting Logic**: Corrected morpheme analysis to count individual components when they appear within compound words - "벤츠엔진경고" counts as 벤츠=1, 엔진=1, 경고=1 occurrence each
-- **Enhanced Chatbot Intent Recognition**: Improved chatbot to accurately distinguish between content editing requests ("서론 수정해줘") and image generation requests, with priority given to content editing keywords
-- **SEO Validation in Chatbot**: Added real-time morpheme analysis validation when editing content through chatbot, ensuring all SEO conditions (complete keyword 5+, components 15-17 each, 1500-1700 characters) are maintained during edits
-- **Enhanced Morpheme Limit Enforcement**: Added strict 17-count maximum enforcement for keyword components to prevent SEO penalties from overuse
-- **Attractive Writing Guidelines**: Implemented engaging introduction and conclusion writing strategies with storytelling elements and natural CTAs
-- **Introduction Writing Styles**: Added two approaches - reader empathy type (storytelling about difficulties) and warning type (emphasizing keyword importance and consequences)
-- **Professional Conclusion Format**: Enhanced conclusion structure with content summary and natural "contact us if you need help" CTA messaging
-- **Business Expertise Integration**: Improved natural integration of business expertise mentions in introduction and conclusion sections
-- **Reference Blog Analysis Enhancement**: Fixed webFetcher.ts with improved HTML parsing, better content extraction, and Korean blog site compatibility
-- **Enhanced Error Handling**: Added comprehensive logging and alternative fetch methods for Korean blog platforms (Naver, Tistory, Daum)
-- **Content Extraction Improvement**: Upgraded text extraction with content-specific selectors and better filtering for meaningful content
-- **Claude Opus 4.0 Model Upgrade**: Upgraded all AI services from claude-sonnet-4 to claude-opus-4-20250514 for improved content generation quality
-- **Enhanced Morpheme Overuse Prevention**: Strengthened 17-count maximum enforcement with explicit warnings and detailed guidance to prevent SEO penalties
-- **Stricter Content Generation**: Added specific instructions to prevent keyword component overuse (17+ times) which causes search ranking drops
-- **Intelligent Morpheme Overuse Resolution**: Implemented automated system to resolve 17+ count overuse by identifying problematic sentences and naturally adjusting them
-- **Smart Content Adjustment**: Claude Opus analyzes context to determine if sentences/morphemes can be safely removed or replaced with synonyms without affecting readability
-- **Three-Step Resolution Process**: Find overused morpheme sentences → Remove/replace naturally → Verify context maintains flow and meaning
-- **Research Citation Integration**: Added natural research source citation in blog content using phrases like "최근 연구에 따르면", "업계 보고서에서는" to enhance credibility while maintaining natural flow
-- **Comprehensive SEO + Persuasive Writing System**: Implemented complete integration of SEO optimization (15-17 morpheme count, 1500-1700 characters) with persuasive writing requirements
-- **Enhanced Introduction Strategy**: Expanded introduction proportion to 35-40% with two strategic approaches - reader empathy type (storytelling about difficulties) or warning type (emphasizing importance and consequences)
-- **Intelligent Morpheme Overflow Resolution**: Refined 3-step Claude Opus judgment process - find morpheme sentences → delete if contextually safe → use synonyms/pronouns if deletion causes awkwardness
-- **Natural CTA Integration**: Updated conclusion structure with content summary and natural "글만으로 해결되지 않거나 직접 해보기 어렵다면 부담없이 연락주세요" messaging
-- **Reader Retention Focus**: All content generation now prioritizes keeping readers engaged until the end through compelling introductions and natural flow
-
-### January 18, 2025
-- **Enhanced Perplexity Research Quality**: Improved search quality with explicit social media exclusion (Instagram, TikTok, Facebook, Twitter), keyword-focused search queries, and strict credible source requirements (government agencies, academic institutions, industry reports) while maintaining sonar-pro model
-- **Research Domain Filtering Update**: Modified Perplexity API domain filtering per user request - now excludes Kakao domains (kakao.com, daum.net, cafe.daum.net, blog.kakao.com) while allowing YouTube domains for research data collection
-- **Claude 4.0 Sonnet Model Update**: Both blog content generation and title generation services now use the latest `claude-sonnet-4-20250514` model for improved quality and consistency
-- **Title Generation Feature Added**: Implemented comprehensive title generation functionality in chatbot - users can now request "제목 만들어줘" to generate 10 different types of blog titles (일반 상식 반박형, 인정욕구 자극형, 숨겨진 비밀형, 트렌드 제시형, 실패담 공유형, 비교형, 경고형, 남탓 공감형, 초보자 가이드형, 효과 제시형)
-- **Intelligent Title Analysis**: Title generator extracts key information from blog content including subtitles, statistics, and keywords to create contextually relevant titles
-- **Enhanced Chatbot Interface**: Updated editing chat UI with new guidance for title generation feature and improved placeholder text
-- **Unified AI Experience**: Both content generation and title generation use the same Claude model ensuring consistent quality and style across all generated content
-- **Authentication System Completely Disabled**: Removed all isAuthenticated middleware from API routes for immediate service access without login requirement
-- **Default User Account Implementation**: Created default user account (ID: 1) in database to prevent undefined user ID errors
-- **Perplexity Research Enhancement**: Updated Perplexity API to prioritize news articles, academic papers, and statistical data with system prompts and search recency filters
-- **Drag & Drop Subtitle Reordering**: Added drag-and-drop functionality for subtitle reordering using @hello-pangea/dnd library with intuitive visual feedback
-- **Enhanced Chatbot UI**: Improved chatbot text readability with automatic line breaks and increased chat area height for better user experience
-- **Plain Text Blog Format**: Changed blog content generation from markdown to plain text format with enhanced readability structure
-- **Enhanced Perplexity Research Quality**: Improved search quality with explicit social media exclusion (Instagram, TikTok, Facebook, Twitter), keyword-focused search queries, and strict credible source requirements (government agencies, academic institutions, industry reports) while maintaining sonar-pro model
-
-### January 17, 2025
-- **Authentication Temporarily Disabled**: Commented out all social login code (Google, Kakao, Naver) instead of just Google
-- **Modified system to bypass authentication checks, allowing users immediate service access without login**: All users can now use service without authentication
-- **OAuth setup completed but disabled**: Google and Naver developer centers configured with proper callback URLs
-- **Code structure preserved**: All authentication code commented but not deleted for future reactivation
-- **Optional Reference Blog Links Feature**: Implemented user-requested feature for referencing blog writing styles - users can now add reference blog links categorized by purpose (tone, storytelling, hook methods, CTA approaches)
-- **Intelligent Style Analysis**: Created automated web content fetching and analysis system that extracts writing patterns from reference blogs including tone analysis, hook methods, storytelling approaches, and CTA styles
-- **Enhanced Content Generation**: Updated Claude Anthropic service to incorporate reference blog analysis results into content generation prompts for more targeted writing style adaptation
-- **Database Schema Enhancement**: Added `referenceBlogLinks` field to blog projects table with structured link categorization and optional user descriptions
-- **User-Friendly Interface**: Developed comprehensive UI component allowing users to add, categorize, and manage reference links with clear purpose labels and external link validation
-- **UI Layout Optimization**: Repositioned reference blog links below business info section and moved chatbot above subtitle image generation for better user workflow
-- **AI Learning Enhancement**: Improved AI prompts to recognize reference blog patterns as "good writing examples" and learn from successful content structures for better quality generation
-- **Advanced Multi-Stage Optimization**: Implemented Python-inspired 3-stage optimization process (SEO → Readability → Morpheme) for better quality while maintaining speed
-- **Smart Enhancement Process**: Introduction/conclusion enhancement only applied when content already meets morpheme conditions to prevent degradation
-- **Performance Optimization**: Reduced blog generation time by 50% - decreased retry attempts, shorter delays, simplified prompts
-- **Speed Improvements**: Max attempts reduced from 5→3, retry delays from 5s→2s, max tokens from 8000→6000, temperature increased to 0.7
-- **Image Generation Issue Resolution**: Fixed Google Vertex AI Imagen 3.0 API response parsing issues - updated to use latest `imagen-3.0-generate-002` model
-- **Enhanced Error Handling**: Improved image generation debugging with better error messages and response structure validation
-- **API Response Format Update**: Updated response parsing to handle the correct `bytesBase64Encoded` format from Imagen 3.0 API
-- **Keyword Analysis & Research Speed Optimization**: Reduced keyword analysis response length (200→150 chars), optimized Perplexity API calls (max_tokens: 2000→1200, temperature: 0.2→0.4, simplified prompts), decreased retry delays (1000ms→500ms)
-- **Data Collection Performance**: Improved research speed by 70% - from 30+ seconds to ~8.5 seconds through optimized prompts and reduced token usage
-- **Variable Duplication Fix**: Resolved strictMorphemeGenerator.ts compilation errors causing 500 errors during blog generation
-- **Enhanced Chatbot Image Generation**: Improved prompt extraction for chatbot image generation - better removal of action words ("그려줘", "만들어줘") while preserving user's actual intent and description
-- **Improved Prompt Processing**: Enhanced regex patterns to remove Korean particles and request phrases while maintaining core content meaning
-- **Extended Image Keywords**: Added more image generation trigger keywords including "사진", "인포그래픽" for better detection
-- **Better Style Detection**: Improved automatic style detection between photo and infographic based on user's request context
-
-### January 16, 2025
-- **Interactive AI Image Generation**: Implemented hover-triggered image generation buttons on each subtitle section - users can generate infographics or photos directly from content sections with visual feedback
-- **Chatbot Image Generation**: Added AI image generation to editing chat - users can request images with commands like "BMW 그림을 그려줘"
-- **Google Vertex AI Integration**: Successfully integrated Imagen 3.0 for high-quality image generation with proper authentication and error handling
-- **Enhanced API Error Handling**: Added retry logic and fallback responses for both Gemini and Claude API overload situations (status 503/529), ensuring content generation always succeeds with intelligent fallback content
-- **Engaging Introduction & Conclusion Enhancement**: Enhanced intro to address reader pain points and build empathy, strengthened conclusion with compelling CTA that acknowledges time constraints and drives immediate action to contact business
-- **Natural Blog Tone Implementation**: Changed to natural blog writing style using ~합니다, ~때문이죠, ~입니다, ~신가요? expressions for more engaging and relatable content
-- **Professional-Friendly Tone Balance**: Balanced professional expertise with friendly approach - introductions establish credibility and create curiosity, conclusions guide readers to business contact for complex issues
-- **Enhanced Mobile Formatting**: Improved mobile line break algorithm with cleaner 25-28 character segments, better Korean phrase boundary detection, and optimized readability
-- **Strict Morpheme Generation System**: Created new strict morpheme generator that ensures all 3 conditions are met: 15-17 morpheme count, 1700-1800 characters, keyword morpheme dominance
-- **Non-Conversational Content Generation**: Modified Claude and Gemini prompts to eliminate all conversational expressions and produce pure informational blog posts ready for copy-paste
-- **Enhanced Morpheme Optimization**: Each keyword morpheme (BMW, 코딩) now requires 15-17 individual occurrences, not combined total
-- **Keyword Frequency Dominance**: Keyword morphemes must be the most frequent words in content - no other morpheme can exceed keyword counts
-- **Text Format Output**: Changed from markdown to plain text with optimized line breaks for better readability
-- **Improved Analysis**: Individual morpheme counting with specific suggestions for over/under-occurrence
-- **Manual Research Control**: Changed Perplexity data collection to manual operation - users can modify subtitles before triggering research
-- **Gemini Enhancement Integration**: Added Gemini-powered introduction and conclusion enhancement after Claude generates initial content
-- **Progress Visibility**: Project progress stepper visible from the start, not just after project creation
-- **Text Formatting**: Subtitles followed by 2 line breaks, paragraphs by 1 line break for optimal readability
-- **Mobile Optimization**: Enhanced mobile formatting with 30-character line breaks for better mobile reading
-- **In-paragraph Line Breaks**: Added 40-50 character line breaks within paragraphs for improved readability
-- **Responsive UI**: Mobile-first design with responsive buttons and improved text display
-- **AI Status Indicators**: Fixed real-time AI model status display during keyword analysis and data collection
-- **Enhanced Reference Links**: Added meaningful titles to citation links instead of raw URLs
-- **Improved Content Tone**: Updated Claude prompts for more engaging, empathetic introduction and conclusion writing
-- **Mobile Preview Feature**: Added preview functionality to show how mobile formatting will look before copying
-- **Advanced Morpheme Analysis**: Improved morpheme analyzer to detect over-frequent non-keyword terms and ensure keyword dominance
-- **Mobile Line Break Enhancement**: Improved mobile formatting to respect 30-character limit while maintaining readability
-- **Content Regeneration Feature**: Added "다시 생성" button for users unsatisfied with generated content
-- **Strict Keyword Limits**: Enhanced Claude prompts with absolute 20-count limit warnings and automatic retry logic for overuse detection
-- **Blog Structure Enforcement**: Added clear instructions to Claude to generate informational blog posts, not conversational content
-- **Morpheme Optimization System**: Created intelligent morpheme optimizer that removes or replaces keyword-heavy sentences when overuse is detected
-- **Content Structure Restoration**: Added system to restore proper blog structure (intro-body-conclusion) after optimization
-
-### January 15, 2025
-- **Enhanced Business Info Management**: Added user-specific business information storage with `userBusinessInfo` table
-- **Improved Industry Selection**: Upgraded business type selector to combobox with 50+ predefined options and custom input capability
-- **Persistent User Profiles**: Business information now saves to user profile and auto-loads for future projects
-- **Business Info Auto-Fill**: Added dropdown selection for saved businesses - selecting a business name automatically fills expertise and differentiators
-- **Smart UI Flow**: Business info form now remains visible during content generation with clear progress indicators
-- **Robust Error Handling**: Added fallback SEO analysis when Gemini API is overloaded, ensuring Claude-generated content is always delivered
-- **Korean Morpheme Analysis**: Replaced Gemini API with custom Korean morpheme analyzer for reliable keyword counting
-- **Business Info UX**: Form starts empty, saved business selection changes button to "블로그 생성"
-- **Content Generation Speed**: Optimized Claude prompts and increased max_tokens to 8000 for faster generation
-- **Model Updates**: Updated Perplexity API to use simplified `sonar-pro` model name
-- **UI Improvements**: Fixed business info form UI with proper button placement and persistent form visibility
-
-The application follows a modern TypeScript stack with strong typing throughout, efficient state management, and a clean separation between frontend and backend concerns. The AI integration is modular and extensible, allowing for easy addition of new AI services or modification of existing workflows.
+- **TanStack Query**: Server state management and caching.
+- **Radix UI**: Accessible component primitives.
+- **Tailwind CSS**: Utility-first styling framework.
+- **React Hook Form**: Form validation and handling.
+- **Wouter**: Lightweight client-side routing.
+- **@hello-pangea/dnd**: For drag-and-drop functionality.
