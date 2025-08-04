@@ -1,11 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
-// 로그아웃 상태를 관리하는 전역 상태
-let isLoggedOut = false;
+// 로그아웃 상태를 localStorage로 관리하여 페이지 새로고침 후에도 유지
+const LOGOUT_KEY = 'auth_logged_out';
 
 export const setLoggedOut = (value: boolean) => {
-  isLoggedOut = value;
+  if (value) {
+    localStorage.setItem(LOGOUT_KEY, 'true');
+  } else {
+    localStorage.removeItem(LOGOUT_KEY);
+  }
+};
+
+export const getLoggedOut = () => {
+  return localStorage.getItem(LOGOUT_KEY) === 'true';
 };
 
 export interface User {
@@ -21,8 +29,8 @@ export interface User {
 }
 
 export function useAuth() {
-  // 로그아웃 상태면 인증되지 않은 것으로 처리
-  if (isLoggedOut) {
+  // localStorage에서 로그아웃 상태 확인
+  if (getLoggedOut()) {
     return {
       user: undefined,
       isLoading: false,
