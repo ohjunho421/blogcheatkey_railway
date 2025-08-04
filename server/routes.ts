@@ -38,24 +38,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Session set:", req.session);
       console.log("Session ID:", req.sessionID);
       
-      // 세션 저장 강제 실행
+      // 세션 저장 강제 실행 및 응답
       req.session.save((err) => {
         if (err) {
           console.error("Session save error:", err);
+          return res.status(500).json({ message: "세션 저장 오류" });
         } else {
           console.log("Session saved successfully");
+          // 세션 ID를 응답에 포함하여 클라이언트에서 직접 설정할 수 있도록 함
+          res.json({
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            isAdmin: user.isAdmin,
+            subscriptionTier: user.subscriptionTier,
+            canGenerateContent: user.canGenerateContent,
+            canGenerateImages: user.canGenerateImages,
+            canUseChatbot: user.canUseChatbot,
+            sessionId: req.sessionID // 세션 ID 포함
+          });
         }
-      });
-      
-      res.json({
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        isAdmin: user.isAdmin,
-        subscriptionTier: user.subscriptionTier,
-        canGenerateContent: user.canGenerateContent,
-        canGenerateImages: user.canGenerateImages,
-        canUseChatbot: user.canUseChatbot
       });
     } catch (error) {
       console.error("Login error:", error);
@@ -131,7 +133,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = 1; // 임시 고정 사용자 ID (나중에 req.user?.id로 변경)
 
       const project = await storage.createBlogProject({
-        userId,
         keyword: keyword.trim(),
         status: "keyword_analysis",
       });
@@ -228,7 +229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Search research data using Perplexity
-      const researchData = await searchResearch(project.keyword);
+      const researchData = await searchResearch(project.keyword, "ko");
       
       const updatedProject = await storage.updateBlogProject(id, {
         researchData,
@@ -278,9 +279,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Generate blog content using Anthropic
-      const { generateWithStrictMorphemes } = await import('./services/strictMorphemeGenerator');
+      const strictMorphemeGenerator = await import('./services/strictMorphemeGenerator');
       
-      const generationResult = await generateWithStrictMorphemes(
+      const generationResult = await strictMorphemeGenerator.generateBlogContent(
         project.keyword,
         project.subtitles as string[],
         project.researchData as any,
@@ -498,7 +499,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Generate titles using TitleGenerator
         try {
           const titleGenerator = new TitleGenerator();
-          const titles = await titleGenerator.generateTitles(project.keyword, project.generatedContent);
+          const titles = await titleGenerator.generateTitles(project.keyword, project.generatedContent || "");
           
           // Format titles for display
           let titleResponse = "📝 **10가지 유형별 제목 추천**\n\n";

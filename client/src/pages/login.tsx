@@ -65,13 +65,12 @@ export default function Login() {
       console.log("로그인 성공:", userData);
       console.log("현재 쿠키:", document.cookie);
       
-      // 수동으로 쿠키 설정 시도 (디버깅용) - connect.sid 사용
-      const setCookieHeader = response.headers.get('set-cookie');
-      console.log("Set-Cookie 헤더:", setCookieHeader);
-      const sessionMatch = setCookieHeader?.match(/connect\.sid=([^;]+)/);
-      if (sessionMatch) {
-        console.log("서버에서 받은 세션 ID:", sessionMatch[1]);
-        document.cookie = `connect.sid=${sessionMatch[1]}; path=/; max-age=86400`;
+      // 응답에서 받은 세션 ID로 수동 쿠키 설정
+      if (userData.sessionId) {
+        console.log("서버에서 받은 세션 ID:", userData.sessionId);
+        // URL 인코딩된 세션 ID로 쿠키 설정
+        const encodedSessionId = `s%3A${userData.sessionId}.${userData.sessionId}`;
+        document.cookie = `connect.sid=${encodedSessionId}; path=/; max-age=86400; sameSite=lax`;
         console.log("수동 설정 후 쿠키:", document.cookie);
       }
       
