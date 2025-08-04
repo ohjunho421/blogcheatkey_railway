@@ -16,13 +16,7 @@ function Router() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // 임시로 인증 체크 우회 - 모든 사용자가 바로 서비스 이용 가능
-    setIsAuthenticated(true);
-    setAuthChecked(true);
-    
-    // 원래 코드 (나중에 활성화)
-    /*
-    fetch('/auth/user')
+    fetch('/api/auth/user')
       .then(res => {
         if (res.ok) {
           setIsAuthenticated(true);
@@ -36,7 +30,6 @@ function Router() {
       .finally(() => {
         setAuthChecked(true);
       });
-    */
   }, []);
 
   // 인증 확인 중이면 로딩 표시

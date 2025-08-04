@@ -58,7 +58,7 @@ export default function Login() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = "/auth/google";
+    window.location.href = "/api/auth/google";
   };
 
   const handleKakaoLogin = () => {
