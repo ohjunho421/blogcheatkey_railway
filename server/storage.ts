@@ -1,4 +1,4 @@
-import { users, userBusinessInfo, blogProjects, chatMessages, type User, type InsertUser, type UserBusinessInfo, type InsertUserBusinessInfo, type BlogProject, type InsertBlogProject, type ChatMessage, type InsertChatMessage } from "@shared/schema";
+import { users, userBusinessInfo, blogProjects, chatMessages, type User, type InsertUser, type UserBusinessInfo, type InsertUserBusinessInfo, type BlogProject, type InsertBlogProject, type ChatMessage, type InsertChatMessage, type UpdateUserPermissions } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 
@@ -30,6 +30,11 @@ export interface IStorage {
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
   getChatMessages(projectId: number): Promise<ChatMessage[]>;
   deleteChatMessages(projectId: number): Promise<boolean>;
+  
+  // Admin methods
+  getAllUsers(): Promise<User[]>;
+  updateUserPermissions(userId: number, permissions: UpdateUserPermissions): Promise<User>;
+  makeUserAdmin(email: string): Promise<User | null>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -182,6 +187,42 @@ export class DatabaseStorage implements IStorage {
   async deleteChatMessages(projectId: number): Promise<boolean> {
     const result = await db.delete(chatMessages).where(eq(chatMessages.projectId, projectId));
     return (result.rowCount || 0) > 0;
+  }
+
+  // Admin methods
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(users.createdAt);
+  }
+
+  async updateUserPermissions(userId: number, permissions: UpdateUserPermissions): Promise<User> {
+    const [updated] = await db
+      .update(users)
+      .set({ ...permissions, updatedAt: new Date() })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    if (!updated) {
+      throw new Error(`User with id ${userId} not found`);
+    }
+    
+    return updated;
+  }
+
+  async makeUserAdmin(email: string): Promise<User | null> {
+    const [updated] = await db
+      .update(users)
+      .set({ 
+        isAdmin: true,
+        canGenerateContent: true,
+        canGenerateImages: true,
+        canUseChatbot: true,
+        subscriptionTier: "pro",
+        updatedAt: new Date() 
+      })
+      .where(eq(users.email, email))
+      .returning();
+    
+    return updated || null;
   }
 }
 

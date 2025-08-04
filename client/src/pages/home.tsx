@@ -18,7 +18,7 @@ import { ReferenceLinks } from "@/components/ReferenceLinks";
 import { InfographicGallery } from "@/components/InfographicGallery";
 import { ReferenceBlogLinksForm } from "@/components/ReferenceBlogLinksForm";
 import { GenerateBlogButton } from "@/components/GenerateBlogButton";
-import { MessageSquare, FileText, Search, Building2, Sparkles, RotateCw, LogOut, User, ChevronDown, CreditCard } from "lucide-react";
+import { MessageSquare, FileText, Search, Building2, Sparkles, RotateCw, LogOut, User, ChevronDown, CreditCard, Shield } from "lucide-react";
 import PaymentModal from "@/components/PaymentModal";
 import Footer from "@/components/Footer";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -154,6 +154,12 @@ export default function Home() {
                       <FileText className="mr-2 h-4 w-4" />
                       작성 내역
                     </DropdownMenuItem>
+                    {user.isAdmin && (
+                      <DropdownMenuItem onClick={() => navigate("/admin")}>
+                        <Shield className="mr-2 h-4 w-4" />
+                        관리자 페이지
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} disabled={logoutMutation.isPending}>
                       <LogOut className="mr-2 h-4 w-4" />

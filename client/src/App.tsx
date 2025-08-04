@@ -11,6 +11,7 @@ import Signup from "@/pages/signup";
 import NotFound from "@/pages/not-found";
 import PricingPage from "@/pages/PricingPage";
 import PrivacyPolicy from "@/pages/privacy-policy";
+import AdminPage from "@/pages/admin";
 
 function Router() {
   const [authChecked, setAuthChecked] = useState(false);
@@ -62,6 +63,7 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/project/:id" component={Home} />
           <Route path="/pricing" component={PricingPage} />
+          <Route path="/admin" component={AdminPage} />
         </>
       ) : (
         <Route path="/" component={Login} />

@@ -16,6 +16,14 @@ export const users = pgTable("users", {
   // Account status
   isEmailVerified: boolean("is_email_verified").default(false),
   isActive: boolean("is_active").default(true),
+  // Admin and subscription fields
+  isAdmin: boolean("is_admin").default(false),
+  subscriptionTier: text("subscription_tier").default("none"), // none, basic, premium, pro
+  subscriptionExpiresAt: timestamp("subscription_expires_at"),
+  // Feature permissions (can be individually granted by admin)
+  canGenerateContent: boolean("can_generate_content").default(false),
+  canGenerateImages: boolean("can_generate_images").default(false),
+  canUseChatbot: boolean("can_use_chatbot").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -150,6 +158,17 @@ export const referenceBlogLinkSchema = z.object({
   description: z.string().optional(),
 });
 
+// Admin schemas
+export const updateUserPermissionsSchema = z.object({
+  isAdmin: z.boolean().optional(),
+  subscriptionTier: z.enum(["none", "basic", "premium", "pro"]).optional(),
+  subscriptionExpiresAt: z.string().datetime().optional().nullable(),
+  canGenerateContent: z.boolean().optional(),
+  canGenerateImages: z.boolean().optional(),
+  canUseChatbot: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type EmailSignup = z.infer<typeof emailSignupSchema>;
@@ -165,3 +184,4 @@ export type BusinessInfo = z.infer<typeof businessInfoSchema>;
 export type KeywordAnalysis = z.infer<typeof keywordAnalysisSchema>;
 export type SEOMetrics = z.infer<typeof seoMetricsSchema>;
 export type ReferenceBlogLink = z.infer<typeof referenceBlogLinkSchema>;
+export type UpdateUserPermissions = z.infer<typeof updateUserPermissionsSchema>;

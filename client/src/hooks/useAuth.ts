@@ -6,6 +6,11 @@ export interface User {
   email: string;
   name: string;
   profileImage?: string;
+  isAdmin?: boolean;
+  subscriptionTier?: string;
+  canGenerateContent?: boolean;
+  canGenerateImages?: boolean;
+  canUseChatbot?: boolean;
 }
 
 export function useAuth() {
@@ -13,9 +18,14 @@ export function useAuth() {
   return {
     user: {
       id: 1,
-      email: "guest@blogcheatkey.com",
-      name: "게스트 사용자",
-      profileImage: undefined
+      email: "admin@blogcheatkey.com", // 관리자 이메일로 설정
+      name: "관리자",
+      profileImage: undefined,
+      isAdmin: true, // 임시로 관리자 권한 부여
+      subscriptionTier: "pro",
+      canGenerateContent: true,
+      canGenerateImages: true,
+      canUseChatbot: true
     } as User,
     isLoading: false,
     isAuthenticated: true,

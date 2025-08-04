@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { businessInfoSchema, keywordAnalysisSchema, seoMetricsSchema } from "@shared/schema";
+import { businessInfoSchema, keywordAnalysisSchema, seoMetricsSchema, updateUserPermissionsSchema } from "@shared/schema";
 import { analyzeKeyword, editContent, enhanceIntroductionAndConclusion } from "./services/gemini";
 import { preparePayment, verifyPayment, cancelPayment, getPaymentHistory } from "./services/portone";
 import { setupAuth, requireAuth } from './auth';
@@ -588,6 +588,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Delete business info error:", error);
       res.status(500).json({ error: "업체 정보 삭제에 실패했습니다" });
+    }
+  });
+
+  // ===== ADMIN ROUTES =====
+  
+  // Middleware to check admin permissions
+  const requireAdmin = async (req: any, res: any, next: any) => {
+    if (!req.user) {
+      return res.status(401).json({ error: "로그인이 필요합니다" });
+    }
+    
+    const user = await storage.getUser(req.user.id);
+    if (!user?.isAdmin) {
+      return res.status(403).json({ error: "관리자 권한이 필요합니다" });
+    }
+    
+    next();
+  };
+
+  // Get all users (admin only)
+  app.get("/api/admin/users", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Admin get users error:", error);
+      res.status(500).json({ error: "사용자 목록 조회에 실패했습니다" });
+    }
+  });
+
+  // Update user permissions (admin only)
+  app.put("/api/admin/users/:id/permissions", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const permissions = updateUserPermissionsSchema.parse(req.body);
+      
+      const updatedUser = await storage.updateUserPermissions(userId, permissions);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Admin update permissions error:", error);
+      res.status(500).json({ error: "권한 업데이트에 실패했습니다" });
+    }
+  });
+
+  // Make user admin by email (super admin only - for initial setup)
+  app.post("/api/admin/make-admin", async (req, res) => {
+    try {
+      const { email, adminSecret } = req.body;
+      
+      // Simple secret check for initial admin setup
+      if (adminSecret !== "blogcheatkey-admin-2025") {
+        return res.status(403).json({ error: "잘못된 관리자 비밀번호입니다" });
+      }
+      
+      const updatedUser = await storage.makeUserAdmin(email);
+      if (!updatedUser) {
+        return res.status(404).json({ error: "해당 이메일의 사용자를 찾을 수 없습니다" });
+      }
+      
+      res.json({ message: "관리자 권한이 부여되었습니다", user: updatedUser });
+    } catch (error) {
+      console.error("Make admin error:", error);
+      res.status(500).json({ error: "관리자 권한 부여에 실패했습니다" });
     }
   });
 
