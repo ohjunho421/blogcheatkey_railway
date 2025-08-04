@@ -43,7 +43,10 @@ function Router() {
           <Route path="/admin" component={AdminPage} />
         </>
       ) : (
-        <Route path="/" component={Login} />
+        <>
+          <Route path="/" component={Login} />
+          <Route path="*" component={Login} />
+        </>
       )}
       <Route component={NotFound} />
     </Switch>

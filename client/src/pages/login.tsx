@@ -34,10 +34,8 @@ export default function Login() {
     },
   });
 
-  // 로그인 페이지 진입시 로그아웃 상태 초기화
-  useEffect(() => {
-    setLoggedOut(false);
-  }, []);
+  // 로그인 페이지에서는 로그아웃 상태를 초기화하지 않음
+  // 사용자가 직접 로그인 버튼을 클릭할 때만 상태 변경
 
   // Redirect if already authenticated - useEffect 사용으로 hook 순서 보장
   React.useEffect(() => {
@@ -48,6 +46,8 @@ export default function Login() {
 
   const onSubmit = async (data: LoginForm) => {
     try {
+      // 로그인 시도시 로그아웃 상태 해제
+      setLoggedOut(false);
       await loginMutation.mutateAsync(data);
       toast({
         title: "로그인 성공",

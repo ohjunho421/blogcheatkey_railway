@@ -143,7 +143,7 @@ export function useLogout() {
     onSuccess: () => {
       queryClient.setQueryData(["/auth/user"], null);
       queryClient.clear();
-      // 페이지 새로고침으로 로그인 화면으로 이동
+      // 로그인 페이지로 이동 후 새로고침
       window.location.href = "/login";
     },
   });
