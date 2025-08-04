@@ -1,4 +1,5 @@
 import { Building2, User, Phone, FileText } from "lucide-react";
+import { Link } from "wouter";
 
 export default function Footer() {
   return (
@@ -72,9 +73,14 @@ export default function Footer() {
         {/* 하단 저작권 */}
         <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
           <div className="flex flex-col sm:flex-row justify-between items-center">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              © 2025 블로그치트키. All rights reserved.
-            </p>
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                © 2025 블로그치트키. All rights reserved.
+              </p>
+              <Link href="/privacy-policy" className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 underline">
+                개인정보처리방침
+              </Link>
+            </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 sm:mt-0">
               사업자등록번호: 456-05-03530 | 대표: 오준호
             </p>

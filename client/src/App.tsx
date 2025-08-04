@@ -10,6 +10,7 @@ import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import NotFound from "@/pages/not-found";
 import PricingPage from "@/pages/PricingPage";
+import PrivacyPolicy from "@/pages/privacy-policy";
 
 function Router() {
   const [authChecked, setAuthChecked] = useState(false);
@@ -55,6 +56,7 @@ function Router() {
     <Switch>
       <Route path="/login" component={Login} />
       <Route path="/signup" component={Signup} />
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
       {isAuthenticated ? (
         <>
           <Route path="/" component={Home} />

@@ -232,12 +232,19 @@ export default function Login() {
             </Button>
           </div>
 
-          <div className="text-center">
+          <div className="text-center space-y-2">
             <p className="text-sm text-gray-600">
               계정이 없으신가요?{" "}
               <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-500">
                 회원가입
               </Link>
+            </p>
+            <p className="text-xs text-gray-500">
+              로그인 시{" "}
+              <Link href="/privacy-policy" className="underline hover:text-gray-700">
+                개인정보처리방침
+              </Link>
+              에 동의하는 것으로 간주됩니다.
             </p>
           </div>
         </CardContent>
