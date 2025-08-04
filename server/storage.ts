@@ -7,6 +7,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getUserBySocialId(provider: 'google' | 'kakao' | 'naver', socialId: string): Promise<User | undefined>;
+  getUserByGoogleId(googleId: string): Promise<User | undefined>;
   createUser(userData: Partial<InsertUser>): Promise<User>;
   updateUser(id: number, updates: Partial<InsertUser>): Promise<User>;
   
@@ -47,6 +48,11 @@ export class DatabaseStorage implements IStorage {
                    provider === 'kakao' ? users.kakaoId : 
                    users.naverId;
     const [user] = await db.select().from(users).where(eq(column, socialId));
+    return user || undefined;
+  }
+
+  async getUserByGoogleId(googleId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.googleId, googleId));
     return user || undefined;
   }
 
@@ -176,14 +182,6 @@ export class DatabaseStorage implements IStorage {
   async deleteChatMessages(projectId: number): Promise<boolean> {
     const result = await db.delete(chatMessages).where(eq(chatMessages.projectId, projectId));
     return (result.rowCount || 0) > 0;
-  }
-
-  async getAllUserBusinessInfos(userId: number): Promise<UserBusinessInfo[]> {
-    return await db
-      .select()
-      .from(userBusinessInfo)
-      .where(eq(userBusinessInfo.userId, userId))
-      .orderBy(userBusinessInfo.updatedAt);
   }
 }
 

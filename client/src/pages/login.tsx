@@ -58,13 +58,7 @@ export default function Login() {
   };
 
   const handleGoogleLogin = () => {
-    // 개인정보 처리방침 준비 후 활성화 예정
-    toast({
-      title: "준비 중",
-      description: "구글 로그인은 개인정보 처리방침 준비 후 제공됩니다.",
-      variant: "destructive",
-    });
-    // window.location.href = "/auth/google";
+    window.location.href = "/auth/google";
   };
 
   const handleKakaoLogin = () => {

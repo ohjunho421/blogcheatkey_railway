@@ -2,13 +2,15 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { businessInfoSchema, keywordAnalysisSchema, seoMetricsSchema } from "@shared/schema";
+import { businessInfoSchema, keywordAnalysisSchema, seoMetricsSchema, emailSignupSchema, emailLoginSchema } from "@shared/schema";
 import { analyzeKeyword, editContent, enhanceIntroductionAndConclusion } from "./services/gemini";
 import { preparePayment, verifyPayment, cancelPayment, getPaymentHistory } from "./services/portone";
+import passport from 'passport';
 import { setupAuth, requireAuth } from './auth';
 import { writeOptimizedBlogPost } from "./services/anthropic";
 import { searchResearch, getDetailedResearch } from "./services/perplexity";
-import { analyzeSEOOptimization } from "./services/seoOptimizer";
+// 이미지 생성 서비스 제거됨 - 외부 도구 사용
+import { analyzeSEOOptimization, formatForMobile } from "./services/seoOptimizer";
 import { enhancedSEOAnalysis } from "./services/morphemeAnalyzer";
 import { TitleGenerator } from "./services/titleGenerator";
 
@@ -17,23 +19,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication middleware
   setupAuth(app);
   
+  // Health check endpoint should be at the top
+  // Health check and ping endpoints are already handled in server/index.ts
+  
+  // ===== AUTHENTICATION ROUTES =====
+  // Google OAuth routes are handled in auth.ts setupAuth function
+  
   // ===== BLOG PROJECT ROUTES =====
+  /*
+  app.get('/auth/google',
+    passport.authenticate('google', { scope: ['profile', 'email'] })
+  );
+
+  app.get('/auth/google/callback',
+    passport.authenticate('google', { 
+      successRedirect: '/',
+      failureRedirect: '/login?error=google_login_failed'
+    })
+  );
+  */
+
+  // Kakao OAuth routes - 소셜 로그인 기능 일시 비활성화
+  /*
+  app.get('/auth/kakao',
+    passport.authenticate('kakao')
+  );
+
+  app.get('/auth/kakao/callback',
+    passport.authenticate('kakao', { 
+      successRedirect: '/',
+      failureRedirect: '/login?error=kakao_login_failed'
+    })
+  );
+  */
+
+  // Naver OAuth routes - 소셜 로그인 기능 일시 비활성화
+  /*
+  app.get('/auth/naver',
+    passport.authenticate('naver')
+  );
+
+  app.get('/auth/naver/callback',
+    passport.authenticate('naver', { 
+      successRedirect: '/',
+      failureRedirect: '/login?error=naver_login_failed'
+    })
+  );
+  */
+  
+  // ===== PROTECTED ROUTES (require authentication) =====
   
   // Create new blog project
   app.post("/api/projects", async (req, res) => {
     try {
       const { keyword } = req.body;
       
-      if (!keyword || typeof keyword !== 'string' || keyword.trim().length === 0) {
+      if (!keyword || typeof keyword !== "string") {
         return res.status(400).json({ error: "키워드를 입력해주세요" });
       }
 
-      const userId = 1; // 임시 고정 사용자 ID (나중에 req.user?.id로 변경)
-
+      // 인증 우회: 기본 사용자 ID 사용
       const project = await storage.createBlogProject({
-        userId,
-        keyword: keyword.trim(),
+        keyword,
         status: "keyword_analysis",
+        keywordAnalysis: null,
+        subtitles: null,
+        researchData: null,
+        businessInfo: null,
+        generatedContent: null,
+        seoMetrics: null,
+        referenceLinks: null,
       });
 
       res.json(project);
@@ -43,19 +98,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get all projects for user
-  app.get("/api/projects", async (req, res) => {
-    try {
-      const userId = 1; // 임시 고정 사용자 ID
-      const projects = await storage.getBlogProjectsByUser(userId);
-      res.json(projects);
-    } catch (error) {
-      console.error("Projects fetch error:", error);
-      res.status(500).json({ error: "프로젝트 목록 조회에 실패했습니다" });
-    }
-  });
-
-  // Get specific project
+  // Get project
   app.get("/api/projects/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -72,25 +115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete project
-  app.delete("/api/projects/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const success = await storage.deleteBlogProject(id);
-      
-      if (!success) {
-        return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
-      }
-
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Project deletion error:", error);
-      res.status(500).json({ error: "프로젝트 삭제에 실패했습니다" });
-    }
-  });
-
-  // ===== KEYWORD ANALYSIS =====
-  
+  // Analyze keyword with Gemini
   app.post("/api/projects/:id/analyze", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -100,13 +125,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
       }
 
-      // Analyze keyword using Gemini
       const analysis = await analyzeKeyword(project.keyword);
       
       const updatedProject = await storage.updateBlogProject(id, {
         keywordAnalysis: analysis,
         subtitles: analysis.suggestedSubtitles,
-        status: "data_collection",
+        status: "keyword_analysis",
       });
 
       res.json(updatedProject);
@@ -116,83 +140,163 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ===== RESEARCH DATA COLLECTION =====
-  
+  // Update subtitles
+  app.post("/api/projects/:id/subtitles", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { subtitles } = req.body;
+      
+      if (!Array.isArray(subtitles) || subtitles.length !== 4) {
+        return res.status(400).json({ error: "4개의 소제목을 입력해주세요" });
+      }
+
+      const updatedProject = await storage.updateBlogProject(id, {
+        subtitles,
+      });
+
+      res.json(updatedProject);
+    } catch (error) {
+      console.error("Subtitle update error:", error);
+      res.status(500).json({ error: "소제목 업데이트에 실패했습니다" });
+    }
+  });
+
+  // Research with Perplexity
   app.post("/api/projects/:id/research", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const project = await storage.getBlogProject(id);
       
-      if (!project) {
-        return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
+      if (!project || !project.subtitles) {
+        return res.status(400).json({ error: "소제목이 설정되지 않았습니다" });
       }
 
-      // Search research data using Perplexity
-      const researchData = await searchResearch(project.keyword);
+      const research = await searchResearch(project.keyword, project.subtitles as string[]);
       
       const updatedProject = await storage.updateBlogProject(id, {
-        researchData,
+        researchData: research,
+        referenceLinks: research.citations,
         status: "business_info",
       });
 
       res.json(updatedProject);
     } catch (error) {
       console.error("Research error:", error);
-      res.status(500).json({ error: "연구 자료 수집에 실패했습니다" });
+      res.status(500).json({ error: "자료 수집에 실패했습니다" });
     }
   });
 
-  // ===== BUSINESS INFO =====
-  
-  app.post("/api/projects/:id/business-info", async (req, res) => {
+  // Save business info
+  app.post("/api/projects/:id/business", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const businessInfoData = businessInfoSchema.parse(req.body);
+      const businessInfo = businessInfoSchema.parse(req.body);
       
-      const project = await storage.getBlogProject(id);
-      if (!project) {
-        return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
-      }
-
+      // Only save business info, don't change status to prevent auto-generation
       const updatedProject = await storage.updateBlogProject(id, {
-        businessInfo: businessInfoData,
-        status: "content_generation",
+        businessInfo,
+        // Keep current status, don't auto-change to content_generation
       });
 
       res.json(updatedProject);
     } catch (error) {
-      console.error("Business info error:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Business info save error:", error);
       res.status(500).json({ error: "업체 정보 저장에 실패했습니다" });
     }
   });
 
-  // ===== CONTENT GENERATION =====
-  
+  // Generate blog content
   app.post("/api/projects/:id/generate", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const project = await storage.getBlogProject(id);
       
-      if (!project) {
-        return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
+      if (!project || !project.subtitles || !project.researchData || !project.businessInfo) {
+        return res.status(400).json({ error: "필요한 정보가 모두 준비되지 않았습니다" });
       }
 
-      // Generate blog content using Anthropic
-      const { generateWithStrictMorphemes } = await import('./services/strictMorphemeGenerator');
+      // Update status to content_generation when actually starting generation
+      await storage.updateBlogProject(id, {
+        status: "content_generation",
+      });
+
+      // Generate content with strict morpheme requirements
+      const { generateStrictMorphemeContent } = await import('./services/strictMorphemeGenerator');
       
-      const generationResult = await generateWithStrictMorphemes(
+      const generationResult = await generateStrictMorphemeContent(
         project.keyword,
         project.subtitles as string[],
         project.researchData as any,
         project.businessInfo as any,
+        project.referenceBlogLinks as any,
         project.customMorphemes as string | undefined
       );
       
-      const finalContent = generationResult.content;
-      const seoAnalysis = generationResult.analysis;
+      let finalContent = generationResult.content;
+      let seoAnalysis = generationResult.analysis;
       
       console.log(`Content generation completed in ${generationResult.attempts} attempts. Success: ${generationResult.success}`);
+      
+      // Enhanced optimization process with multiple stages
+      console.log('Starting multi-stage optimization process');
+      
+      // Stage 1: Initial content optimization
+      if (!generationResult.success) {
+        try {
+          console.log('Stage 1: Initial content optimization');
+          const { optimizeMorphemeUsage } = await import('./services/morphemeOptimizer');
+          const optimizedContent = await optimizeMorphemeUsage(
+            finalContent,
+            project.keyword,
+            project.businessInfo as any
+          );
+          
+          // Re-analyze optimized content
+          const { analyzeMorphemes } = await import('./services/morphemeAnalyzer');
+          const optimizedAnalysis = analyzeMorphemes(optimizedContent.optimizedContent, project.keyword);
+          
+          if (optimizedAnalysis.isOptimized) {
+            console.log('Stage 1 successful: Content meets morpheme conditions');
+            finalContent = optimizedContent.optimizedContent;
+            seoAnalysis = optimizedAnalysis;
+          }
+        } catch (optimizationError) {
+          console.error("Stage 1 optimization failed:", optimizationError);
+        }
+      }
+      
+      // Stage 2: Introduction/conclusion enhancement (only if content is already optimized)
+      if (generationResult.success || seoAnalysis.isOptimized) {
+        try {
+          console.log('Stage 2: Introduction/conclusion enhancement');
+          const enhancedContent = await enhanceIntroductionAndConclusion(
+            finalContent,
+            project.keyword,
+            project.businessInfo as any
+          );
+          
+          // Check if enhancement broke morpheme conditions
+          const { analyzeMorphemes } = await import('./services/morphemeAnalyzer');
+          const enhancedAnalysis = analyzeMorphemes(enhancedContent, project.keyword);
+          
+          if (enhancedAnalysis.isOptimized) {
+            console.log('Stage 2 successful: Enhancement maintains morpheme conditions');
+            finalContent = enhancedContent;
+            seoAnalysis = enhancedAnalysis;
+          } else {
+            console.log('Stage 2 failed: Enhancement broke morpheme conditions, reverting');
+          }
+        } catch (enhancementError) {
+          console.error("Stage 2 enhancement failed:", enhancementError);
+        }
+      } else {
+        console.log('Stage 2 skipped: Content not optimized enough for enhancement');
+      }
 
+      // Don't auto-generate images, only generate content
       const updatedProject = await storage.updateBlogProject(id, {
         generatedContent: finalContent,
         seoMetrics: seoAnalysis,
@@ -206,16 +310,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Regenerate content
+  // Regenerate blog content
   app.post("/api/projects/:id/regenerate", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const project = await storage.getBlogProject(id);
       
-      if (!project) {
-        return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
+      if (!project || !project.subtitles || !project.researchData || !project.businessInfo) {
+        return res.status(400).json({ error: "필요한 정보가 모두 준비되지 않았습니다" });
       }
 
+      // Update status to content_generation
+      await storage.updateBlogProject(id, {
+        status: "content_generation",
+      });
+
+      // Regenerate content with strict morpheme requirements
       const { regenerateWithStrictMorphemes } = await import('./services/strictMorphemeGenerator');
       
       const regenerationResult = await regenerateWithStrictMorphemes(
@@ -232,6 +342,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Content regeneration completed in ${regenerationResult.attempts} attempts. Success: ${regenerationResult.success}`);
 
+      // Update project with regenerated content
       const updatedProject = await storage.updateBlogProject(id, {
         generatedContent: finalContent,
         seoMetrics: seoAnalysis,
@@ -366,15 +477,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .replace(/\n\s*\n/g, '\n\n'); // 불필요한 빈 줄 정리
   }
 
-  // ===== CHAT FUNCTIONALITY =====
-  
-  // Send chat message (content editing or title generation)
+  // Update reference blog links
+  app.post("/api/projects/:id/reference-links", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { links } = req.body;
+      
+      const project = await storage.getBlogProject(id);
+      if (!project) {
+        return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
+      }
+
+      await storage.updateBlogProject(id, {
+        referenceBlogLinks: links
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Reference links update error:", error);
+      res.status(500).json({ error: "참고 링크 저장에 실패했습니다" });
+    }
+  });
+
+  // Update custom morphemes
+  app.post("/api/projects/:id/custom-morphemes", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { customMorphemes } = req.body;
+      
+      const project = await storage.getBlogProject(id);
+      if (!project) {
+        return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
+      }
+
+      await storage.updateBlogProject(id, {
+        customMorphemes
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Custom morphemes update error:", error);
+      res.status(500).json({ error: "사용자 정의 형태소 저장에 실패했습니다" });
+    }
+  });
+
+  // Chat with Gemini for content editing and title generation
   app.post("/api/projects/:id/chat", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { message } = req.body;
       
-      if (!message || typeof message !== 'string') {
+      if (!message || typeof message !== "string") {
         return res.status(400).json({ error: "메시지를 입력해주세요" });
       }
 
@@ -390,12 +543,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: message,
       });
 
-      // Check if this is a title generation request
-      const isTitleRequest = /제목|타이틀|title/i.test(message);
-      const isImageRequest = /이미지|그림|사진|인포그래픽|infographic/i.test(message);
+      // Check if user is requesting title generation
+      const titleKeywords = ['제목', '타이틀', 'title', '제목 만들어', '제목 생성', '제목 추천'];
+      const isTitleRequest = titleKeywords.some(keyword => 
+        message.toLowerCase().includes(keyword.toLowerCase())
+      );
+
+      // 이미지 생성 기능 제거됨 - 외부 도구 사용
+      const isImageRequest = false;
 
       if (isTitleRequest) {
-        // Generate titles using TitleGenerator
+        // Title generation
+        if (!project.generatedContent) {
+          await storage.createChatMessage({
+            projectId: id,
+            role: "assistant",
+            content: "제목을 생성하려면 먼저 블로그 콘텐츠를 생성해주세요.",
+          });
+          return res.json({ success: true, type: 'error' });
+        }
+
         try {
           const titleGenerator = new TitleGenerator();
           const titles = await titleGenerator.generateTitles(project.keyword, project.generatedContent);
@@ -521,12 +688,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ===== BUSINESS INFO ROUTES =====
-  
+  // Download image
+  app.get("/api/projects/:id/images/:imageIndex", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const imageIndex = parseInt(req.params.imageIndex);
+      
+      const project = await storage.getBlogProject(id);
+      if (!project || !project.generatedImages) {
+        return res.status(404).json({ error: "이미지를 찾을 수 없습니다" });
+      }
+
+      const images = project.generatedImages as string[];
+      if (imageIndex < 0 || imageIndex >= images.length || !images[imageIndex]) {
+        return res.status(404).json({ error: "이미지를 찾을 수 없습니다" });
+      }
+
+      const imageUrl = images[imageIndex];
+      
+      // Fetch the image from the URL
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        return res.status(404).json({ error: "이미지 다운로드에 실패했습니다" });
+      }
+
+      const imageBuffer = await response.arrayBuffer();
+      
+      // Set appropriate headers for download
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Content-Disposition', `attachment; filename="infographic-${project.keyword}-${imageIndex + 1}.png"`);
+      res.send(Buffer.from(imageBuffer));
+    } catch (error) {
+      console.error("Image download error:", error);
+      res.status(500).json({ error: "이미지 다운로드에 실패했습니다" });
+    }
+  });
+
   // Get user business info
   app.get("/api/user/business-info", async (req, res) => {
     try {
-      const userId = 1; // 임시 고정 사용자 ID
+      const userId = 1; // 인증 우회: 기본 사용자 ID 사용
       const businessInfos = await storage.getAllUserBusinessInfos(userId);
       res.json(businessInfos);
     } catch (error) {
@@ -538,7 +739,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all user business infos for selection
   app.get("/api/user/business-infos", async (req, res) => {
     try {
-      const userId = 1; // 임시 고정 사용자 ID
+      const userId = 1; // 인증 우회: 기본 사용자 ID 사용
       const businessInfos = await storage.getAllUserBusinessInfos(userId);
       res.json(businessInfos);
     } catch (error) {
@@ -550,7 +751,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create new business info
   app.post("/api/user/business-info", async (req, res) => {
     try {
-      const userId = 1; // 임시 고정 사용자 ID
+      const userId = 1; // 인증 우회: 기본 사용자 ID 사용
       const businessInfoData = businessInfoSchema.parse(req.body);
       
       const businessInfo = await storage.createUserBusinessInfo({
@@ -588,6 +789,169 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Delete business info error:", error);
       res.status(500).json({ error: "업체 정보 삭제에 실패했습니다" });
+    }
+  });
+
+  // Generate individual image for subtitle
+  app.post("/api/projects/:id/generate-image", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { subtitle, type } = req.body; // type: 'infographic' or 'photo'
+      
+      const project = await storage.getBlogProject(id);
+      if (!project) {
+        return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
+      }
+
+      let imageUrl;
+      if (type === 'infographic') {
+        const { generateInfographic } = await import("./services/imageGeneration.js");
+        imageUrl = await generateInfographic(subtitle, project.keyword);
+      } else {
+        // Generate photo-style image focused on subtitle content, not keyword
+        const { generateImage } = await import("./services/imageGeneration.js");
+        imageUrl = await generateImage(subtitle, "photo");
+      }
+
+      res.json({ imageUrl, subtitle, type });
+    } catch (error) {
+      console.error("Individual image generation error:", error);
+      // Check if it's a permission error
+      if (error instanceof Error && error.message.includes('Permission')) {
+        res.status(503).json({ 
+          error: 'Google Cloud 권한 설정이 필요합니다', 
+          details: 'Vertex AI User 역할을 서비스 계정에 추가해주세요'
+        });
+      } else {
+        res.status(500).json({ error: "이미지 생성에 실패했습니다" });
+      }
+    }
+  });
+
+  // Download individual image
+  app.get("/api/projects/:id/download-image", async (req, res) => {
+    try {
+      const { imageUrl, filename } = req.query;
+      
+      if (!imageUrl || !filename) {
+        return res.status(400).json({ error: "이미지 URL과 파일명이 필요합니다" });
+      }
+
+      const response = await fetch(imageUrl as string);
+      if (!response.ok) {
+        throw new Error("이미지 다운로드 실패");
+      }
+
+      const buffer = await response.arrayBuffer();
+      
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(Buffer.from(buffer));
+    } catch (error) {
+      console.error("Image download error:", error);
+      res.status(500).json({ error: "이미지 다운로드에 실패했습니다" });
+    }
+  });
+
+  // ===== 결제 관련 라우터 =====
+  
+  // 구독 결제 준비
+  app.post("/api/payment/prepare", async (req, res) => {
+    try {
+      const { amount, name, planType } = req.body;
+      
+      if (!amount || !name || !planType) {
+        return res.status(400).json({ error: "필수 정보가 누락되었습니다." });
+      }
+
+      const paymentData = preparePayment({
+        merchant_uid: `subscription_${Date.now()}`,
+        amount: Number(amount),
+        name: String(name),
+        planType: String(planType),
+      });
+
+      res.json(paymentData);
+    } catch (error) {
+      console.error("Subscription preparation error:", error);
+      res.status(500).json({ error: "구독 준비 중 오류가 발생했습니다." });
+    }
+  });
+
+  // 구독 결제 검증
+  app.post("/api/payment/verify", async (req, res) => {
+    try {
+      const { imp_uid, merchant_uid } = req.body;
+      
+      if (!imp_uid || !merchant_uid) {
+        return res.status(400).json({ error: "결제 정보가 누락되었습니다." });
+      }
+
+      const verificationResult = await verifyPayment({ imp_uid, merchant_uid });
+      
+      if (verificationResult.success) {
+        // 구독 정보 저장 로직 구현 예정
+        // - 사용자 구독 플랜 업데이트
+        // - 구독 시작일/만료일 설정
+        // - 월별 사용량 제한 초기화
+        
+        res.json({ 
+          success: true, 
+          payment: verificationResult.payment,
+          subscription: {
+            plan: merchant_uid.includes('content_only') ? 'basic' :
+                  merchant_uid.includes('content_and_images') ? 'premium' : 'pro',
+            startDate: new Date(),
+            nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30일 후
+          }
+        });
+      } else {
+        res.status(400).json({ 
+          success: false, 
+          error: verificationResult.error 
+        });
+      }
+    } catch (error) {
+      console.error("Subscription verification error:", error);
+      res.status(500).json({ error: "구독 검증 중 오류가 발생했습니다." });
+    }
+  });
+
+  // 결제 취소
+  app.post("/api/payment/cancel", async (req, res) => {
+    try {
+      const { imp_uid, reason } = req.body;
+      
+      if (!imp_uid) {
+        return res.status(400).json({ error: "결제 ID가 누락되었습니다." });
+      }
+
+      const cancelResult = await cancelPayment(imp_uid, reason);
+      
+      if (cancelResult.success) {
+        res.json({ success: true, data: cancelResult.data });
+      } else {
+        res.status(400).json({ success: false, error: cancelResult.error });
+      }
+    } catch (error) {
+      console.error("Payment cancellation error:", error);
+      res.status(500).json({ error: "결제 취소 중 오류가 발생했습니다." });
+    }
+  });
+
+  // 결제 내역 조회
+  app.get("/api/payment/history", async (req, res) => {
+    try {
+      const historyResult = await getPaymentHistory();
+      
+      if (historyResult.success) {
+        res.json({ success: true, payments: historyResult.payments });
+      } else {
+        res.status(500).json({ success: false, error: historyResult.error });
+      }
+    } catch (error) {
+      console.error("Payment history error:", error);
+      res.status(500).json({ error: "결제 내역 조회 중 오류가 발생했습니다." });
     }
   });
 
