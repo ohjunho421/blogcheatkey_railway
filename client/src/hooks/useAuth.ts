@@ -39,32 +39,15 @@ export function useAuth() {
     };
   }
 
-  // 임시로 슈퍼 관리자로 설정 - wnsghcoswp@gmail.com
-  return {
-    user: {
-      id: 1,
-      email: "wnsghcoswp@gmail.com", // 슈퍼 관리자 이메일
-      name: "슈퍼 관리자",
-      profileImage: undefined,
-      isAdmin: true, // 슈퍼 관리자 권한
-      subscriptionTier: "premium",
-      canGenerateContent: true,
-      canGenerateImages: true,
-      canUseChatbot: true
-    } as User,
-    isLoading: false,
-    isAuthenticated: true,
-    error: null
-  };
-
-  // 원래 코드 (나중에 활성화)
-  /*
+  // 실제 사용자 정보를 서버에서 가져오기
   const { data: user, isLoading, error, isError } = useQuery({
-    queryKey: ["/auth/user"],
+    queryKey: ["/api/auth/user"],
     retry: false,
     staleTime: 5 * 60 * 1000, // 5분간 캐시 유지
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
+    refetchInterval: false, // 자동 새로고침 비활성화
+    enabled: !getLoggedOut(), // 로그아웃 상태일 때는 쿼리 비활성화
   });
 
   // 401 오류가 발생하면 인증되지 않은 것으로 처리
@@ -76,7 +59,6 @@ export function useAuth() {
     isAuthenticated,
     error
   };
-  */
 }
 
 export function useLogin() {
@@ -84,7 +66,7 @@ export function useLogin() {
   
   return useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
-      const response = await fetch("/auth/login", {
+      const response = await fetch("/api/auth/login", {
         method: "POST",
         body: JSON.stringify(credentials),
         headers: { "Content-Type": "application/json" },

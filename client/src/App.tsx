@@ -17,9 +17,18 @@ import { useAuth } from "@/hooks/useAuth";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [showLoading, setShowLoading] = useState(true);
 
-  // 인증 확인 중이면 로딩 표시
-  if (isLoading) {
+  // 로딩 상태를 3초로 제한하여 무한 루프 방지
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setShowLoading(false);
+    }, 3000);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  // 3초 후에도 로딩 중이면 로그인 페이지로 리다이렉트
+  if (isLoading && showLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

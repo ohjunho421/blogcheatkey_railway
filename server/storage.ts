@@ -35,6 +35,10 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   updateUserPermissions(userId: number, permissions: UpdateUserPermissions): Promise<User>;
   makeUserAdmin(email: string): Promise<User | null>;
+  
+  // Authentication methods
+  loginUser(email: string, password: string): Promise<User | null>;
+  getUserById(id: number): Promise<User | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -216,13 +220,37 @@ export class DatabaseStorage implements IStorage {
         canGenerateContent: true,
         canGenerateImages: true,
         canUseChatbot: true,
-        subscriptionTier: "pro",
+        subscriptionTier: "premium",
         updatedAt: new Date() 
       })
       .where(eq(users.email, email))
       .returning();
     
     return updated || null;
+  }
+
+  async loginUser(email: string, password: string): Promise<User | null> {
+    try {
+      const user = await this.getUserByEmail(email);
+      if (!user || !user.password) {
+        return null;
+      }
+
+      const bcrypt = await import('bcryptjs');
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        return null;
+      }
+
+      return user;
+    } catch (error) {
+      console.error("Login user error:", error);
+      return null;
+    }
+  }
+
+  async getUserById(id: number): Promise<User | undefined> {
+    return this.getUser(id);
   }
 }
 

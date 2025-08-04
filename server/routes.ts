@@ -16,6 +16,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Setup authentication middleware
   setupAuth(app);
+
+  // ===== AUTHENTICATION ROUTES =====
+  
+  // Login endpoint
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: "이메일과 비밀번호를 입력해주세요" });
+      }
+
+      const user = await storage.loginUser(email, password);
+      if (!user) {
+        return res.status(401).json({ message: "이메일 또는 비밀번호가 잘못되었습니다" });
+      }
+
+      // 세션에 사용자 정보 저장
+      (req.session as any).userId = user.id;
+      console.log("Session set:", req.session);
+      
+      res.json({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        isAdmin: user.isAdmin,
+        subscriptionTier: user.subscriptionTier,
+        canGenerateContent: user.canGenerateContent,
+        canGenerateImages: user.canGenerateImages,
+        canUseChatbot: user.canUseChatbot
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "로그인 처리 중 오류가 발생했습니다" });
+    }
+  });
+
+  // Get current user
+  app.get("/api/auth/user", async (req, res) => {
+    try {
+      const userId = (req.session as any)?.userId;
+      console.log("Session userId:", userId, "Full session:", req.session);
+      if (!userId) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+
+      const user = await storage.getUserById(userId);
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      res.json({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        isAdmin: user.isAdmin,
+        subscriptionTier: user.subscriptionTier,
+        canGenerateContent: user.canGenerateContent,
+        canGenerateImages: user.canGenerateImages,
+        canUseChatbot: user.canUseChatbot
+      });
+    } catch (error) {
+      console.error("Get user error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // Logout endpoint
+  app.post("/api/auth/logout", async (req, res) => {
+    try {
+      req.session?.destroy((err) => {
+        if (err) {
+          console.error("Session destroy error:", err);
+          return res.status(500).json({ message: "로그아웃 처리 중 오류가 발생했습니다" });
+        }
+        res.json({ message: "로그아웃되었습니다" });
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+      res.status(500).json({ message: "로그아웃 처리 중 오류가 발생했습니다" });
+    }
+  });
   
   // ===== BLOG PROJECT ROUTES =====
   
