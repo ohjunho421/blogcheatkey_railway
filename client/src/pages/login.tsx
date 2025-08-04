@@ -53,7 +53,8 @@ export default function Login() {
         title: "로그인 성공",
         description: "블로그치트키에 오신 것을 환영합니다!",
       });
-      navigate("/");
+      // 강제로 페이지 새로고침하여 인증 상태 업데이트
+      window.location.href = "/";
     } catch (error: any) {
       toast({
         title: "로그인 실패",
