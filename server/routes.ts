@@ -36,6 +36,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 세션에 사용자 정보 저장
       (req.session as any).userId = user.id;
       console.log("Session set:", req.session);
+      console.log("Session ID:", req.sessionID);
+      
+      // 세션 저장 강제 실행
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+        } else {
+          console.log("Session saved successfully");
+        }
+      });
       
       res.json({
         id: user.id,

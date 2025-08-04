@@ -57,12 +57,11 @@ export function setupAuth(app: Express) {
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, // Set to true in production with HTTPS
-      httpOnly: true,
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      sameSite: 'lax' // CSRF 보호
-    },
-    name: 'sessionId' // 기본 세션 쿠키 이름
+      secure: false,
+      httpOnly: false, // 개발용으로 false
+      maxAge: 24 * 60 * 60 * 1000, // 24시간
+      sameSite: false // 개발용으로 제거
+    }
   }));
 
   // Initialize Passport
