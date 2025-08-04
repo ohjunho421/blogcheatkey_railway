@@ -13,36 +13,13 @@ import PricingPage from "@/pages/PricingPage";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import AdminPage from "@/pages/admin";
 
-function Router() {
-  const [authChecked, setAuthChecked] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+import { useAuth } from "@/hooks/useAuth";
 
-  useEffect(() => {
-    // 임시로 인증 우회 - Google OAuth 설정 완료 후 활성화 예정
-    setIsAuthenticated(true);
-    setAuthChecked(true);
-    
-    // Google OAuth 설정 완료 후 활성화할 코드:
-    /*
-    fetch('/api/auth/user')
-      .then(res => {
-        if (res.ok) {
-          setIsAuthenticated(true);
-        } else {
-          setIsAuthenticated(false);
-        }
-      })
-      .catch(() => {
-        setIsAuthenticated(false);
-      })
-      .finally(() => {
-        setAuthChecked(true);
-      });
-    */
-  }, []);
+function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
 
   // 인증 확인 중이면 로딩 표시
-  if (!authChecked) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

@@ -1,6 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
+// 로그아웃 상태를 관리하는 전역 상태
+let isLoggedOut = false;
+
+export const setLoggedOut = (value: boolean) => {
+  isLoggedOut = value;
+};
+
 export interface User {
   id: number;
   email: string;
@@ -14,6 +21,16 @@ export interface User {
 }
 
 export function useAuth() {
+  // 로그아웃 상태면 인증되지 않은 것으로 처리
+  if (isLoggedOut) {
+    return {
+      user: undefined,
+      isLoading: false,
+      isAuthenticated: false,
+      error: null
+    };
+  }
+
   // 임시로 슈퍼 관리자로 설정 - wnsghcoswp@gmail.com
   return {
     user: {
@@ -22,7 +39,7 @@ export function useAuth() {
       name: "슈퍼 관리자",
       profileImage: undefined,
       isAdmin: true, // 슈퍼 관리자 권한
-      subscriptionTier: "pro",
+      subscriptionTier: "premium",
       canGenerateContent: true,
       canGenerateImages: true,
       canUseChatbot: true
@@ -105,6 +122,12 @@ export function useLogout() {
   
   return useMutation({
     mutationFn: async () => {
+      // 임시 로그아웃 구현 - 전역 상태 변경
+      setLoggedOut(true);
+      return { success: true };
+      
+      // 원래 로그아웃 API 호출 (나중에 활성화)
+      /*
       const response = await fetch("/auth/logout", {
         method: "POST",
         credentials: "include",
@@ -115,10 +138,13 @@ export function useLogout() {
       }
       
       return response.json();
+      */
     },
     onSuccess: () => {
       queryClient.setQueryData(["/auth/user"], null);
       queryClient.clear();
+      // 페이지 새로고침으로 로그인 화면으로 이동
+      window.location.href = "/login";
     },
   });
 }

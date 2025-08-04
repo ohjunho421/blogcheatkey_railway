@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { setLoggedOut } from "@/hooks/useAuth";
 import { Link, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -32,6 +33,11 @@ export default function Login() {
       password: "",
     },
   });
+
+  // 로그인 페이지 진입시 로그아웃 상태 초기화
+  useEffect(() => {
+    setLoggedOut(false);
+  }, []);
 
   // Redirect if already authenticated - useEffect 사용으로 hook 순서 보장
   React.useEffect(() => {
