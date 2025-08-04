@@ -30,20 +30,21 @@ export interface User {
 
 export function useAuth() {
   const isLoggedOut = getLoggedOut();
+  const hasStoredSession = localStorage.getItem('sessionId') !== null;
   
-  // 실제 사용자 정보를 서버에서 가져오기 - 항상 실행하되 조건부 활성화
+  // localStorage에 세션이 있고 로그아웃 상태가 아닐 때만 서버에서 사용자 정보 가져오기
   const { data: user, isLoading, error, isError } = useQuery({
     queryKey: ["/api/auth/user"],
     retry: false,
-    staleTime: 5 * 60 * 1000, // 5분간 캐시 유지
+    staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    refetchInterval: false, // 자동 새로고침 비활성화
-    enabled: !isLoggedOut, // 로그아웃 상태일 때는 쿼리 비활성화
+    refetchInterval: false,
+    enabled: !isLoggedOut && hasStoredSession,
   });
 
-  // 로그아웃 상태이면 인증되지 않은 것으로 처리
-  if (isLoggedOut) {
+  // 로그아웃 상태이거나 저장된 세션이 없으면 인증되지 않은 것으로 처리
+  if (isLoggedOut || !hasStoredSession) {
     return {
       user: undefined,
       isLoading: false,
@@ -52,7 +53,24 @@ export function useAuth() {
     };
   }
 
-  // 401 오류가 발생하면 인증되지 않은 것으로 처리
+  // localStorage에서 사용자 정보 백업 사용
+  if (!user && !isLoading && !isError) {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        return {
+          user: parsedUser as User,
+          isLoading: false,
+          isAuthenticated: true,
+          error: null
+        };
+      } catch (e) {
+        console.error('Failed to parse stored user:', e);
+      }
+    }
+  }
+
   const isAuthenticated = !!user && !isError;
   
   return {

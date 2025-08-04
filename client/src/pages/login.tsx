@@ -65,13 +65,12 @@ export default function Login() {
       console.log("로그인 성공:", userData);
       console.log("현재 쿠키:", document.cookie);
       
-      // 응답에서 받은 세션 ID로 수동 쿠키 설정
+      // localStorage를 사용하여 로그인 상태 저장
       if (userData.sessionId) {
         console.log("서버에서 받은 세션 ID:", userData.sessionId);
-        // URL 인코딩된 세션 ID로 쿠키 설정
-        const encodedSessionId = `s%3A${userData.sessionId}.${userData.sessionId}`;
-        document.cookie = `connect.sid=${encodedSessionId}; path=/; max-age=86400; sameSite=lax`;
-        console.log("수동 설정 후 쿠키:", document.cookie);
+        localStorage.setItem('sessionId', userData.sessionId);
+        localStorage.setItem('user', JSON.stringify(userData));
+        console.log("localStorage에 세션 저장 완료");
       }
       
       toast({
