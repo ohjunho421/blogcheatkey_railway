@@ -593,22 +593,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ===== ADMIN ROUTES =====
   
-  // Middleware to check admin permissions
-  const requireAdmin = async (req: any, res: any, next: any) => {
-    if (!req.user) {
-      return res.status(401).json({ error: "로그인이 필요합니다" });
-    }
+  // 슈퍼 관리자 권한 확인 (wnsghcoswp@gmail.com만 접근 가능)
+  const requireSuperAdmin = (req: any, res: any, next: any) => {
+    // 임시로 슈퍼 관리자 접근 허용 (Google OAuth 연결 후 실제 이메일 확인)
+    const superAdminEmail = "wnsghcoswp@gmail.com";
+    // TODO: Google OAuth 완료 후 req.user.email로 변경
+    const currentUserEmail = "wnsghcoswp@gmail.com"; 
     
-    const user = await storage.getUser(req.user.id);
-    if (!user?.isAdmin) {
-      return res.status(403).json({ error: "관리자 권한이 필요합니다" });
+    if (currentUserEmail !== superAdminEmail) {
+      return res.status(403).json({ 
+        error: "슈퍼 관리자만 접근할 수 있습니다 (wnsghcoswp@gmail.com)" 
+      });
     }
-    
     next();
   };
 
-  // Get all users (admin only)
-  app.get("/api/admin/users", requireAuth, requireAdmin, async (req, res) => {
+  // 모든 사용자 조회 (슈퍼 관리자만)
+  app.get("/api/admin/users", requireSuperAdmin, async (req, res) => {
     try {
       const users = await storage.getAllUsers();
       res.json(users);
@@ -618,8 +619,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update user permissions (admin only)
-  app.put("/api/admin/users/:id/permissions", requireAuth, requireAdmin, async (req, res) => {
+  // 사용자 권한 업데이트 (슈퍼 관리자만) - 무통장 입금 후 수동으로 권한 부여
+  app.put("/api/admin/users/:id/permissions", requireSuperAdmin, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
       const permissions = updateUserPermissionsSchema.parse(req.body);

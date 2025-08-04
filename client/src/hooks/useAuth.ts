@@ -14,14 +14,14 @@ export interface User {
 }
 
 export function useAuth() {
-  // 임시로 인증 체크 우회 - 모든 사용자가 바로 서비스 이용 가능
+  // 임시로 슈퍼 관리자로 설정 - wnsghcoswp@gmail.com
   return {
     user: {
       id: 1,
-      email: "admin@blogcheatkey.com", // 관리자 이메일로 설정
-      name: "관리자",
+      email: "wnsghcoswp@gmail.com", // 슈퍼 관리자 이메일
+      name: "슈퍼 관리자",
       profileImage: undefined,
-      isAdmin: true, // 임시로 관리자 권한 부여
+      isAdmin: true, // 슈퍼 관리자 권한
       subscriptionTier: "pro",
       canGenerateContent: true,
       canGenerateImages: true,
