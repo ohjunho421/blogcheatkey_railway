@@ -441,6 +441,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== SUBTITLE MANAGEMENT =====
+  
+  app.post("/api/projects/:id/subtitles", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { subtitles } = req.body;
+      
+      if (!Array.isArray(subtitles)) {
+        return res.status(400).json({ error: "소제목은 배열 형태여야 합니다" });
+      }
+      
+      const project = await storage.getBlogProject(id);
+      if (!project) {
+        return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
+      }
+
+      const updatedProject = await storage.updateBlogProject(id, {
+        subtitles,
+      });
+
+      res.json(updatedProject);
+    } catch (error) {
+      console.error("Subtitle update error:", error);
+      res.status(500).json({ error: "소제목 업데이트에 실패했습니다" });
+    }
+  });
+
   // ===== CUSTOM MORPHEMES =====
   
   app.post("/api/projects/:id/custom-morphemes", async (req, res) => {
