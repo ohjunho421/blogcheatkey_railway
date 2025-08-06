@@ -137,12 +137,34 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
       onRefresh();
       toast({
         title: "프로젝트 업체 정보 저장 완료",
-        description: "이제 추가형태소를 설정하고 블로그를 생성하세요.",
+        description: "이제 블로그를 생성하세요.",
       });
     },
     onError: (error) => {
       toast({
         title: "저장 실패",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Generate blog content
+  const generateContent = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", `/api/projects/${project.id}/generate`, {});
+      return response.json();
+    },
+    onSuccess: () => {
+      onRefresh();
+      toast({
+        title: "블로그 생성 완료",
+        description: "SEO 최적화된 블로그가 생성되었습니다.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "생성 실패",
         description: error.message,
         variant: "destructive",
       });
