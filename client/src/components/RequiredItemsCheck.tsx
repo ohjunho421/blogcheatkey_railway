@@ -7,7 +7,54 @@ interface RequiredItemsCheckProps {
 }
 
 export function RequiredItemsCheck({ project }: RequiredItemsCheckProps) {
-  if (!project) return null;
+  // Show empty state when no project exists
+  if (!project) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center text-lg">
+            <AlertCircle className="h-5 w-5 text-muted-foreground mr-2" />
+            필수 항목 체크
+            <Badge variant="outline" className="ml-2">
+              0/3
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">필수 항목</h4>
+            <div className="flex items-center justify-between p-2 rounded-lg border border-dashed">
+              <div className="flex items-center space-x-2">
+                <XCircle className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">키워드 분석</p>
+                  <p className="text-xs text-muted-foreground">키워드를 입력하고 분석을 시작하세요</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-2 rounded-lg border border-dashed">
+              <div className="flex items-center space-x-2">
+                <XCircle className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">자료 수집</p>
+                  <p className="text-xs text-muted-foreground">키워드 분석 후 자료를 수집하세요</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-2 rounded-lg border border-dashed">
+              <div className="flex items-center space-x-2">
+                <XCircle className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">업체 정보</p>
+                  <p className="text-xs text-muted-foreground">업체명, 업종, 전문성을 입력하세요</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const checks = [
     {

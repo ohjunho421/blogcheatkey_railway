@@ -20,7 +20,6 @@ import { ReferenceBlogLinksForm } from "@/components/ReferenceBlogLinksForm";
 import { GenerateBlogButton } from "@/components/GenerateBlogButton";
 import { RequiredItemsCheck } from "@/components/RequiredItemsCheck";
 import { ContentGenerationProgress } from "@/components/ContentGenerationProgress";
-import { StepNavigation } from "@/components/StepNavigation";
 import { MessageSquare, FileText, Search, Building2, Sparkles, RotateCw, LogOut, User, ChevronDown, CreditCard, Shield } from "lucide-react";
 import PaymentModal from "@/components/PaymentModal";
 import Footer from "@/components/Footer";
@@ -206,19 +205,6 @@ export default function Home() {
               }}
               project={project}
               onRefresh={refetch}
-            />
-
-            {/* Step Navigation */}
-            <StepNavigation 
-              project={project}
-              onStepClick={(step) => {
-                // Handle step navigation
-                console.log("Navigate to step:", step);
-              }}
-              onResetProject={() => {
-                navigate("/");
-                window.location.reload();
-              }}
             />
 
             {/* Required Items Check */}
