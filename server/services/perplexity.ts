@@ -105,7 +105,9 @@ export async function searchResearch(keyword: string, subtitles: string[]): Prom
   citations: string[];
   citationsWithTitles?: Array<{url: string, title: string}>;
 }> {
-  const searchQuery = `"${keyword}" ${subtitles.join(" ")} academic research paper journal study statistics government report news article`;
+  // subtitles가 배열인지 확인하고 안전하게 처리
+  const subtitlesList = Array.isArray(subtitles) ? subtitles : [];
+  const searchQuery = `"${keyword}" ${subtitlesList.join(" ")} academic research paper journal study statistics government report news article`;
 
   const messages = [
     {
@@ -114,7 +116,7 @@ export async function searchResearch(keyword: string, subtitles: string[]): Prom
     },
     {
       role: "user",
-      content: `Research "${keyword}" with focus on: ${subtitles.join(", ")}
+      content: `Research "${keyword}" with focus on: ${subtitlesList.join(", ")}
 
 Priority sources:
 1. Academic papers and scholarly journals (.edu, research institutions)
