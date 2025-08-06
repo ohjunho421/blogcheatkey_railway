@@ -244,6 +244,14 @@ export default function Home() {
               />
             )}
 
+            {/* Content Generation Form - Show after business info is saved */}
+            {(project as any) && ((project as any).status === 'content_generation' || (project as any).status === 'completed') && (
+              <ContentGenerationForm 
+                project={project as any} 
+                onRefresh={refetch}
+              />
+            )}
+
 
 
             {/* Reference Blog Links Form - Show after business info */}
