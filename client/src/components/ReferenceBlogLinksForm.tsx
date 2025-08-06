@@ -312,17 +312,6 @@ export function ReferenceBlogLinksForm({ project, onRefresh }: ReferenceBlogLink
                   <br />이제 SEO 최적화된 블로그를 생성해보세요.
                 </p>
               </div>
-              
-              <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-4">
-                <h4 className="font-semibold text-foreground mb-2">SEO 최적화 조건</h4>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• 키워드 "{project.keyword}" 5-7회 포함</li>
-                  <li>• 키워드 구성요소 각각 15-17회 포함</li>
-                  <li>• 총 1500-1700자 (공백 제외)</li>
-                  <li>• 서론 35-40% 비중</li>
-                  <li>• 자연스러운 블로그 톤앤매너</li>
-                </ul>
-              </div>
 
               <GenerateBlogButton project={project} onRefresh={onRefresh} />
             </div>

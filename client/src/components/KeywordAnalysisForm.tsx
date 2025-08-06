@@ -211,9 +211,6 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
                 </Button>
               )}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              📝 <strong>입력 예시:</strong> 벤츠엔진경고등, 레스토랑창업비용, 아이폰수리방법
-            </p>
           </div>
           {!project && (
             <Button 
