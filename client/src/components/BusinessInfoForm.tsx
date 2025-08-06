@@ -130,7 +130,7 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
   // Save to current project
   const saveBusinessInfo = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest("POST", `/api/projects/${project.id}/business`, data);
+      const response = await apiRequest("POST", `/api/projects/${project.id}/business-info`, data);
       return response.json();
     },
     onSuccess: () => {
