@@ -344,7 +344,7 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
             </div>
 
             {/* Research Data Collection Button */}
-            {project.status === 'keyword_analysis' && (
+            {(project.status === 'keyword_analysis' || project.status === 'data_collection') && (
               <div className="mt-6 pt-4 border-t">
                 <Button
                   onClick={() => researchData.mutate(project.id)}
@@ -355,17 +355,17 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
                   {researchData.isPending ? (
                     <>
                       <Search className="h-4 w-4 mr-2 animate-spin" />
-                      자료 수집 중...
+                      퍼플렉시티 자료 수집 중...
                     </>
                   ) : (
                     <>
                       <Search className="h-4 w-4 mr-2" />
-                      자료 수집 시작
+                      퍼플렉시티 자료 수집하기
                     </>
                   )}
                 </Button>
                 <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Perplexity로 관련 정보를 수집합니다
+                  Perplexity AI로 관련 정보를 수집합니다
                 </p>
               </div>
             )}
