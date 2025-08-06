@@ -402,7 +402,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Search research data using Perplexity
-      const subtitles = project.subtitles || [];
+      const subtitles = project.subtitles as string[] || [];
       const researchData = await searchResearch(project.keyword, subtitles);
       
       const updatedProject = await storage.updateBlogProject(id, {

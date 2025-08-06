@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Search, Brain, Edit2, ArrowRight, GripVertical } from "lucide-react";
+import { useLocation } from "wouter";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 
 interface KeywordAnalysisFormProps {
@@ -22,6 +23,7 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
   const [editingSubtitle, setEditingSubtitle] = useState<number | null>(null);
   const [editedSubtitles, setEditedSubtitles] = useState<string[]>([]);
   const { toast } = useToast();
+  const [, navigate] = useLocation();
 
   const createProjectAndAnalyze = useMutation({
     mutationFn: async (data: { keyword: string }) => {
@@ -183,14 +185,35 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <Label htmlFor="keyword">블로그 주제 키워드</Label>
-            <Input
-              id="keyword"
-              value={project ? project.keyword : keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              placeholder="예: 엔진오일교체, 자동차수리, 레스토랑창업"
-              disabled={!!project}
-            />
+            <Label htmlFor="keyword">블로그 주제 키워드 <span className="text-red-500">*</span></Label>
+            <div className="flex gap-2">
+              <Input
+                id="keyword"
+                value={project ? project.keyword : keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                placeholder="예: 엔진오일교체, 자동차수리, 레스토랑창업"
+                disabled={!!project}
+                className="flex-1"
+              />
+              {project && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    if (window.confirm("키워드를 수정하면 현재 프로젝트가 초기화됩니다. 계속하시겠습니까?")) {
+                      navigate("/");
+                      window.location.reload();
+                    }
+                  }}
+                  title="키워드 수정"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              📝 <strong>입력 예시:</strong> 벤츠엔진경고등, 레스토랑창업비용, 아이폰수리방법
+            </p>
           </div>
           {!project && (
             <Button 

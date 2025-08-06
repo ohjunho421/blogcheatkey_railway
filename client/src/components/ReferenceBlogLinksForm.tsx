@@ -124,7 +124,7 @@ export function ReferenceBlogLinksForm({ project, onRefresh }: ReferenceBlogLink
   };
 
   const parsedMorphemes = customMorphemes.trim() 
-    ? customMorphemes.split(' ').filter(m => m.trim().length > 0)
+    ? customMorphemes.split(' ').filter((m: string) => m.trim().length > 0)
     : [];
 
   return (
@@ -271,7 +271,7 @@ export function ReferenceBlogLinksForm({ project, onRefresh }: ReferenceBlogLink
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">인식된 형태소 ({parsedMorphemes.length}개)</Label>
                 <div className="flex flex-wrap gap-1">
-                  {parsedMorphemes.map((morpheme, index) => (
+                  {parsedMorphemes.map((morpheme: string, index: number) => (
                     <Badge key={index} variant="secondary" className="text-xs">
                       {morpheme}
                     </Badge>

@@ -18,6 +18,9 @@ import { ReferenceLinks } from "@/components/ReferenceLinks";
 import { InfographicGallery } from "@/components/InfographicGallery";
 import { ReferenceBlogLinksForm } from "@/components/ReferenceBlogLinksForm";
 import { GenerateBlogButton } from "@/components/GenerateBlogButton";
+import { RequiredItemsCheck } from "@/components/RequiredItemsCheck";
+import { ContentGenerationProgress } from "@/components/ContentGenerationProgress";
+import { StepNavigation } from "@/components/StepNavigation";
 import { MessageSquare, FileText, Search, Building2, Sparkles, RotateCw, LogOut, User, ChevronDown, CreditCard, Shield } from "lucide-react";
 import PaymentModal from "@/components/PaymentModal";
 import Footer from "@/components/Footer";
@@ -205,32 +208,21 @@ export default function Home() {
               onRefresh={refetch}
             />
 
-            {/* AI Model Status */}
-            <AIModelStatus project={project} />
+            {/* Step Navigation */}
+            <StepNavigation 
+              project={project}
+              onStepClick={(step) => {
+                // Handle step navigation
+                console.log("Navigate to step:", step);
+              }}
+              onResetProject={() => {
+                navigate("/");
+                window.location.reload();
+              }}
+            />
 
-            {/* SEO Settings Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center text-lg">
-                  <Sparkles className="h-5 w-5 text-primary mr-2" />
-                  SEO 최적화 설정
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">키워드 출현 빈도</span>
-                  <span className="text-sm font-medium text-primary">15-17회</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">글자수 범위</span>
-                  <span className="text-sm font-medium text-primary">1700-1800자</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">구조</span>
-                  <span className="text-sm font-medium text-primary">서론-본론(4개)-결론</span>
-                </div>
-              </CardContent>
-            </Card>
+            {/* Required Items Check */}
+            <RequiredItemsCheck project={project} />
           </div>
 
           {/* Right Column - Results */}
@@ -256,39 +248,8 @@ export default function Home() {
 
 
 
-            {/* Content Generation Status */}
-            {project && (project as any).status === 'content_generation' && !(project as any).generatedContent && (
-              <Card className="border-accent">
-                <CardContent className="py-8">
-                  <div className="text-center space-y-4">
-                    <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto">
-                      <RotateCw className="h-8 w-8 text-accent animate-spin" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-accent">블로그 생성 중...</h3>
-                      <p className="text-muted-foreground mt-2">
-                        Claude가 SEO 최적화된 블로그 포스트를 작성하고 있습니다.
-                        <br />잠시만 기다려주세요. (약 30-60초 소요)
-                      </p>
-                    </div>
-                    <div className="flex justify-center space-x-2 text-sm text-muted-foreground">
-                      <span className="flex items-center">
-                        <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                        키워드 분석 완료
-                      </span>
-                      <span className="flex items-center">
-                        <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                        자료 수집 완료
-                      </span>
-                      <span className="flex items-center">
-                        <div className="w-2 h-2 bg-accent rounded-full mr-2 animate-pulse"></div>
-                        콘텐츠 생성 중
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            {/* Content Generation Progress */}
+            <ContentGenerationProgress project={project as any} />
 
             {/* Blog Content Display */}
             {project && (project as any).generatedContent && (

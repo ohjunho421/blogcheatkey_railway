@@ -282,7 +282,7 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="businessName">업체명</Label>
+            <Label htmlFor="businessName">업체명 <span className="text-red-500">*</span></Label>
             <Popover open={businessNameOpen} onOpenChange={setBusinessNameOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -351,7 +351,7 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
             </Popover>
           </div>
           <div>
-            <Label htmlFor="businessType">업종</Label>
+            <Label htmlFor="businessType">업종 <span className="text-red-500">*</span></Label>
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -400,7 +400,7 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
             </Popover>
           </div>
           <div className="md:col-span-2">
-            <Label htmlFor="expertise">전문성 및 경력</Label>
+            <Label htmlFor="expertise">전문성 및 경력 <span className="text-red-500">*</span></Label>
             <Textarea
               id="expertise"
               value={expertise}
