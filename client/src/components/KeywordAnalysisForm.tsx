@@ -164,6 +164,7 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
+    if (result.destination.index === result.source.index) return;
 
     const items = Array.from(project.subtitles || []) as string[];
     const [reorderedItem] = items.splice(result.source.index, 1);
@@ -280,27 +281,35 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
                 드래그앤드롭으로 순서를 변경할 수 있습니다
               </p>
               <DragDropContext onDragEnd={handleDragEnd}>
-                <Droppable droppableId="subtitles">
+                <Droppable droppableId="subtitles" type="SUBTITLE">
                   {(provided) => (
                     <div
                       {...provided.droppableProps}
                       ref={provided.innerRef}
-                      className="space-y-2"
+                      className="space-y-2 min-h-[100px]"
                     >
                       {project.subtitles?.map((subtitle: string, index: number) => (
-                        <Draggable key={`subtitle-${index}`} draggableId={`subtitle-${index}`} index={index}>
+                        <Draggable 
+                          key={`subtitle-${subtitle}-${index}`} 
+                          draggableId={`subtitle-${subtitle}-${index}`} 
+                          index={index}
+                          isDragDisabled={editingSubtitle === index}
+                        >
                           {(provided, snapshot) => (
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
-                              className={`flex items-center justify-between p-2 bg-card rounded border transition-colors ${
-                                snapshot.isDragging ? 'bg-primary/10 border-primary' : 'hover:bg-muted/50'
+                              className={`flex items-center justify-between p-3 bg-card rounded border transition-all duration-200 ${
+                                snapshot.isDragging 
+                                  ? 'bg-primary/10 border-primary shadow-lg transform rotate-2' 
+                                  : 'hover:bg-muted/50 hover:shadow-sm'
                               }`}
                             >
                               <div className="flex items-center flex-1">
                                 <div
                                   {...provided.dragHandleProps}
-                                  className="mr-2 p-1 cursor-grab active:cursor-grabbing hover:bg-muted rounded"
+                                  className="mr-3 p-1 cursor-grab active:cursor-grabbing hover:bg-muted rounded transition-colors"
+                                  title="드래그하여 순서 변경"
                                 >
                                   <GripVertical className="h-4 w-4 text-muted-foreground" />
                                 </div>
