@@ -137,7 +137,7 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
       onRefresh();
       toast({
         title: "프로젝트 업체 정보 저장 완료",
-        description: "블로그 생성을 시작하세요.",
+        description: "이제 추가형태소를 설정하고 블로그를 생성하세요.",
       });
     },
     onError: (error) => {
@@ -149,26 +149,7 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
     },
   });
 
-  const generateContent = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await apiRequest("POST", `/api/projects/${id}/generate`, {});
-      return response.json();
-    },
-    onSuccess: () => {
-      onRefresh();
-      toast({
-        title: "블로그 생성 완료",
-        description: "생성된 블로그를 확인하세요.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "생성 실패",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+
 
 
 
@@ -218,9 +199,7 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
     });
   };
 
-  const handleGenerate = () => {
-    generateContent.mutate(project.id);
-  };
+
 
   // Handle selecting a saved business info
   const handleSelectSavedBusiness = (selectedInfo: any) => {
@@ -237,24 +216,19 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
     });
   };
 
-  const isGenerating = generateContent.isPending;
+  const isGenerating = false;
 
   return (
     <div className="space-y-6">
       {/* Business Info Form */}
-      <Card className={isGenerating ? "border-accent" : ""}>
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between text-lg">
             <div className="flex items-center">
               <Building2 className="h-5 w-5 text-primary mr-2" />
               업체 정보
             </div>
-            {isGenerating && (
-              <div className="flex items-center text-accent text-sm">
-                <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
-                블로그 생성 중...
-              </div>
-            )}
+
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -470,26 +444,7 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
             )}
 
 
-            
-            {(project.status === 'content_generation' || project.status === 'completed') && (
-              <Button 
-                onClick={handleGenerate}
-                disabled={generateContent.isPending}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                {generateContent.isPending ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Claude로 생성 중...
-                  </>
-                ) : (
-                  <>
-                    <ArrowRight className="h-4 w-4 mr-2" />
-                    {project.status === 'completed' ? '블로그 재생성' : '블로그 생성'}
-                  </>
-                )}
-              </Button>
-            )}
+
           </div>
         </div>
       </CardContent>

@@ -12,6 +12,7 @@ import { ProgressStepper } from "@/components/ProgressStepper";
 import { KeywordAnalysisForm } from "@/components/KeywordAnalysisForm";
 import { AIModelStatus } from "@/components/AIModelStatus";
 import { BusinessInfoForm } from "@/components/BusinessInfoForm";
+import { ContentGenerationForm } from "@/components/ContentGenerationForm";
 import { BlogContentDisplay } from "@/components/BlogContentDisplay";
 import { EditingChat } from "@/components/EditingChat";
 import { ReferenceLinks } from "@/components/ReferenceLinks";
@@ -238,6 +239,14 @@ export default function Home() {
             {/* Business Info Form - Show after data collection */}
             {(project as any) && ((project as any).status === 'business_info' || (project as any).status === 'content_generation' || (project as any).status === 'completed') && (
               <BusinessInfoForm 
+                project={project as any} 
+                onRefresh={refetch}
+              />
+            )}
+
+            {/* Content Generation Form - Show after business info is saved */}
+            {(project as any) && ((project as any).status === 'content_generation' || (project as any).status === 'completed') && (
+              <ContentGenerationForm 
                 project={project as any} 
                 onRefresh={refetch}
               />

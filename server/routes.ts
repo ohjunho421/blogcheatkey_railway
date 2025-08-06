@@ -441,6 +441,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== CUSTOM MORPHEMES =====
+  
+  app.post("/api/projects/:id/custom-morphemes", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { customMorphemes } = req.body;
+      
+      const project = await storage.getBlogProject(id);
+      if (!project) {
+        return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
+      }
+
+      const updatedProject = await storage.updateBlogProject(id, {
+        customMorphemes,
+      });
+
+      res.json(updatedProject);
+    } catch (error) {
+      console.error("Custom morphemes error:", error);
+      res.status(500).json({ error: "추가형태소 저장에 실패했습니다" });
+    }
+  });
+
   // ===== CONTENT GENERATION =====
   
   app.post("/api/projects/:id/generate", async (req, res) => {
@@ -455,11 +478,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate blog content using Anthropic
       const strictMorphemeGenerator = await import('./services/strictMorphemeGenerator');
       
-      const generationResult = await strictMorphemeGenerator.generateBlogContent(
+      const generationResult = await strictMorphemeGenerator.generateStrictMorphemeContent(
         project.keyword,
         project.subtitles as string[],
         project.researchData as any,
         project.businessInfo as any,
+        undefined, // referenceLinks
         project.customMorphemes as string | undefined
       );
       
