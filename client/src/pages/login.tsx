@@ -99,25 +99,7 @@ export default function Login() {
     window.location.href = "/api/auth/google";
   };
 
-  const handleKakaoLogin = () => {
-    // 소셜 로그인 기능 일시 비활성화
-    toast({
-      title: "준비 중",
-      description: "카카오 로그인은 준비 중입니다.",
-      variant: "destructive",
-    });
-    // window.location.href = "/auth/kakao";
-  };
 
-  const handleNaverLogin = () => {
-    // 소셜 로그인 기능 일시 비활성화
-    toast({
-      title: "준비 중",
-      description: "네이버 로그인은 준비 중입니다.",
-      variant: "destructive",
-    });
-    // window.location.href = "/auth/naver";
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -136,20 +118,7 @@ export default function Login() {
               </AlertDescription>
             </Alert>
           )}
-          {location.includes("error=kakao") && (
-            <Alert variant="destructive">
-              <AlertDescription>
-                카카오 로그인에 실패했습니다. 다시 시도해주세요.
-              </AlertDescription>
-            </Alert>
-          )}
-          {location.includes("error=naver") && (
-            <Alert variant="destructive">
-              <AlertDescription>
-                네이버 로그인에 실패했습니다. 다시 시도해주세요.
-              </AlertDescription>
-            </Alert>
-          )}
+
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -245,29 +214,7 @@ export default function Login() {
               Google로 로그인
             </Button>
 
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full bg-yellow-300 hover:bg-yellow-400 text-black border-yellow-400"
-              onClick={handleKakaoLogin}
-            >
-              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 3c5.799 0 10.5 3.664 10.5 8.185 0 4.52-4.701 8.184-10.5 8.184a13.5 13.5 0 0 1-1.727-.11l-4.408 2.883c-.501.265-.678.236-.472-.413l.892-3.678c-2.88-1.46-4.785-3.99-4.785-6.866C1.5 6.665 6.201 3 12 3z"/>
-              </svg>
-              카카오로 로그인
-            </Button>
 
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full bg-green-500 hover:bg-green-600 text-white border-green-600"
-              onClick={handleNaverLogin}
-            >
-              <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M16.273 12.845L7.376 0H0v24h7.726V11.156L16.624 24H24V0h-7.727v12.845z"/>
-              </svg>
-              네이버로 로그인
-            </Button>
           </div>
 
           <div className="text-center space-y-2">
