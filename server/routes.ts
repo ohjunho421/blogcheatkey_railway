@@ -69,7 +69,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get current user
   app.get("/api/auth/user", async (req, res) => {
     try {
-      console.log("=== AUTH USER DEBUG ===");
+      console.log("=== AUTH USER DEBUG START ===");
       console.log("Request headers cookie:", req.headers.cookie);
       console.log("Authorization header:", req.headers.authorization);
       console.log("Session ID from request:", req.sessionID);

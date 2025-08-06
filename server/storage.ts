@@ -199,9 +199,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserPermissions(userId: number, permissions: UpdateUserPermissions): Promise<User> {
+    const updateData: any = { ...permissions, updatedAt: new Date() };
+    
+    // Convert subscriptionExpiresAt string to Date if provided
+    if (permissions.subscriptionExpiresAt) {
+      updateData.subscriptionExpiresAt = new Date(permissions.subscriptionExpiresAt);
+    }
+    
     const [updated] = await db
       .update(users)
-      .set({ ...permissions, updatedAt: new Date() })
+      .set(updateData)
       .where(eq(users.id, userId))
       .returning();
     

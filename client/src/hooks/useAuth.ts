@@ -32,7 +32,7 @@ export function useAuth() {
   const isLoggedOut = getLoggedOut();
   const hasStoredSession = localStorage.getItem('sessionId') !== null;
   
-  // 임시로 서버 인증 비활성화하고 localStorage만 사용
+  // 서버 인증 잠시 비활성화, localStorage로 임시 동작
   const { data: user, isLoading, error, isError } = useQuery({
     queryKey: ["/api/auth/user"],
     retry: false,
@@ -40,7 +40,7 @@ export function useAuth() {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchInterval: false,
-    enabled: false, // 서버 인증 완전 비활성화
+    enabled: false, // 임시 비활성화
   });
 
   // 로그아웃 상태이거나 저장된 세션이 없으면 인증되지 않은 것으로 처리

@@ -103,6 +103,7 @@ export const socialUserSchema = z.object({
 export const insertUserSchema = createInsertSchema(users);
 
 export const insertBlogProjectSchema = createInsertSchema(blogProjects).pick({
+  userId: true,
   keyword: true,
   status: true,
   keywordAnalysis: true,
