@@ -229,11 +229,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "키워드를 입력해주세요" });
       }
 
-      const userId = 1; // 임시 고정 사용자 ID (나중에 req.user?.id로 변경)
+      // 실제 로그인한 사용자 ID 획득
+      let userId = (req.session as any)?.userId;
+      
+      // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
+      if (!userId && req.headers.authorization) {
+        const storedUser = req.headers.authorization.includes('Bearer') ? 
+          req.headers.authorization.replace('Bearer ', '') : null;
+        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
+          userId = 1; // 슈퍼 유저
+        }
+      }
+
+      if (!userId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
 
       const project = await storage.createBlogProject({
         keyword: keyword.trim(),
         status: "keyword_analysis",
+        userId: userId,
       });
 
       res.json(project);
@@ -246,7 +261,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all projects for user
   app.get("/api/projects", async (req, res) => {
     try {
-      const userId = 1; // 임시 고정 사용자 ID
+      // 실제 로그인한 사용자 ID 획득
+      let userId = (req.session as any)?.userId;
+      
+      // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
+      if (!userId && req.headers.authorization) {
+        const storedUser = req.headers.authorization.includes('Bearer') ? 
+          req.headers.authorization.replace('Bearer ', '') : null;
+        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
+          userId = 1; // 슈퍼 유저
+        }
+      }
+
+      if (!userId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+
       const projects = await storage.getBlogProjectsByUser(userId);
       res.json(projects);
     } catch (error) {
@@ -259,10 +289,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/projects/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // 실제 로그인한 사용자 ID 획득
+      let userId = (req.session as any)?.userId;
+      
+      // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
+      if (!userId && req.headers.authorization) {
+        const storedUser = req.headers.authorization.includes('Bearer') ? 
+          req.headers.authorization.replace('Bearer ', '') : null;
+        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
+          userId = 1; // 슈퍼 유저
+        }
+      }
+
+      if (!userId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+
       const project = await storage.getBlogProject(id);
       
       if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
+      }
+
+      // 프로젝트 소유권 확인
+      if (project.userId !== userId) {
+        return res.status(403).json({ error: "접근 권한이 없습니다" });
       }
 
       res.json(project);
@@ -276,12 +328,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/projects/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const success = await storage.deleteBlogProject(id);
       
-      if (!success) {
+      // 실제 로그인한 사용자 ID 획득
+      let userId = (req.session as any)?.userId;
+      
+      // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
+      if (!userId && req.headers.authorization) {
+        const storedUser = req.headers.authorization.includes('Bearer') ? 
+          req.headers.authorization.replace('Bearer ', '') : null;
+        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
+          userId = 1; // 슈퍼 유저
+        }
+      }
+
+      if (!userId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+
+      // 프로젝트 소유권 확인
+      const project = await storage.getBlogProject(id);
+      if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
       }
 
+      if (project.userId !== userId) {
+        return res.status(403).json({ error: "삭제 권한이 없습니다" });
+      }
+
+      const success = await storage.deleteBlogProject(id);
       res.json({ success: true });
     } catch (error) {
       console.error("Project deletion error:", error);
@@ -726,7 +800,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user business info
   app.get("/api/user/business-info", async (req, res) => {
     try {
-      const userId = 1; // 임시 고정 사용자 ID
+      // 실제 로그인한 사용자 ID 획득
+      let userId = (req.session as any)?.userId;
+      
+      // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
+      if (!userId && req.headers.authorization) {
+        const storedUser = req.headers.authorization.includes('Bearer') ? 
+          req.headers.authorization.replace('Bearer ', '') : null;
+        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
+          userId = 1; // 슈퍼 유저
+        }
+      }
+
+      if (!userId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+
       const businessInfos = await storage.getAllUserBusinessInfos(userId);
       res.json(businessInfos);
     } catch (error) {
@@ -738,7 +827,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all user business infos for selection
   app.get("/api/user/business-infos", async (req, res) => {
     try {
-      const userId = 1; // 임시 고정 사용자 ID
+      // 실제 로그인한 사용자 ID 획득
+      let userId = (req.session as any)?.userId;
+      
+      // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
+      if (!userId && req.headers.authorization) {
+        const storedUser = req.headers.authorization.includes('Bearer') ? 
+          req.headers.authorization.replace('Bearer ', '') : null;
+        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
+          userId = 1; // 슈퍼 유저
+        }
+      }
+
+      if (!userId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+
       const businessInfos = await storage.getAllUserBusinessInfos(userId);
       res.json(businessInfos);
     } catch (error) {
@@ -750,7 +854,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create new business info
   app.post("/api/user/business-info", async (req, res) => {
     try {
-      const userId = 1; // 임시 고정 사용자 ID
+      // 실제 로그인한 사용자 ID 획득
+      let userId = (req.session as any)?.userId;
+      
+      // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
+      if (!userId && req.headers.authorization) {
+        const storedUser = req.headers.authorization.includes('Bearer') ? 
+          req.headers.authorization.replace('Bearer ', '') : null;
+        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
+          userId = 1; // 슈퍼 유저
+        }
+      }
+
+      if (!userId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+
       const businessInfoData = businessInfoSchema.parse(req.body);
       
       const businessInfo = await storage.createUserBusinessInfo({
@@ -769,8 +888,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/user/business-info/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const businessInfoData = businessInfoSchema.parse(req.body);
       
+      // 실제 로그인한 사용자 ID 획득
+      let userId = (req.session as any)?.userId;
+      
+      // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
+      if (!userId && req.headers.authorization) {
+        const storedUser = req.headers.authorization.includes('Bearer') ? 
+          req.headers.authorization.replace('Bearer ', '') : null;
+        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
+          userId = 1; // 슈퍼 유저
+        }
+      }
+
+      if (!userId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+
+      // 업체정보 소유권 확인
+      const existingBusinessInfo = await storage.getUserBusinessInfo(userId);
+      if (!existingBusinessInfo || existingBusinessInfo.id !== id) {
+        return res.status(403).json({ error: "수정 권한이 없습니다" });
+      }
+
+      const businessInfoData = businessInfoSchema.parse(req.body);
       const businessInfo = await storage.updateUserBusinessInfoById(id, businessInfoData);
       res.json(businessInfo);
     } catch (error) {
@@ -783,6 +924,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/user/business-info/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // 실제 로그인한 사용자 ID 획득
+      let userId = (req.session as any)?.userId;
+      
+      // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
+      if (!userId && req.headers.authorization) {
+        const storedUser = req.headers.authorization.includes('Bearer') ? 
+          req.headers.authorization.replace('Bearer ', '') : null;
+        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
+          userId = 1; // 슈퍼 유저
+        }
+      }
+
+      if (!userId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+
+      // 업체정보 소유권 확인
+      const existingBusinessInfo = await storage.getUserBusinessInfo(userId);
+      if (!existingBusinessInfo || existingBusinessInfo.id !== id) {
+        return res.status(403).json({ error: "삭제 권한이 없습니다" });
+      }
+
       const success = await storage.deleteUserBusinessInfo(id);
       res.json({ success });
     } catch (error) {
