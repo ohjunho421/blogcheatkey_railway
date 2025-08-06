@@ -216,22 +216,7 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
         <CardContent>
           <div className="space-y-6">
             {/* SEO 분석 결과 */}
-            {project.seoMetrics && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">{project.seoMetrics.keywordFrequency}</div>
-                  <div className="text-sm text-muted-foreground">키워드 출현 횟수</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">{project.seoMetrics.characterCount}</div>
-                  <div className="text-sm text-muted-foreground">글자수 (공백제외)</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary">{project.seoMetrics.morphemeCount}</div>
-                  <div className="text-sm text-muted-foreground">형태소 개수</div>
-                </div>
-              </div>
-            )}
+
 
             {/* 생성된 콘텐츠 with Interactive Image Generation */}
             <div className="max-w-none">
