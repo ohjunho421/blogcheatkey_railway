@@ -6,11 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { X, Plus, ExternalLink, BookOpen, Hash, Save } from "lucide-react";
+import { X, Plus, ExternalLink, BookOpen, Hash, Save, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { ReferenceBlogLink } from "@shared/schema";
+import { GenerateBlogButton } from "@/components/GenerateBlogButton";
 
 interface ReferenceBlogLinksFormProps {
   project: any;
@@ -296,6 +297,37 @@ export function ReferenceBlogLinksForm({ project, onRefresh }: ReferenceBlogLink
             더욱 전문적이고 개성있는 블로그가 생성됩니다.
           </div>
         </div>
+
+        {/* Blog Generation Button Section */}
+        {project.status === 'business_info' && project.businessInfo && !project.generatedContent && (
+          <div className="mt-6 pt-6 border-t">
+            <div className="text-center space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold flex items-center justify-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  모든 정보가 준비되었습니다!
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  업체 정보, 참고 링크, 추가 형태소가 설정되었습니다.
+                  <br />이제 SEO 최적화된 블로그를 생성해보세요.
+                </p>
+              </div>
+              
+              <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-4">
+                <h4 className="font-semibold text-foreground mb-2">SEO 최적화 조건</h4>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>• 키워드 "{project.keyword}" 5-7회 포함</li>
+                  <li>• 키워드 구성요소 각각 15-17회 포함</li>
+                  <li>• 총 1500-1700자 (공백 제외)</li>
+                  <li>• 서론 35-40% 비중</li>
+                  <li>• 자연스러운 블로그 톤앤매너</li>
+                </ul>
+              </div>
+
+              <GenerateBlogButton project={project} onRefresh={onRefresh} />
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
