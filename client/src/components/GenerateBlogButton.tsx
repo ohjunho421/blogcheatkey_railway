@@ -50,37 +50,47 @@ export function GenerateBlogButton({ project, onRefresh }: GenerateBlogButtonPro
   });
 
   useEffect(() => {
-    if (!generateContent.isPending) {
-      return;
+    let interval: NodeJS.Timeout;
+    
+    if (generateContent.isPending) {
+      setProgress(0);
+      setCurrentStep(steps[0].label);
+      
+      interval = setInterval(() => {
+        setProgress(prev => {
+          const newProgress = Math.min(prev + 0.8, 95); // 더 느린 속도로, 최대 95%까지
+          
+          // 단계 변경 로직
+          let stepIndex = 0;
+          let accumulated = 0;
+          
+          for (let i = 0; i < steps.length; i++) {
+            accumulated += (steps[i].duration / 100) * 95; // 전체 95%에 맞춰 조정
+            if (newProgress <= accumulated) {
+              stepIndex = i;
+              break;
+            }
+          }
+          
+          if (stepIndex < steps.length) {
+            setCurrentStep(steps[stepIndex].label);
+          }
+          
+          return newProgress;
+        });
+      }, 1200); // 1.2초마다 0.8% 증가
+    } else {
+      // mutation이 완료되면 진행률과 단계 리셋
+      setProgress(0);
+      setCurrentStep("");
     }
 
-    setProgress(0);
-    setCurrentStep(steps[0].label);
-    
-    const interval = setInterval(() => {
-      setProgress(prev => {
-        const newProgress = Math.min(prev + 1, 98); // 최대 98%까지만
-        
-        // 단계 변경 로직
-        let stepIndex = 0;
-        let accumulated = 0;
-        
-        for (let i = 0; i < steps.length; i++) {
-          accumulated += steps[i].duration;
-          if (newProgress <= accumulated) {
-            stepIndex = i;
-            break;
-          }
-        }
-        
-        setCurrentStep(steps[stepIndex].label);
-        
-        return newProgress;
-      });
-    }, 1000); // 1초마다 1% 증가
-
-    return () => clearInterval(interval);
-  }, [generateContent.isPending, steps]);
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [generateContent.isPending]);
 
   const handleGenerate = () => {
     generateContent.mutate(project.id);
@@ -108,12 +118,17 @@ export function GenerateBlogButton({ project, onRefresh }: GenerateBlogButtonPro
       </Button>
       
       {generateContent.isPending && (
-        <div className="space-y-2">
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">{currentStep}</span>
-            <span className="text-muted-foreground">{progress}%</span>
+        <div className="space-y-3 p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/30">
+          <div className="flex justify-between items-center text-sm font-medium">
+            <span className="text-blue-700 dark:text-blue-300">{currentStep}</span>
+            <span className="text-blue-700 dark:text-blue-300">{Math.round(progress)}%</span>
           </div>
-          <Progress value={progress} className="h-2" />
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+            <div 
+              className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
           <p className="text-xs text-muted-foreground text-center">
             예상 소요 시간: 약 1-2분
           </p>
