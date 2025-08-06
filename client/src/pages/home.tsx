@@ -150,6 +150,10 @@ export default function Home() {
                       <User className="mr-2 h-4 w-4" />
                       프로필
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/subscribe")}>
+                      <CreditCard className="mr-2 h-4 w-4" />
+                      구독하기
+                    </DropdownMenuItem>
                     <DropdownMenuItem>
                       <FileText className="mr-2 h-4 w-4" />
                       작성 내역

@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import Home from "@/pages/home";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
+import Subscribe from "@/pages/subscribe";
 import NotFound from "@/pages/not-found";
 import PricingPage from "@/pages/PricingPage";
 import PrivacyPolicy from "@/pages/privacy-policy";
@@ -49,6 +50,7 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/project/:id" component={Home} />
           <Route path="/pricing" component={PricingPage} />
+          <Route path="/subscribe" component={Subscribe} />
           <Route path="/admin" component={AdminPage} />
         </>
       ) : (
