@@ -431,7 +431,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updatedProject = await storage.updateBlogProject(id, {
         businessInfo: businessInfoData,
-        status: "content_generation",
+        status: "business_info",
       });
 
       res.json(updatedProject);
@@ -474,6 +474,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
       }
+
+      // First update status to show generation is starting
+      await storage.updateBlogProject(id, {
+        status: "content_generation",
+      });
 
       // Generate blog content using Anthropic
       const strictMorphemeGenerator = await import('./services/strictMorphemeGenerator');
