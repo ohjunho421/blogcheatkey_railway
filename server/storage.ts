@@ -1,4 +1,4 @@
-import { users, userBusinessInfo, blogProjects, chatMessages, type User, type InsertUser, type UserBusinessInfo, type InsertUserBusinessInfo, type BlogProject, type InsertBlogProject, type ChatMessage, type InsertChatMessage, type UpdateUserPermissions } from "@shared/schema";
+import { users, userBusinessInfo, blogProjects, chatMessages, completedProjects, type User, type InsertUser, type UserBusinessInfo, type InsertUserBusinessInfo, type BlogProject, type InsertBlogProject, type ChatMessage, type InsertChatMessage, type CompletedProject, type InsertCompletedProject, type UpdateUserPermissions } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 
@@ -30,6 +30,11 @@ export interface IStorage {
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
   getChatMessages(projectId: number): Promise<ChatMessage[]>;
   deleteChatMessages(projectId: number): Promise<boolean>;
+  
+  // Completed project methods
+  createCompletedProject(project: InsertCompletedProject): Promise<CompletedProject>;
+  getCompletedProjects(userId: number): Promise<CompletedProject[]>;
+  deleteCompletedProject(id: number): Promise<boolean>;
   
   // Admin methods
   getAllUsers(): Promise<User[]>;
@@ -258,6 +263,31 @@ export class DatabaseStorage implements IStorage {
 
   async getUserById(id: number): Promise<User | undefined> {
     return this.getUser(id);
+  }
+
+  // Completed project methods
+  async createCompletedProject(project: InsertCompletedProject): Promise<CompletedProject> {
+    const [created] = await db
+      .insert(completedProjects)
+      .values(project)
+      .returning();
+    return created;
+  }
+
+  async getCompletedProjects(userId: number): Promise<CompletedProject[]> {
+    const { desc } = await import("drizzle-orm");
+    return await db
+      .select()
+      .from(completedProjects)
+      .where(eq(completedProjects.userId, userId))
+      .orderBy(desc(completedProjects.createdAt));
+  }
+
+  async deleteCompletedProject(id: number): Promise<boolean> {
+    const result = await db
+      .delete(completedProjects)
+      .where(eq(completedProjects.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 }
 

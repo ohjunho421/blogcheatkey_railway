@@ -78,6 +78,18 @@ export const chatMessages = pgTable("chat_messages", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Completed projects for history page
+export const completedProjects = pgTable("completed_projects", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  title: text("title"), // Blog post title
+  keyword: text("keyword").notNull(),
+  content: text("content").notNull(),
+  referenceData: jsonb("reference_data"), // Research sources and references
+  seoMetrics: jsonb("seo_metrics"), // SEO analysis results
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Email login schema
 export const emailSignupSchema = z.object({
   email: z.string().email("올바른 이메일을 입력해주세요"),
@@ -123,6 +135,15 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).pick({
   role: true,
   content: true,
   imageUrl: true,
+});
+
+export const insertCompletedProjectSchema = createInsertSchema(completedProjects).pick({
+  userId: true,
+  title: true,
+  keyword: true,
+  content: true,
+  referenceData: true,
+  seoMetrics: true,
 });
 
 export const insertUserBusinessInfoSchema = createInsertSchema(userBusinessInfo).pick({
@@ -181,6 +202,8 @@ export type InsertBlogProject = z.infer<typeof insertBlogProjectSchema>;
 export type BlogProject = typeof blogProjects.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
+export type InsertCompletedProject = z.infer<typeof insertCompletedProjectSchema>;
+export type CompletedProject = typeof completedProjects.$inferSelect;
 export type BusinessInfo = z.infer<typeof businessInfoSchema>;
 export type KeywordAnalysis = z.infer<typeof keywordAnalysisSchema>;
 export type SEOMetrics = z.infer<typeof seoMetricsSchema>;

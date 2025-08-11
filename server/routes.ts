@@ -530,6 +530,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "completed",
       });
 
+      // 완성된 글을 작성 내역에 저장
+      try {
+        await storage.createCompletedProject({
+          userId: updatedProject.userId!,
+          title: null, // 제목은 추후 채팅으로 생성할 수 있음
+          keyword: updatedProject.keyword,
+          content: finalContent,
+          referenceData: updatedProject.researchData,
+          seoMetrics: seoAnalysis,
+        });
+        console.log(`Completed project saved for user ${updatedProject.userId}, keyword: ${updatedProject.keyword}`);
+      } catch (saveError) {
+        console.error("Failed to save completed project:", saveError);
+        // 저장 실패해도 메인 프로세스는 계속 진행
+      }
+
       res.json(updatedProject);
     } catch (error) {
       console.error("Content generation error:", error);
@@ -1073,6 +1089,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Make admin error:", error);
       res.status(500).json({ error: "관리자 권한 부여에 실패했습니다" });
+    }
+  });
+
+  // ===== COMPLETED PROJECTS (HISTORY) =====
+  
+  // Get completed projects for history page
+  app.get("/api/completed-projects", async (req, res) => {
+    try {
+      // 실제 로그인한 사용자 ID 획득
+      let userId = (req.session as any)?.userId;
+      
+      // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
+      if (!userId && req.headers.authorization) {
+        const storedUser = req.headers.authorization.includes('Bearer') ? 
+          req.headers.authorization.replace('Bearer ', '') : null;
+        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
+          userId = 1; // 슈퍼 유저
+        }
+      }
+
+      if (!userId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+
+      const completedProjects = await storage.getCompletedProjects(userId);
+      res.json(completedProjects);
+    } catch (error) {
+      console.error("Get completed projects error:", error);
+      res.status(500).json({ error: "작성 내역 조회에 실패했습니다" });
+    }
+  });
+
+  // Save completed project (called when blog generation is finished)
+  app.post("/api/completed-projects", async (req, res) => {
+    try {
+      // 실제 로그인한 사용자 ID 획득
+      let userId = (req.session as any)?.userId;
+      
+      // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
+      if (!userId && req.headers.authorization) {
+        const storedUser = req.headers.authorization.includes('Bearer') ? 
+          req.headers.authorization.replace('Bearer ', '') : null;
+        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
+          userId = 1; // 슈퍼 유저
+        }
+      }
+
+      if (!userId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+
+      const { title, keyword, content, referenceData, seoMetrics } = req.body;
+
+      if (!keyword || !content) {
+        return res.status(400).json({ error: "키워드와 콘텐츠는 필수입니다" });
+      }
+
+      const completedProject = await storage.createCompletedProject({
+        userId,
+        title: title || null,
+        keyword,
+        content,
+        referenceData: referenceData || null,
+        seoMetrics: seoMetrics || null,
+      });
+
+      res.json(completedProject);
+    } catch (error) {
+      console.error("Save completed project error:", error);
+      res.status(500).json({ error: "완성된 글 저장에 실패했습니다" });
     }
   });
 

@@ -9,6 +9,7 @@ import Home from "@/pages/home";
 import Login from "@/pages/login";
 import Signup from "@/pages/signup";
 import Subscribe from "@/pages/subscribe";
+import History from "@/pages/history";
 import NotFound from "@/pages/not-found";
 import PricingPage from "@/pages/PricingPage";
 import PrivacyPolicy from "@/pages/privacy-policy";
@@ -51,6 +52,7 @@ function Router() {
           <Route path="/project/:id" component={Home} />
           <Route path="/pricing" component={PricingPage} />
           <Route path="/subscribe" component={Subscribe} />
+          <Route path="/history" component={History} />
           <Route path="/admin" component={AdminPage} />
         </>
       ) : (

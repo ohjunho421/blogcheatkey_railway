@@ -95,8 +95,12 @@ export default function Home() {
             </div>
             <nav className="hidden md:flex space-x-6">
               <a href="#" className="text-muted-foreground hover:text-primary transition-colors">대시보드</a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">작성 내역</a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">설정</a>
+              <button 
+                onClick={() => navigate('/history')}
+                className="text-muted-foreground hover:text-primary transition-colors"
+              >
+                작성 내역
+              </button>
             </nav>
             <div className="flex items-center space-x-3">
               <PaymentModal>
@@ -156,7 +160,7 @@ export default function Home() {
                       <CreditCard className="mr-2 h-4 w-4" />
                       구독하기
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/history")}>
                       <FileText className="mr-2 h-4 w-4" />
                       작성 내역
                     </DropdownMenuItem>
