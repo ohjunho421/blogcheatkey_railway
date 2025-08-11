@@ -537,8 +537,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           title: null, // 제목은 추후 채팅으로 생성할 수 있음
           keyword: updatedProject.keyword,
           content: finalContent,
-          referenceData: updatedProject.researchData,
-          seoMetrics: seoAnalysis,
+          referenceData: updatedProject.researchData as any,
+          seoMetrics: seoAnalysis as any,
         });
         console.log(`Completed project saved for user ${updatedProject.userId}, keyword: ${updatedProject.keyword}`);
       } catch (saveError) {

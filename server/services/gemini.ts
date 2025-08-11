@@ -15,23 +15,15 @@ export async function analyzeKeyword(keyword: string): Promise<KeywordAnalysis> 
     throw new Error("Gemini API key is not configured");
   }
 
-  const prompt = `다음 키워드를 분석하여 블로그 작성에 필요한 정보를 제공해주세요.
+  const prompt = `키워드: "${keyword}"
 
-키워드: "${keyword}"
+다음 JSON 형식으로만 응답해주세요. 설명이나 다른 텍스트 없이 JSON만 반환해주세요:
 
-분석해야 할 내용:
-1. 검색 의도 (150-200자로 간결하게)
-2. 사용자 고민사항 (150-200자로 간결하게)
-3. 4개의 소제목 추천
-
-다음 JSON 형식으로 응답해주세요:
 {
   "searchIntent": "검색 의도 설명 (150-200자)",
-  "userConcerns": "사용자 고민사항 (150-200자)",
+  "userConcerns": "사용자 고민사항 (150-200자)",  
   "suggestedSubtitles": ["소제목1", "소제목2", "소제목3", "소제목4"]
-}
-
-각 소제목은 구체적이고 실용적이며, SEO에 최적화된 형태로 작성해주세요.`;
+}`;
 
   // Retry logic for API overload - optimized for speed
   const maxRetries = 2;
@@ -43,31 +35,28 @@ export async function analyzeKeyword(keyword: string): Promise<KeywordAnalysis> 
         model: "gemini-2.5-pro",
         config: {
           systemInstruction: "당신은 SEO 전문가이자 블로그 작성 전문가입니다. 사용자의 검색 의도를 정확히 파악하고, 실용적이고 도움이 되는 블로그 구조를 제안해주세요.",
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "object",
-            properties: {
-              searchIntent: { type: "string" },
-              userConcerns: { type: "string" },
-              suggestedSubtitles: { 
-                type: "array", 
-                items: { type: "string" },
-                minItems: 4,
-                maxItems: 4
-              }
-            },
-            required: ["searchIntent", "userConcerns", "suggestedSubtitles"]
-          }
         },
-        contents: prompt,
+        contents: [{
+          role: "user",
+          parts: [{ text: prompt }]
+        }],
       });
 
-      const rawJson = response.text;
-      if (!rawJson) {
+      const rawText = response.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawText) {
         throw new Error("Empty response from Gemini");
       }
 
-      const analysis: KeywordAnalysis = JSON.parse(rawJson);
+      // Extract JSON from the response
+      let jsonStr = rawText.trim();
+      if (jsonStr.startsWith('```json')) {
+        jsonStr = jsonStr.slice(7);
+      }
+      if (jsonStr.endsWith('```')) {
+        jsonStr = jsonStr.slice(0, -3);
+      }
+      
+      const analysis: KeywordAnalysis = JSON.parse(jsonStr.trim());
       
       // Validate the response
       if (!analysis.searchIntent || !analysis.userConcerns || !analysis.suggestedSubtitles || analysis.suggestedSubtitles.length !== 4) {
