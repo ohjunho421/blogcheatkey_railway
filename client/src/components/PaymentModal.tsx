@@ -194,27 +194,30 @@ export default function PaymentModal({ children }: PaymentModalProps) {
                   ))}
                 </ul>
                 
-                <Button
-                  onClick={() => handleSubscription(plan)}
-                  disabled={isProcessing && selectedPlan?.name === plan.name}
-                  className={`w-full py-3 text-lg font-semibold ${
-                    plan.popular 
-                      ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-900 border border-gray-300'
-                  }`}
-                  variant={plan.popular ? 'default' : 'outline'}
-                >
-                  {isProcessing && selectedPlan?.name === plan.name 
-                    ? '구독 진행중...' 
-                    : `${plan.name} 구독하기`
-                  }
-                </Button>
-                
-                <div className="mt-4 text-center">
-                  <p className="text-sm text-gray-500">언제든지 해지 가능</p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    카카오뱅크 3333-17-9948665 (블로그치트키)
-                  </p>
+                <div className="space-y-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-blue-900 mb-2">입금 안내</h4>
+                    <p className="text-sm text-blue-800 mb-2">
+                      <span className="font-medium">카카오뱅크 3333-17-9948665</span><br/>
+                      예금주: 블로그치트키
+                    </p>
+                    <p className="text-xs text-blue-700">
+                      입금 후 카카오톡으로 연락주세요<br/>
+                      구독 승인 및 계정 활성화를 도와드리겠습니다
+                    </p>
+                  </div>
+                  
+                  <Button
+                    onClick={() => window.open('https://open.kakao.com/o/your-kakao-link', '_blank')}
+                    className={`w-full py-3 text-lg font-semibold ${
+                      plan.popular 
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-900 border border-gray-300'
+                    }`}
+                    variant={plan.popular ? 'default' : 'outline'}
+                  >
+                    카카오톡으로 문의하기
+                  </Button>
                 </div>
               </CardContent>
             </Card>
