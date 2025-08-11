@@ -89,3 +89,23 @@ export async function generateStrictMorphemeContent(
     success: false
   };
 }
+
+// 재생성을 위한 함수 추가
+export async function regenerateWithStrictMorphemes(
+  currentContent: string,
+  keyword: string,
+  subtitles: string[],
+  researchData: { content: string; citations: string[] },
+  businessInfo: BusinessInfo,
+  customMorphemes?: string
+): Promise<StrictGenerationResult> {
+  // 기존 콘텐츠를 바탕으로 새로 생성 (동일한 로직 사용)
+  return generateStrictMorphemeContent(
+    keyword,
+    subtitles,
+    researchData,
+    businessInfo,
+    undefined,
+    customMorphemes
+  );
+}
