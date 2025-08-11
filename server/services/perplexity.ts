@@ -21,7 +21,7 @@ interface PerplexityResponse {
   };
 }
 
-async function makePerplexityRequest(messages: any[], maxRetries = 2): Promise<PerplexityResponse> {
+async function makePerplexityRequest(messages: any[], maxRetries = 3): Promise<PerplexityResponse> {
   const apiKey = process.env.PERPLEXITY_API_KEY;
   if (!apiKey) {
     throw new Error("PERPLEXITY_API_KEY is not configured");
@@ -30,7 +30,7 @@ async function makePerplexityRequest(messages: any[], maxRetries = 2): Promise<P
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second timeout
       
       const response = await fetch("https://api.perplexity.ai/chat/completions", {
         method: "POST",
@@ -59,8 +59,8 @@ async function makePerplexityRequest(messages: any[], maxRetries = 2): Promise<P
           throw new Error(`Perplexity API error: ${response.status} ${response.statusText} - ${errorText}`);
         }
         
-        // Wait before retry
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Wait before retry with exponential backoff
+        await new Promise(resolve => setTimeout(resolve, Math.min(2000 * Math.pow(2, attempt), 10000)));
         continue;
       }
 
@@ -85,15 +85,19 @@ async function makePerplexityRequest(messages: any[], maxRetries = 2): Promise<P
       
       return data;
       
-    } catch (error) {
-      console.error(`Perplexity request failed (attempt ${attempt + 1}):`, error.message);
+    } catch (error: any) {
+      console.error(`Perplexity request failed (attempt ${attempt + 1}):`, error?.message || error);
       
       if (attempt === maxRetries - 1) {
-        throw error;
+        // 마지막 시도 실패시 더 구체적인 에러 메시지
+        if (error?.name === 'AbortError' || error?.message?.includes('aborted')) {
+          throw new Error("요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.");
+        }
+        throw new Error(`연구 자료 수집 중 오류가 발생했습니다: ${error?.message || '알 수 없는 오류'}`);
       }
       
-      // Wait before retry
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Wait before retry with exponential backoff
+      await new Promise(resolve => setTimeout(resolve, Math.min(3000 * Math.pow(2, attempt), 15000)));
     }
   }
   

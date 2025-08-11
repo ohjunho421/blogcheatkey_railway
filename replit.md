@@ -28,7 +28,8 @@ Preferred communication style: Simple, everyday language.
 - **SEO Optimization**: Integrates a strict morpheme generation system ensuring keyword frequency (15-17 counts per component, 5+ for full keywords), character count (1500-1700), and keyword dominance. Includes intelligent morpheme overuse resolution.
 - **Content Quality**: Focuses on natural blog tone, engaging introductions (35-40% of content, empathy or warning types), professional conclusions, and natural integration of business expertise and research citations.
 - **UI/UX**: Features include drag-and-drop subtitle reordering, interactive AI image generation buttons, chat-based content editing with SEO validation, and a mobile-first responsive design with enhanced line breaking for readability.
-- **Authentication**: Authentication system is temporarily disabled, allowing immediate service access.
+- **Authentication**: Full authentication system enabled with session management and user permissions.
+- **Error Handling**: Enhanced Perplexity API timeout handling (90s timeout, 3 retries with exponential backoff) for stable research data collection.
 - **Deployment**: Utilizes Vite for frontend builds, esbuild for backend bundling, and Drizzle for database migrations.
 
 ## External Dependencies
