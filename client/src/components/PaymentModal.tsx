@@ -202,13 +202,13 @@ export default function PaymentModal({ children }: PaymentModalProps) {
                       예금주: 블로그치트키
                     </p>
                     <p className="text-xs text-blue-700">
-                      입금 후 카카오톡으로 연락주세요<br/>
+                      입금 후 카카오톡 채팅방에서 입금자명을 알려주세요<br/>
                       구독 승인 및 계정 활성화를 도와드리겠습니다
                     </p>
                   </div>
                   
                   <Button
-                    onClick={() => window.open('https://open.kakao.com/o/your-kakao-link', '_blank')}
+                    onClick={() => window.open('https://open.kakao.com/o/saPv2yUg', '_blank')}
                     className={`w-full py-3 text-lg font-semibold ${
                       plan.popular 
                         ? 'bg-blue-600 hover:bg-blue-700 text-white' 
@@ -216,7 +216,7 @@ export default function PaymentModal({ children }: PaymentModalProps) {
                     }`}
                     variant={plan.popular ? 'default' : 'outline'}
                   >
-                    카카오톡으로 문의하기
+                    카카오톡 채팅방 입장하기
                   </Button>
                 </div>
               </CardContent>

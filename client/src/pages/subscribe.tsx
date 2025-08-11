@@ -175,19 +175,29 @@ export default function Subscribe() {
               <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                 <h4 className="font-semibold text-yellow-800 mb-2">입금 시 유의사항</h4>
                 <ul className="text-sm text-yellow-700 space-y-1">
-                  <li>• 입금자명을 가입하신 이메일과 동일하게 해주세요</li>
-                  <li>• 입금 후 1-2일 내에 권한이 활성화됩니다</li>
-                  <li>• 문의사항은 고객센터로 연락주세요</li>
+                  <li>• 입금 후 카카오톡 채팅방에서 입금자명을 알려주세요</li>
+                  <li>• 구독 승인 및 계정 활성화를 즉시 도와드립니다</li>
+                  <li>• 문의사항도 카카오톡 채팅방에서 편리하게 문의하세요</li>
                 </ul>
               </div>
 
-              <div className="text-center">
-                <p className="text-gray-600 mb-4">
-                  현재 계정: <span className="font-semibold">{user?.email}</span>
-                </p>
-                <p className="text-sm text-gray-500">
-                  입금자명을 위 이메일과 동일하게 입금해주시기 바랍니다.
-                </p>
+              <div className="text-center space-y-4">
+                <Button 
+                  onClick={() => window.open('https://open.kakao.com/o/saPv2yUg', '_blank')}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-8 text-lg"
+                  size="lg"
+                >
+                  카카오톡 채팅방 입장하기
+                </Button>
+                
+                <div>
+                  <p className="text-gray-600 mb-2">
+                    현재 계정: <span className="font-semibold">{user?.email}</span>
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    입금 후 채팅방에서 입금자명과 이 이메일을 알려주세요.
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
