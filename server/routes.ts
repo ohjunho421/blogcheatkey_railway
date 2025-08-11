@@ -563,7 +563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
       }
 
-      const { regenerateWithStrictMorphemes } = await import('./services/strictMorphemeGenerator');
+      const { regenerateWithStrictMorphemes } = await import('./services/strictMorphemeGenerator.js');
       
       const regenerationResult = await regenerateWithStrictMorphemes(
         project.generatedContent || '',
