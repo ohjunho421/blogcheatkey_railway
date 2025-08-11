@@ -186,7 +186,7 @@ export function findCompleteKeywordMatches(morphemes: string[], keyword: string)
   return matches;
 }
 
-// Find individual keyword component matches (for 15-17 occurrences each)
+// Find individual keyword component matches (for 8-12 occurrences each)
 export function findKeywordComponentMatches(morphemes: string[], keyword: string): Map<string, string[]> {
   const keywordComponents = extractKeywordComponents(keyword);
   const componentMatches = new Map<string, string[]>();
@@ -292,14 +292,14 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
   const completeKeywordMatches = findCompleteKeywordMatches(allMorphemes, keyword);
   const completeKeywordCount = completeKeywordMatches.length;
   
-  // Find individual component matches (15-17 required each)
+  // Find individual component matches (8-12 required each)
   const componentMatches = findKeywordComponentMatches(allMorphemes, keyword);
   const keywordComponents = extractKeywordComponents(keyword);
   
   // Check complete keyword condition (5-7 times)
   const isCompleteKeywordOptimized = completeKeywordCount >= 5 && completeKeywordCount <= 7;
   
-  // Check individual component conditions (15-17 times each)
+  // Check individual component conditions (8-12 times each)
   let areComponentsOptimized = true;
   const componentIssues: string[] = [];
   
@@ -309,12 +309,12 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
     const matches = componentMatches.get(component) || [];
     const count = matches.length;
     
-    if (count < 15 || count > 17) {
+    if (count < 8 || count > 12) {
       areComponentsOptimized = false;
-      if (count < 15) {
-        componentIssues.push(`${component}: ${count}회 (부족, 15-17회 필요)`);
+      if (count < 8) {
+        componentIssues.push(`${component}: ${count}회 (부족, 8-12회 필요)`);
       } else {
-        componentIssues.push(`${component}: ${count}회 (과다, 15-17회 필요)`);
+        componentIssues.push(`${component}: ${count}회 (과다, 8-12회 필요)`);
       }
     }
   }
@@ -351,7 +351,7 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
     for (const issue of componentIssues) {
       issues.push(`형태소 출현 횟수 불균형: ${issue}`);
     }
-    suggestions.push(`키워드 구성 요소들(${keywordComponents.join(', ')})을 각각 15-17회씩 사용해주세요`);
+    suggestions.push(`키워드 구성 요소들(${keywordComponents.join(', ')})을 각각 8-12회씩 사용해주세요`);
   }
   
   if (!isLengthOptimized) {

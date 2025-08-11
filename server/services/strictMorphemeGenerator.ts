@@ -43,11 +43,11 @@ export async function generateStrictMorphemeContent(
         seoSuggestions.push(`🎯 완전한 키워드 "${keyword}"를 정확히 5-7회 사용 (범위 준수 필수)`);
         
         for (const component of keywordComponents) {
-          seoSuggestions.push(`🎯 "${component}" 형태소를 정확히 15-17회 사용 (완전한 키워드 "${keyword}" 내 출현 포함하여 계산)`);
+          seoSuggestions.push(`🎯 "${component}" 형태소를 정확히 8-12회 사용 (완전한 키워드 "${keyword}" 내 출현 포함하여 계산)`);
         }
         
         seoSuggestions.push(`🚨 키워드 형태소 우위성: "${keywordComponents.join('", "')}" 이외 다른 형태소가 이들보다 많이 나오면 SEO 실패`);
-        seoSuggestions.push(`🔥 각 형태소 17회 초과시 검색 노출 완전 차단`);
+        seoSuggestions.push(`🔥 각 형태소 12회 초과시 검색 노출 완전 차단`);
         seoSuggestions.push(`📏 공백 제외 1500-1700자 엄수 (1499자 이하, 1701자 이상 모두 실패)`);
         seoSuggestions.push(`📖 서론 비중 35-40% (500-700자) 필수 - 미달시 독자 이탈률 증가로 SEO 패널티`);
         seoSuggestions.push(`🎭 매력적인 스토리텔링으로 독자가 끝까지 읽게 만드세요`);
@@ -56,11 +56,11 @@ export async function generateStrictMorphemeContent(
         seoSuggestions.push(`🎯 완전한 키워드 "${keyword}"를 정확히 5-7회 포함 (SEO 최적 범위)`);
         
         for (const component of keywordComponents) {
-          seoSuggestions.push(`🎯 "${component}" 형태소를 각각 15-17회 포함 (완전한 키워드 "${keyword}" 내 출현 포함하여 계산)`);
+          seoSuggestions.push(`🎯 "${component}" 형태소를 각각 8-12회 포함 (완전한 키워드 "${keyword}" 내 출현 포함하여 계산)`);
         }
         
         seoSuggestions.push(`🚨 키워드 형태소 우위성 확보: "${keywordComponents.join('", "')}" 이외 형태소들이 이들보다 많이 나오면 안됨`);
-        seoSuggestions.push(`⚠️ 각 형태소 17회 초과 절대 금지 (SEO 패널티 발생)`);
+        seoSuggestions.push(`⚠️ 각 형태소 12회 초과 절대 금지 (SEO 패널티 발생)`);
         seoSuggestions.push(`📏 공백 제외 1500-1700자 범위 엄격 준수`);
         seoSuggestions.push(`📖 서론 35-40% 비중으로 독자 몰입도 최우선`);
         seoSuggestions.push(`🏆 키워드 형태소가 글에서 가장 중요한 단어로 인식되도록 작성`);
@@ -72,7 +72,7 @@ export async function generateStrictMorphemeContent(
           `[필수] 다음 단어들을 글에 반드시 최소 1회씩 포함해야 합니다: ${customMorphemesArray.join(', ')}`
         );
         seoSuggestions.push(
-          `추가 형태소를 포함하면서도 완전한 키워드 "${keyword}" 5회 이상, 구성 요소들 각각 15-17회 조건을 반드시 맞춰주세요`
+          `추가 형태소를 포함하면서도 완전한 키워드 "${keyword}" 5회 이상, 구성 요소들 각각 8-12회 조건을 반드시 맞춰주세요`
         );
         if (attempts > 1) {
           seoSuggestions.push(`이전 시도에서 누락된 추가 형태소가 있었거나 키워드 조건이 부족했습니다. 완전한 키워드 5회 이상, 구성 요소 15-17회, 추가 형태소 포함 조건을 모두 만족하세요.`);
