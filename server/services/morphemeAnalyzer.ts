@@ -296,8 +296,8 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
   const componentMatches = findKeywordComponentMatches(allMorphemes, keyword);
   const keywordComponents = extractKeywordComponents(keyword);
   
-  // Check complete keyword condition (5-10 times - more lenient)
-  const isCompleteKeywordOptimized = completeKeywordCount >= 5 && completeKeywordCount <= 10;
+  // Check complete keyword condition (5-7 times)
+  const isCompleteKeywordOptimized = completeKeywordCount >= 5 && completeKeywordCount <= 7;
   
   // Check individual component conditions (15-17 times each)
   let areComponentsOptimized = true;
@@ -309,12 +309,12 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
     const matches = componentMatches.get(component) || [];
     const count = matches.length;
     
-    if (count < 12 || count > 20) {
+    if (count < 15 || count > 17) {
       areComponentsOptimized = false;
-      if (count < 12) {
-        componentIssues.push(`${component}: ${count}회 (부족, 12-20회 필요)`);
+      if (count < 15) {
+        componentIssues.push(`${component}: ${count}회 (부족, 15-17회 필요)`);
       } else {
-        componentIssues.push(`${component}: ${count}회 (과다, 12-20회 필요)`);
+        componentIssues.push(`${component}: ${count}회 (과다, 15-17회 필요)`);
       }
     }
   }
@@ -351,7 +351,7 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
     for (const issue of componentIssues) {
       issues.push(`형태소 출현 횟수 불균형: ${issue}`);
     }
-    suggestions.push(`키워드 구성 요소들(${keywordComponents.join(', ')})을 각각 12-20회 정도 사용해주세요`);
+    suggestions.push(`키워드 구성 요소들(${keywordComponents.join(', ')})을 각각 15-17회씩 사용해주세요`);
   }
   
   if (!isLengthOptimized) {
