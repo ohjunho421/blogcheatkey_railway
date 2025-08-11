@@ -169,7 +169,7 @@ export default function PrivacyPolicy() {
             <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
               <p className="text-gray-700 dark:text-gray-300">
                 개인정보보호책임자: 블로그치트키 운영팀<br/>
-                연락처: support@blogcheatkey.com<br/>
+                연락처: wnsghcoswp@gmail.com<br/>
                 개인정보보호 담당부서: 운영팀
               </p>
             </div>
