@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Check, CreditCard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,44 +22,29 @@ interface SubscriptionPlan {
 const subscriptionPlans: SubscriptionPlan[] = [
   {
     name: '베이직',
-    price: 30000,
-    description: '기본 블로그 콘텐츠 생성',
+    price: 50000,
+    description: '기본적인 블로그 콘텐츠 생성',
     features: [
-      '월 30개 블로그 생성',
-      'SEO 최적화 콘텐츠', 
-      '키워드 분석',
-      '이메일 지원'
+      '블로그 콘텐츠 생성',
+      '인포그래픽 이미지 생성',
+      'SEO 최적화',
+      '키워드 분석'
     ],
-    planType: 'content_only'
+    planType: 'basic'
   },
   {
     name: '프리미엄',
-    price: 50000,
-    description: '블로그 + 이미지 생성',
+    price: 100000,
+    description: '모든 기능을 포함한 완전한 서비스',
     features: [
-      '월 30개 블로그 생성',
-      'SEO 최적화 콘텐츠',
-      '인포그래픽 자동 생성',
+      '블로그 콘텐츠 생성',
+      '인포그래픽 이미지 생성',
+      'SEO 최적화',
       '키워드 분석',
-      '우선 지원'
+      'AI 챗봇 상담'
     ],
     popular: true,
-    planType: 'content_and_images'
-  },
-  {
-    name: '프로',
-    price: 100000,
-    description: '올인원 AI 블로그 솔루션',
-    features: [
-      '월 30개 블로그 생성',
-      'SEO 최적화 콘텐츠',
-      '인포그래픽 자동 생성',
-      'AI 챗봇 편집',
-      '키워드 분석',
-      '전담 지원',
-      'API 접근'
-    ],
-    planType: 'full_service'
+    planType: 'premium'
   }
 ];
 
@@ -177,37 +163,32 @@ export default function PaymentModal({ children }: PaymentModalProps) {
           <DialogTitle className="text-2xl text-center">요금제 선택</DialogTitle>
         </DialogHeader>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto p-6">
           {subscriptionPlans.map((plan) => (
             <Card 
               key={plan.name} 
-              className={`relative ${plan.popular ? 'border-primary shadow-lg' : ''}`}
+              className={`relative ${plan.popular ? 'border-blue-500 shadow-lg scale-105' : 'border-gray-200'}`}
             >
               {plan.popular && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium">
-                    인기
-                  </span>
-                </div>
+                <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-4 py-1">
+                  추천
+                </Badge>
               )}
               
-              <CardHeader className="text-center">
-                <CardTitle className="text-xl">{plan.name}</CardTitle>
-                <CardDescription>{plan.description}</CardDescription>
-                <div className="mt-4">
-                  <span className="text-3xl font-bold">₩{plan.price.toLocaleString()}</span>
-                  <span className="text-muted-foreground ml-1">/월</span>
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  매월 자동 갱신
+              <CardHeader className="text-center pb-4">
+                <CardTitle className="text-2xl font-bold text-gray-900">{plan.name}</CardTitle>
+                <CardDescription className="text-gray-600 mt-2">{plan.description}</CardDescription>
+                <div className="mt-6">
+                  <span className="text-4xl font-bold text-gray-900">{(plan.price / 1000).toFixed(0)},000원</span>
+                  <span className="text-gray-500 text-lg">/월</span>
                 </div>
               </CardHeader>
               
-              <CardContent>
-                <ul className="space-y-2 mb-6">
+              <CardContent className="pt-4">
+                <ul className="space-y-3 mb-8">
                   {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-center text-sm">
-                      <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                    <li key={index} className="flex items-center text-gray-700">
+                      <Check className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
                       {feature}
                     </li>
                   ))}
@@ -216,15 +197,25 @@ export default function PaymentModal({ children }: PaymentModalProps) {
                 <Button
                   onClick={() => handleSubscription(plan)}
                   disabled={isProcessing && selectedPlan?.name === plan.name}
-                  className="w-full"
+                  className={`w-full py-3 text-lg font-semibold ${
+                    plan.popular 
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                      : 'bg-gray-100 hover:bg-gray-200 text-gray-900 border border-gray-300'
+                  }`}
                   variant={plan.popular ? 'default' : 'outline'}
                 >
-                  <CreditCard className="h-4 w-4 mr-2" />
                   {isProcessing && selectedPlan?.name === plan.name 
                     ? '구독 진행중...' 
-                    : `${plan.name} 월구독`
+                    : `${plan.name} 구독하기`
                   }
                 </Button>
+                
+                <div className="mt-4 text-center">
+                  <p className="text-sm text-gray-500">언제든지 해지 가능</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    카카오뱅크 3333-17-9948665 (블로그치트키)
+                  </p>
+                </div>
               </CardContent>
             </Card>
           ))}
