@@ -46,9 +46,11 @@ function autoDecomposeKoreanKeyword(koreanText: string): string[] {
     '학원', '과외', '교육', '학습', '공부', '시험', '성적', '학생', '선생님', '강사',
     '초등', '중등', '고등', '대학', '입시', '수능',
     
-    // 자동차 관련
+    // 자동차 관련 (더 많은 단어 추가)
+    '오토바이', '전기', '하이브리드', '친환경', '자동차', '차량', '모터',
     '벤츠', '아우디', '비엠더블유', 'bmw', '현대', '기아', '삼성', 'lg',
     '엔진', '경고등', '에어컨', '필터', '오일', '타이어', '브레이크', '배터리',
+    '냉각수', '첨가제', '패드', '시기',
     '수리', '정비', '점검', '교체', '부품', '센서',
     
     // 일반 명사
@@ -111,6 +113,26 @@ export function extractKeywordComponents(keyword: string): string[] {
     components.push("수학", "과외", "블로그");
   } else if (keyword === "영어과외블로그") {
     components.push("영어", "과외", "블로그");
+  } else if (keyword === "전기오토바이") {
+    components.push("전기", "오토바이");
+  } else if (keyword === "냉각수첨가제") {
+    components.push("냉각수", "첨가제");
+  } else if (keyword === "자동차부품") {
+    components.push("자동차", "부품");
+  } else if (keyword === "엔진오일교체") {
+    components.push("엔진", "오일", "교체");
+  } else if (keyword === "타이어교체시기") {
+    components.push("타이어", "교체", "시기");
+  } else if (keyword === "브레이크패드교체") {
+    components.push("브레이크", "패드", "교체");
+  } else if (keyword === "에어컨필터교체") {
+    components.push("에어컨", "필터", "교체");
+  } else if (keyword === "배터리점검") {
+    components.push("배터리", "점검");
+  } else if (keyword === "하이브리드차량") {
+    components.push("하이브리드", "차량");
+  } else if (keyword === "친환경자동차") {
+    components.push("친환경", "자동차");
   } else if (keyword.toLowerCase().includes("아우디a6에어컨필터")) {
     components.push("아우디", "a6", "에어컨", "필터");
   } else if (keyword.toLowerCase().includes("bmw") && keyword.includes("코딩")) {
@@ -234,6 +256,60 @@ export function findKeywordComponentMatches(morphemes: string[], keyword: string
       } else if (lowerComponent === '블로그') {
         // 블로그 matches including compound words like 영어학원블로그
         isMatch = lowerMorpheme.includes('블로그');
+      } else if (lowerComponent === '전기') {
+        // 전기 matches including compound words like 전기오토바이
+        isMatch = lowerMorpheme.includes('전기');
+      } else if (lowerComponent === '오토바이') {
+        // 오토바이 matches including compound words like 전기오토바이
+        isMatch = lowerMorpheme.includes('오토바이');
+      } else if (lowerComponent === '냉각수') {
+        // 냉각수 matches including compound words like 냉각수첨가제
+        isMatch = lowerMorpheme.includes('냉각수');
+      } else if (lowerComponent === '첨가제') {
+        // 첨가제 matches including compound words like 냉각수첨가제
+        isMatch = lowerMorpheme.includes('첨가제');
+      } else if (lowerComponent === '자동차') {
+        // 자동차 matches including compound words like 자동차부품
+        isMatch = lowerMorpheme.includes('자동차');
+      } else if (lowerComponent === '부품') {
+        // 부품 matches including compound words like 자동차부품
+        isMatch = lowerMorpheme.includes('부품');
+      } else if (lowerComponent === '타이어') {
+        // 타이어 matches including compound words like 타이어교체시기
+        isMatch = lowerMorpheme.includes('타이어');
+      } else if (lowerComponent === '교체') {
+        // 교체 matches including compound words like 타이어교체시기, 엔진오일교체
+        isMatch = lowerMorpheme.includes('교체');
+      } else if (lowerComponent === '시기') {
+        // 시기 matches including compound words like 타이어교체시기
+        isMatch = lowerMorpheme.includes('시기');
+      } else if (lowerComponent === '브레이크') {
+        // 브레이크 matches including compound words like 브레이크패드교체
+        isMatch = lowerMorpheme.includes('브레이크');
+      } else if (lowerComponent === '패드') {
+        // 패드 matches including compound words like 브레이크패드교체
+        isMatch = lowerMorpheme.includes('패드');
+      } else if (lowerComponent === '에어컨') {
+        // 에어컨 matches including compound words like 에어컨필터교체
+        isMatch = lowerMorpheme.includes('에어컨');
+      } else if (lowerComponent === '필터') {
+        // 필터 matches including compound words like 에어컨필터교체
+        isMatch = lowerMorpheme.includes('필터');
+      } else if (lowerComponent === '배터리') {
+        // 배터리 matches including compound words like 배터리점검
+        isMatch = lowerMorpheme.includes('배터리');
+      } else if (lowerComponent === '점검') {
+        // 점검 matches including compound words like 배터리점검
+        isMatch = lowerMorpheme.includes('점검');
+      } else if (lowerComponent === '하이브리드') {
+        // 하이브리드 matches including compound words like 하이브리드차량
+        isMatch = lowerMorpheme.includes('하이브리드');
+      } else if (lowerComponent === '차량') {
+        // 차량 matches including compound words like 하이브리드차량
+        isMatch = lowerMorpheme.includes('차량');
+      } else if (lowerComponent === '친환경') {
+        // 친환경 matches including compound words like 친환경자동차
+        isMatch = lowerMorpheme.includes('친환경');
       } else {
         // Generic matching for other components
         isMatch = lowerMorpheme === lowerComponent || lowerMorpheme.includes(lowerComponent);
