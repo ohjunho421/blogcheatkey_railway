@@ -112,11 +112,11 @@ export default function History() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate('/')}
+              onClick={() => window.history.back()}
               className="flex items-center gap-2"
             >
               <ChevronLeft className="h-4 w-4" />
-              대시보드로 돌아가기
+              이전 페이지로 돌아가기
             </Button>
           </div>
           
