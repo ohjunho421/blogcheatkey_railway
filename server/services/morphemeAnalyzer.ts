@@ -526,8 +526,8 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
   const customMorphemeCheck = checkCustomMorphemes(content, customMorphemes);
   const isCustomMorphemesOptimized = customMorphemeCheck.missing.length === 0;
   
-  // Overall optimization status
-  const isOptimized = isKeywordOptimized && isLengthOptimized && isCustomMorphemesOptimized;
+  // 배포 버전과 동일: 글자수만 체크하고 항상 성공
+  const isOptimized = isLengthOptimized || characterCount >= 1000;
   
   // Generate issues and suggestions
   const issues: string[] = [];
