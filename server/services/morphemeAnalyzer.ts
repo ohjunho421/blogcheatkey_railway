@@ -37,13 +37,13 @@ export function extractKoreanMorphemes(text: string): string[] {
   return morphemes;
 }
 
-// 지능적 한국어 복합어 분해 함수
-function intelligentKoreanDecomposer(koreanText: string): string[] {
-  console.log(`=== Intelligent decomposing: "${koreanText}" ===`);
+// 지능적 복합어 분해 함수 (한국어 + 영어 + 숫자 혼합 지원)
+function intelligentKoreanDecomposer(text: string): string[] {
+  console.log(`=== Intelligent decomposing: "${text}" ===`);
   
-  // 1단계: 기본 한국어 명사 패턴 사전
+  // 1단계: 핵심 단어 사전
   const coreWords = [
-    // 2글자 핵심 명사
+    // 한국어 2글자 핵심 명사
     '자동', '전기', '수학', '영어', '국어', '과학', '물리', '화학', '생물', '역사', '사회',
     '학원', '과외', '교육', '학습', '공부', '시험', '성적', '입시', '수능', 
     '엔진', '타이어', '브레이크', '배터리', '에어컨', '필터', '센서', '부품',
@@ -52,18 +52,30 @@ function intelligentKoreanDecomposer(koreanText: string): string[] {
     '회사', '전문', '맞춤', '개인', '온라인', '화상', '대면', '코딩', '개발',
     '시스템', '데이터', '머신', '딥러닝', '빅데이터',
     
-    // 3글자 핵심 명사  
+    // 한국어 3글자 핵심 명사  
     '오토바이', '하이브리드', '친환경', '경고등', '웹사이트', '홈페이지', '커뮤니티',
     '프로그래밍', '소프트웨어', '데이터베이스', '인공지능',
     
-    // 4글자 이상 핵심 명사
-    '지구과학'
+    // 한국어 4글자 이상 핵심 명사
+    '지구과학',
+    
+    // 영어 단어들 (소문자로 저장)
+    'bmw', 'audi', 'benz', 'mercedes', 'hyundai', 'kia', 'lg', 'samsung',
+    'coding', 'tuning', 'programming', 'filter', 'engine', 'tire', 'brake',
+    'battery', 'sensor', 'system', 'data', 'machine', 'deep', 'learning',
+    'big', 'software', 'database', 'ai', 'web', 'app', 'blog', 'site',
+    
+    // 영어+숫자 조합들
+    'a1', 'a3', 'a4', 'a6', 'a8', 'q3', 'q5', 'q7', 'q8',
+    'x1', 'x3', 'x5', 'x7', 'i3', 'i8', 'm3', 'm5',
+    'c200', 'c300', 'e200', 'e300', 's300', 's500',
+    '520d', '530i', '540i', '10w30', '10w40', '5w30', '5w40'
   ];
   
   // 2단계: 한국어 어미/접미사 패턴
   const suffixPatterns = ['수', '제', '기', '등', '차', '품', '드', '값', '률', '량', '도'];
   
-  // 3단계: 지능적 분해 알고리즘
+  // 3단계: 지능적 분해 알고리즘 (한영 혼합 지원)
   function smartDecompose(text: string): string[] {
     const result: string[] = [];
     let pos = 0;
@@ -73,10 +85,12 @@ function intelligentKoreanDecomposer(koreanText: string): string[] {
       let bestLength = 0;
       
       // 현재 위치에서 가장 긴 의미있는 단어 찾기
-      for (let len = Math.min(6, text.length - pos); len >= 2; len--) {
+      for (let len = Math.min(8, text.length - pos); len >= 1; len--) {
         const candidate = text.substring(pos, pos + len);
+        const candidateLower = candidate.toLowerCase();
         
-        if (coreWords.includes(candidate)) {
+        // 한국어 단어 또는 영어 단어 매칭
+        if (coreWords.includes(candidate) || coreWords.includes(candidateLower)) {
           if (len > bestLength) {
             bestMatch = candidate;
             bestLength = len;
@@ -96,11 +110,11 @@ function intelligentKoreanDecomposer(koreanText: string): string[] {
           result.push(analyzed[0]);
           pos += analyzed[0].length;
         } else {
-          // 최후의 수단: 2-3글자 단위로 분할
-          const segmentLength = Math.min(3, text.length - pos);
-          if (segmentLength >= 2) {
-            result.push(text.substring(pos, pos + segmentLength));
-            pos += segmentLength;
+          // 최후의 수단: 문자 유형별 분할
+          const segmentInfo = getSegmentInfo(remaining);
+          if (segmentInfo.length >= 1) {
+            result.push(segmentInfo.segment);
+            pos += segmentInfo.length;
           } else {
             pos++; // 1글자는 건너뛰기
           }
@@ -108,44 +122,89 @@ function intelligentKoreanDecomposer(koreanText: string): string[] {
       }
     }
     
-    return result.filter(word => word.length >= 2);
+    return result.filter(word => word.length >= 1); // 영어나 숫자는 1글자도 허용
   }
   
-  // 4단계: 미지의 세그먼트 분석
+  // 새로운 함수: 문자 유형별 세그먼트 정보 반환
+  function getSegmentInfo(text: string): { segment: string; length: number } {
+    if (text.length === 0) return { segment: '', length: 0 };
+    
+    const firstChar = text[0];
+    
+    // 영어인 경우
+    if (/[a-zA-Z]/.test(firstChar)) {
+      const match = text.match(/^[a-zA-Z0-9]+/);
+      return { segment: match ? match[0] : firstChar, length: match ? match[0].length : 1 };
+    }
+    
+    // 숫자인 경우
+    if (/[0-9]/.test(firstChar)) {
+      const match = text.match(/^[0-9]+[a-zA-Z]*/);
+      return { segment: match ? match[0] : firstChar, length: match ? match[0].length : 1 };
+    }
+    
+    // 한국어인 경우
+    if (/[가-힣]/.test(firstChar)) {
+      const koreanMatch = text.match(/^[가-힣]+/);
+      if (koreanMatch) {
+        const segment = koreanMatch[0];
+        // 2-3글자씩 분할
+        const segmentLength = Math.min(3, segment.length);
+        return { segment: segment.substring(0, segmentLength), length: segmentLength };
+      }
+    }
+    
+    return { segment: firstChar, length: 1 };
+  }
+  
+  // 4단계: 미지의 세그먼트 분석 (한영 혼합 지원)
   function analyzeUnknownSegment(segment: string): string[] {
-    // 일반적인 한국어 명사 패턴 분석
-    if (segment.length >= 4) {
-      // 4글자 이상인 경우 2+2 또는 3+나머지로 분할 시도
-      const firstHalf = segment.substring(0, 2);
-      const secondHalf = segment.substring(2);
-      
-      // 뒷부분이 일반적인 접미사 패턴인지 확인
-      if (suffixPatterns.some(suffix => secondHalf.startsWith(suffix))) {
+    console.log(`Analyzing unknown segment: "${segment}"`);
+    
+    // 혼합 패턴 감지 (한국어+영어+숫자)
+    const mixedPattern = segment.match(/([가-힣]+)|([a-zA-Z]+[0-9]*)|([0-9]+[a-zA-Z]*)/g);
+    if (mixedPattern && mixedPattern.length > 1) {
+      console.log(`Mixed pattern detected: [${mixedPattern.join(', ')}]`);
+      return mixedPattern.filter(part => part.length >= 1);
+    }
+    
+    // 순수 한국어 세그먼트 분석
+    if (/^[가-힣]+$/.test(segment)) {
+      if (segment.length >= 4) {
+        // 4글자 이상인 경우 2+2 또는 3+나머지로 분할 시도
+        const firstHalf = segment.substring(0, 2);
+        const secondHalf = segment.substring(2);
+        
+        // 뒷부분이 일반적인 접미사 패턴인지 확인
+        if (suffixPatterns.some(suffix => secondHalf.startsWith(suffix))) {
+          return [firstHalf, secondHalf];
+        }
+        
+        // 3+나머지 패턴 시도
+        if (segment.length >= 5) {
+          const first3 = segment.substring(0, 3);
+          const rest = segment.substring(3);
+          return [first3, rest];
+        }
+        
+        // 기본 2+2 분할
         return [firstHalf, secondHalf];
+      } else if (segment.length >= 2) {
+        return [segment];
       }
-      
-      // 3+나머지 패턴 시도
-      if (segment.length >= 5) {
-        const first3 = segment.substring(0, 3);
-        const rest = segment.substring(3);
-        return [first3, rest];
-      }
-      
-      // 기본 2+2 분할
-      return [firstHalf, secondHalf];
-    } else if (segment.length === 3) {
-      // 3글자인 경우 그대로 사용
-      return [segment];
-    } else if (segment.length === 2) {
-      // 2글자인 경우 그대로 사용
+    }
+    
+    // 순수 영어+숫자 세그먼트
+    if (/^[a-zA-Z0-9]+$/.test(segment)) {
+      // 영어+숫자 조합은 그대로 유지 (예: "a6", "520d")
       return [segment];
     }
     
     return [];
   }
   
-  const decomposed = smartDecompose(koreanText);
-  console.log(`Decomposed "${koreanText}" → [${decomposed.join(', ')}]`);
+  const decomposed = smartDecompose(text);
+  console.log(`Decomposed "${text}" → [${decomposed.join(', ')}]`);
   
   return decomposed;
 }
@@ -154,14 +213,8 @@ function intelligentKoreanDecomposer(koreanText: string): string[] {
 export function extractKeywordComponents(keyword: string): string[] {
   const components = [];
   
-  // 복잡한 특수 케이스만 수동 정의, 나머지는 지능적 분해 시스템 사용
-  if (keyword.toLowerCase().includes("아우디a6에어컨필터")) {
-    components.push("아우디", "a6", "에어컨", "필터");
-  } else if (keyword.toLowerCase().includes("bmw") && keyword.includes("코딩")) {
-    components.push("BMW", "코딩");
-  } else if (keyword.includes("10W40") && keyword.includes("엔진오일")) {
-    components.push("10W40", "엔진", "오일");
-  } else {
+  // 모든 키워드에 지능적 분해 시스템 적용 (한영 혼합 지원)
+  {
     // 자동 분해 시스템을 폴백으로 사용
     const cleanKeyword = keyword.toLowerCase();
     
@@ -181,17 +234,11 @@ export function extractKeywordComponents(keyword: string): string[] {
       }
     }
     
-    // 한국어 형태소 지능적 분해
-    for (const match of koreanMatches) {
-      if (match.length >= 2) {
-        const decomposed = intelligentKoreanDecomposer(match);
-        // 너무 많은 형태소가 생성되지 않도록 제한 (최대 4개)
-        const limitedDecomposed = decomposed.slice(0, 4);
-        for (const comp of limitedDecomposed) {
-          if (!components.includes(comp) && comp.length >= 2) {
-            components.push(comp);
-          }
-        }
+    // 전체 키워드를 지능적으로 분해 (한영숫자 혼합 지원)
+    const decomposed = intelligentKoreanDecomposer(keyword);
+    for (const comp of decomposed) {
+      if (!components.includes(comp) && comp.length >= 1) {
+        components.push(comp);
       }
     }
     
