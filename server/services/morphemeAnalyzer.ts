@@ -211,7 +211,7 @@ function intelligentKoreanDecomposer(text: string): string[] {
 
 // Extract individual keyword components for SEO optimization
 export function extractKeywordComponents(keyword: string): string[] {
-  const components = [];
+  const components: string[] = [];
   
   // 지능적 분해 시스템을 우선 적용 (기존 패턴 매칭 대체)
   console.log(`=== Starting keyword decomposition for: "${keyword}" ===`);
