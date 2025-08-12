@@ -213,40 +213,16 @@ function intelligentKoreanDecomposer(text: string): string[] {
 export function extractKeywordComponents(keyword: string): string[] {
   const components = [];
   
-  // 모든 키워드에 지능적 분해 시스템 적용 (한영 혼합 지원)
-  {
-    // 자동 분해 시스템을 폴백으로 사용
-    const cleanKeyword = keyword.toLowerCase();
-    
-    // 특수 패턴들
-    const numberPattern = /[0-9]+[a-z]*[0-9]*/g;
-    const koreanPattern = /[가-힣]+/g;
-    const englishPattern = /[a-zA-Z]+/g;
-    
-    const numberMatches = cleanKeyword.match(numberPattern) || [];
-    const koreanMatches = cleanKeyword.match(koreanPattern) || [];
-    const englishMatches = cleanKeyword.match(englishPattern) || [];
-    
-    // 숫자+문자 조합 추가
-    for (const match of numberMatches) {
-      if (match.length >= 1) {
-        components.push(match);
-      }
-    }
-    
-    // 전체 키워드를 지능적으로 분해 (한영숫자 혼합 지원)
-    const decomposed = intelligentKoreanDecomposer(keyword);
-    for (const comp of decomposed) {
-      if (!components.includes(comp) && comp.length >= 1) {
-        components.push(comp);
-      }
-    }
-    
-    // 영어 형태소 추가
-    for (const match of englishMatches) {
-      if (match.length >= 1 && !numberMatches.some(num => num.includes(match))) {
-        components.push(match);
-      }
+  // 지능적 분해 시스템을 우선 적용 (기존 패턴 매칭 대체)
+  console.log(`=== Starting keyword decomposition for: "${keyword}" ===`);
+  
+  // 전체 키워드를 지능적으로 분해 (한영숫자 혼합 지원)
+  const decomposed = intelligentKoreanDecomposer(keyword);
+  console.log(`Intelligent decomposition result: [${decomposed.join(', ')}]`);
+  
+  for (const comp of decomposed) {
+    if (!components.includes(comp) && comp.length >= 1) {
+      components.push(comp);
     }
   }
   
