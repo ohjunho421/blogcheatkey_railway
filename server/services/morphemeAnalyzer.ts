@@ -37,103 +37,125 @@ export function extractKoreanMorphemes(text: string): string[] {
   return morphemes;
 }
 
-// 자동 한국어 복합어 분해 함수
-function autoDecomposeKoreanKeyword(koreanText: string): string[] {
-  // 일반적인 한국어 단어 패턴들을 정의
-  const commonWords = [
-    // 교육 관련
-    '수학', '영어', '국어', '과학', '사회', '역사', '물리', '화학', '생물', '지구과학',
-    '학원', '과외', '교육', '학습', '공부', '시험', '성적', '학생', '선생님', '강사',
-    '초등', '중등', '고등', '대학', '입시', '수능',
+// 지능적 한국어 복합어 분해 함수
+function intelligentKoreanDecomposer(koreanText: string): string[] {
+  console.log(`=== Intelligent decomposing: "${koreanText}" ===`);
+  
+  // 1단계: 기본 한국어 명사 패턴 사전
+  const coreWords = [
+    // 2글자 핵심 명사
+    '자동', '전기', '수학', '영어', '국어', '과학', '물리', '화학', '생물', '역사', '사회',
+    '학원', '과외', '교육', '학습', '공부', '시험', '성적', '입시', '수능', 
+    '엔진', '타이어', '브레이크', '배터리', '에어컨', '필터', '센서', '부품',
+    '냉각', '오일', '교체', '점검', '수리', '정비', '시기', '방법', '가격',
+    '비용', '추천', '후기', '리뷰', '정보', '소식', '뉴스', '서비스', '업체',
+    '회사', '전문', '맞춤', '개인', '온라인', '화상', '대면', '코딩', '개발',
+    '시스템', '데이터', '머신', '딥러닝', '빅데이터',
     
-    // 자동차 관련 (더 많은 단어 추가)
-    '오토바이', '전기', '하이브리드', '친환경', '자동차', '차량', '모터',
-    '벤츠', '아우디', '비엠더블유', 'bmw', '현대', '기아', '삼성', 'lg',
-    '엔진', '경고등', '에어컨', '필터', '오일', '타이어', '브레이크', '배터리',
-    '냉각수', '첨가제', '패드', '시기',
-    '수리', '정비', '점검', '교체', '부품', '센서',
+    // 3글자 핵심 명사  
+    '오토바이', '하이브리드', '친환경', '경고등', '웹사이트', '홈페이지', '커뮤니티',
+    '프로그래밍', '소프트웨어', '데이터베이스', '인공지능',
     
-    // 일반 명사
-    '블로그', '사이트', '웹사이트', '홈페이지', '카페', '커뮤니티',
-    '방법', '가격', '비용', '추천', '후기', '리뷰', '정보', '소식', '뉴스',
-    '서비스', '업체', '회사', '전문', '맞춤', '개인', '그룹',
-    '온라인', '오프라인', '화상', '대면', '비대면',
-    
-    // 기술 관련
-    '코딩', '프로그래밍', '개발', '웹', '앱', '소프트웨어', '시스템', '데이터베이스',
-    '인공지능', 'ai', '머신러닝', '딥러닝', '빅데이터'
+    // 4글자 이상 핵심 명사
+    '지구과학'
   ];
   
-  const result: string[] = [];
-  let remaining = koreanText;
+  // 2단계: 한국어 어미/접미사 패턴
+  const suffixPatterns = ['수', '제', '기', '등', '차', '품', '드', '값', '률', '량', '도'];
   
-  // 가장 긴 단어부터 매칭 시도 (탐욕적 접근법)
-  const sortedWords = commonWords.sort((a, b) => b.length - a.length);
-  
-  while (remaining.length > 0) {
-    let found = false;
+  // 3단계: 지능적 분해 알고리즘
+  function smartDecompose(text: string): string[] {
+    const result: string[] = [];
+    let pos = 0;
     
-    for (const word of sortedWords) {
-      if (remaining.startsWith(word)) {
-        result.push(word);
-        remaining = remaining.substring(word.length);
-        found = true;
-        break;
+    while (pos < text.length) {
+      let bestMatch = '';
+      let bestLength = 0;
+      
+      // 현재 위치에서 가장 긴 의미있는 단어 찾기
+      for (let len = Math.min(6, text.length - pos); len >= 2; len--) {
+        const candidate = text.substring(pos, pos + len);
+        
+        if (coreWords.includes(candidate)) {
+          if (len > bestLength) {
+            bestMatch = candidate;
+            bestLength = len;
+          }
+        }
       }
-    }
-    
-    // 매칭되는 단어가 없으면 2-3글자씩 분할
-    if (!found) {
-      if (remaining.length >= 3) {
-        result.push(remaining.substring(0, 3));
-        remaining = remaining.substring(3);
-      } else if (remaining.length >= 2) {
-        result.push(remaining.substring(0, 2));
-        remaining = remaining.substring(2);
+      
+      if (bestMatch) {
+        result.push(bestMatch);
+        pos += bestLength;
       } else {
-        result.push(remaining);
-        remaining = '';
+        // 사전에 없는 경우 패턴 기반 분해
+        const remaining = text.substring(pos);
+        const analyzed = analyzeUnknownSegment(remaining);
+        
+        if (analyzed.length > 0) {
+          result.push(analyzed[0]);
+          pos += analyzed[0].length;
+        } else {
+          // 최후의 수단: 2-3글자 단위로 분할
+          const segmentLength = Math.min(3, text.length - pos);
+          if (segmentLength >= 2) {
+            result.push(text.substring(pos, pos + segmentLength));
+            pos += segmentLength;
+          } else {
+            pos++; // 1글자는 건너뛰기
+          }
+        }
       }
     }
+    
+    return result.filter(word => word.length >= 2);
   }
   
-  return result.filter(component => component.length >= 2); // 2글자 이상만 유효
+  // 4단계: 미지의 세그먼트 분석
+  function analyzeUnknownSegment(segment: string): string[] {
+    // 일반적인 한국어 명사 패턴 분석
+    if (segment.length >= 4) {
+      // 4글자 이상인 경우 2+2 또는 3+나머지로 분할 시도
+      const firstHalf = segment.substring(0, 2);
+      const secondHalf = segment.substring(2);
+      
+      // 뒷부분이 일반적인 접미사 패턴인지 확인
+      if (suffixPatterns.some(suffix => secondHalf.startsWith(suffix))) {
+        return [firstHalf, secondHalf];
+      }
+      
+      // 3+나머지 패턴 시도
+      if (segment.length >= 5) {
+        const first3 = segment.substring(0, 3);
+        const rest = segment.substring(3);
+        return [first3, rest];
+      }
+      
+      // 기본 2+2 분할
+      return [firstHalf, secondHalf];
+    } else if (segment.length === 3) {
+      // 3글자인 경우 그대로 사용
+      return [segment];
+    } else if (segment.length === 2) {
+      // 2글자인 경우 그대로 사용
+      return [segment];
+    }
+    
+    return [];
+  }
+  
+  const decomposed = smartDecompose(koreanText);
+  console.log(`Decomposed "${koreanText}" → [${decomposed.join(', ')}]`);
+  
+  return decomposed;
 }
 
 // Extract individual keyword components for SEO optimization
 export function extractKeywordComponents(keyword: string): string[] {
   const components = [];
   
-  // Manual extraction for known compound Korean keywords - 정확한 분석을 위해 수동 정의 우선
-  if (keyword === "벤츠엔진경고등") {
-    components.push("벤츠", "엔진", "경고등");
-  } else if (keyword === "영어학원블로그") {
-    components.push("영어", "학원", "블로그");
-  } else if (keyword === "수학과외블로그") {
-    components.push("수학", "과외", "블로그");
-  } else if (keyword === "영어과외블로그") {
-    components.push("영어", "과외", "블로그");
-  } else if (keyword === "전기오토바이") {
-    components.push("전기", "오토바이");
-  } else if (keyword === "냉각수첨가제") {
-    components.push("냉각수", "첨가제");
-  } else if (keyword === "자동차부품") {
-    components.push("자동차", "부품");
-  } else if (keyword === "엔진오일교체") {
-    components.push("엔진", "오일", "교체");
-  } else if (keyword === "타이어교체시기") {
-    components.push("타이어", "교체", "시기");
-  } else if (keyword === "브레이크패드교체") {
-    components.push("브레이크", "패드", "교체");
-  } else if (keyword === "에어컨필터교체") {
-    components.push("에어컨", "필터", "교체");
-  } else if (keyword === "배터리점검") {
-    components.push("배터리", "점검");
-  } else if (keyword === "하이브리드차량") {
-    components.push("하이브리드", "차량");
-  } else if (keyword === "친환경자동차") {
-    components.push("친환경", "자동차");
-  } else if (keyword.toLowerCase().includes("아우디a6에어컨필터")) {
+  // 복잡한 특수 케이스만 수동 정의, 나머지는 지능적 분해 시스템 사용
+  if (keyword.toLowerCase().includes("아우디a6에어컨필터")) {
     components.push("아우디", "a6", "에어컨", "필터");
   } else if (keyword.toLowerCase().includes("bmw") && keyword.includes("코딩")) {
     components.push("BMW", "코딩");
@@ -159,14 +181,14 @@ export function extractKeywordComponents(keyword: string): string[] {
       }
     }
     
-    // 한국어 형태소 자동 분해 (최대 3개까지만)
+    // 한국어 형태소 지능적 분해
     for (const match of koreanMatches) {
       if (match.length >= 2) {
-        const decomposed = autoDecomposeKoreanKeyword(match);
-        // 너무 많은 형태소가 생성되지 않도록 제한
-        const limitedDecomposed = decomposed.slice(0, 3);
+        const decomposed = intelligentKoreanDecomposer(match);
+        // 너무 많은 형태소가 생성되지 않도록 제한 (최대 4개)
+        const limitedDecomposed = decomposed.slice(0, 4);
         for (const comp of limitedDecomposed) {
-          if (!components.includes(comp)) {
+          if (!components.includes(comp) && comp.length >= 2) {
             components.push(comp);
           }
         }
