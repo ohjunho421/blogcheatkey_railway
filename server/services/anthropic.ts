@@ -102,7 +102,7 @@ export async function writeOptimizedBlogPost(
 
 ▶ 스토리텔링/사례 중심형
 - 실제 경험이나 사례를 바탕으로 한 자연스러운 도입
-- "${businessInfo.businessName}에서 겪은 실제 사례를 바탕으로..."
+- "${businessInfo?.businessName || '전문업체'}에서 겪은 실제 사례를 바탕으로..."
 - "얼마 전 이런 일이 있었는데...", "고객님 중에서 이런 분이 계셨어요..."
 
 ▶ 트렌드/변화 감지형
@@ -127,8 +127,8 @@ export async function writeOptimizedBlogPost(
 【창의적 연결 방식】
 
 🔗 업체 전문성 자연스러운 연결:
-- "저희 ${businessInfo.businessName}에서 ${businessInfo.expertise} 분야 일을 하면서..."
-- "${businessInfo.differentiators}한 방식으로 도움을 드리다 보니..."
+- "저희 ${businessInfo?.businessName || '전문업체'}에서 ${businessInfo?.expertise || '해당'} 분야 일을 하면서..."
+- "${businessInfo?.differentiators || '전문적'}한 방식으로 도움을 드리다 보니..."
 - "이 분야에서 일하는 전문가로서..."
 
 🔗 독자 기대감 조성:
@@ -233,7 +233,7 @@ BMW 코딩 필수 준비물
 
 소제목: ${subtitles.map((s, i) => `${i + 1}.${s}`).join(' | ')}
 
-연구자료: ${researchData.content}
+연구자료: ${researchData?.content || '관련 자료가 없습니다. 일반적인 지식을 바탕으로 작성해주세요.'}
 
 📚 자료 활용 가이드: 
 ⚠️ 중요: 퍼플렉시티에서 수집한 연구 자료에 포함된 내용만 사용하세요
@@ -242,12 +242,12 @@ BMW 코딩 필수 준비물
 - 기관명 언급은 좋지만 연구 자료에 실제 존재하는 것만 사용
 - 연구 자료가 부족할 때는 "최근 연구에 따르면", "업계 전문가들에 따르면" 같은 일반적 표현 사용
 
-🏢 화자 설정: 당신은 ${businessInfo.businessName}(${businessInfo.businessType})의 사장이며, ${businessInfo.expertise} 전문가입니다.
+🏢 화자 설정: 당신은 ${businessInfo?.businessName || '전문업체'}(${businessInfo?.businessType || '전문업체'})의 사장이며, ${businessInfo?.expertise || '해당 분야'} 전문가입니다.
 📝 업체 정보: 
-- 업체명: ${businessInfo.businessName}
-- 업종: ${businessInfo.businessType}
-- 전문성: ${businessInfo.expertise}
-- 차별점: ${businessInfo.differentiators}
+- 업체명: ${businessInfo?.businessName || '전문업체'}
+- 업종: ${businessInfo?.businessType || '전문업체'}
+- 전문성: ${businessInfo?.expertise || '해당 분야'}
+- 차별점: ${businessInfo?.differentiators || '전문적'}
 
 🎯 서론 작성 필수 지침:
 🚨 CRITICAL: 절대로 같은 패턴을 연속 사용하지 마세요! 매번 완전히 다른 서론 스타일 필수!
@@ -264,7 +264,7 @@ BMW 코딩 필수 준비물
 - 반드시 1인칭 관점에서 작성 ("제가", "저희", "제 경험으로는")
 - 업체 사장으로서의 전문성과 경험을 바탕으로 설명
 - 실제 고객 사례와 업무 경험을 언급
-- "저희 ${businessInfo.businessName}에서는", "제가 직접" 같은 표현 활용
+- "저희 ${businessInfo?.businessName || '전문업체'}에서는", "제가 직접" 같은 표현 활용
 
 ${seoSuggestions && seoSuggestions.length > 0 ? `
 🚨 CRITICAL SEO 최적화 지침 (절대 무시 금지):
@@ -327,13 +327,13 @@ ${referenceGuidance}
 - "얼마 전에도 ${keyword} 때문에 똑같은 고민으로 찾아오신 분이 계셨어요"
 - "그분도 ${keyword} 문제로 몇 달째 고생하고 계시더라고요"
 - "처음 오셨을 때는 '${keyword} 정말 해결될까?' 하고 반신반의하셨는데..."
-- "제가 ${businessInfo.differentiators}한 방법으로 ${keyword} 문제를 차근차근 해결해드렸더니..."
+- "제가 ${businessInfo?.differentiators || '전문적'}한 방법으로 ${keyword} 문제를 차근차근 해결해드렸더니..."
 - "정말 놀라운 변화가 일어났어요"
 - "이제는 ${keyword} 걱정 없이 완전히 다른 사람이 되셨거든요"
 - "지금은 주변 분들이 ${keyword} 고민 상담을 올 정도로 전문가가 되셨어요"
 
 3️⃣ 전문성 + 독자 기대감 조성 + 키워드 강조 (5-6문장):
-- "제가 ${businessInfo.businessName}을 운영하면서 ${businessInfo.expertise}해오며 ${keyword} 관련 변화를 수없이 봤거든요"
+- "제가 ${businessInfo?.businessName || '전문업체'}을 운영하면서 ${businessInfo?.expertise || '해당 분야'} 일을 해오며 ${keyword} 관련 변화를 수없이 봤거든요"
 - "${keyword} 문제는 복잡해 보이지만 올바른 방법만 알면 의외로 간단하게 해결되는 경우가 대부분이에요"
 - "같은 ${keyword} 어려움을 겪고 계신 분들이라면 이 글을 끝까지 읽어보세요"
 - "${keyword}에 대한 정말 유익하고 실용적인 정보들을 상세히 알려드릴게요"
@@ -356,7 +356,7 @@ ${referenceGuidance}
 - "${keyword} 문제는 초기에 정확히 대응하는 것이 정말 중요해요"
 
 3️⃣ 해결책 제시 + 독자 유도 + 키워드 강조 (5-6문장):
-- "제가 ${businessInfo.businessName}을 운영하면서 ${businessInfo.expertise}해오며 ${keyword} 관련 문제들의 해결책을 많이 봐왔어요"
+- "제가 ${businessInfo?.businessName || '전문업체'}을 운영하면서 ${businessInfo?.expertise || '해당 분야'} 일을 해오며 ${keyword} 관련 문제들의 해결책을 많이 봐왔어요"
 - "${keyword}에 대한 올바른 정보만 있으면 충분히 피할 수 있는 문제들이거든요"
 - "같은 ${keyword} 실수를 반복하지 않으려면 이 글을 끝까지 읽어보세요"
 - "${keyword}에 대한 정말 중요하고 핵심적인 정보들을 상세히 알려드릴게요"
@@ -367,9 +367,9 @@ ${referenceGuidance}
 - 현실적 한계 인정: "하지만 직접 해보려니 복잡하고 시간도 많이 걸리죠"
 - 시간 부족 공감: "바쁜 일상 속에서 일일이 찾아가며 설정하기 어려우실 거예요"
 - 전문가 필요성 강조: "실수하면 차량에 문제가 생길 수도 있고요"
-- 업체 솔루션 제시: "저희 ${businessInfo.businessName}에서는 ${businessInfo.differentiators}하게 ${businessInfo.expertise} 서비스를 제공하고 있습니다"
-- 강력한 CTA: "시간 아끼고 안전하게 해결하고 싶으시다면 저희 ${businessInfo.businessName}에 문의해보세요. 제가 직접 도와드릴게요"
-- 예시: "방법을 알아도 직접 하려니 복잡하고 시간도 부족하시죠? 실수라도 하면 차량에 문제가 생길까 걱정되고요. 저희 ${businessInfo.businessName}에서는 ${businessInfo.differentiators}하게 ${businessInfo.expertise} 서비스를 제공하고 있습니다. 시간 아끼고 안전하게 해결하고 싶으시다면 지금 바로 문의해보세요"
+- 업체 솔루션 제시: "저희 ${businessInfo?.businessName || '전문업체'}에서는 ${businessInfo?.differentiators || '전문적'}하게 ${businessInfo?.expertise || '해당 분야'} 서비스를 제공하고 있습니다"
+- 강력한 CTA: "시간 아끼고 안전하게 해결하고 싶으시다면 저희 ${businessInfo?.businessName || '전문업체'}에 문의해보세요. 제가 직접 도와드릴게요"
+- 예시: "방법을 알아도 직접 하려니 복잡하고 시간도 부족하시죠? 실수라도 하면 차량에 문제가 생길까 걱정되고요. 저희 ${businessInfo?.businessName || '전문업체'}에서는 ${businessInfo?.differentiators || '전문적'}하게 ${businessInfo?.expertise || '해당 분야'} 서비스를 제공하고 있습니다. 시간 아끼고 안전하게 해결하고 싶으시다면 지금 바로 문의해보세요"
 
 ❌ 절대 사용 금지 표현들:
 - "안녕하세요", "여러분", "독자님들"
@@ -380,9 +380,9 @@ ${referenceGuidance}
 ✅ 매력적인 서론 작성법 (스토리텔링 중심, 분량 25-30%):
 - 독자 고민 구체화: "${keyword} 때문에 밤잠도 못 이루고 계신가요?", "이런 문제로 얼마나 스트레스 받으셨을까요?"
 - 실제 고객 스토리: "지난달에도 똑같은 고민으로 찾아오신 분이 계셨어요", "처음엔 '정말 될까?' 하고 의심스러워하시더라고요"
-- 문제 해결 과정: "제가 ${businessInfo.differentiators}한 방법으로 차근차근 도와드렸더니..."
+- 문제 해결 과정: "제가 ${businessInfo?.differentiators || '전문적'}한 방법으로 차근차근 도와드렸더니..."
 - 극적인 변화: "이제는 완전히 다른 사람이 되셨어요", "주변 분들이 비결을 물어볼 정도로 달라지셨죠"
-- 전문성 + 확신: "제가 ${businessInfo.businessName}을 운영하면서 ${businessInfo.expertise}해오며 이런 변화를 수없이 봤거든요"
+- 전문성 + 확신: "제가 ${businessInfo?.businessName || '전문업체'}을 운영하면서 ${businessInfo?.expertise || '해당 분야'} 일을 해오며 이런 변화를 수없이 봤거든요"
 - 독자 기대감: "여러분도 이 글 하나로 그런 놀라운 변화를 경험하실 수 있을 거예요"
 
 📝 결론 작성 가이드 (글 전체 정리 + 자연스러운 CTA):
@@ -401,7 +401,7 @@ ${referenceGuidance}
 
 3️⃣ 부담 없는 CTA (3-4문장):
 - "그럴 때는 전문가의 도움을 받는 것도 좋은 방법이에요"
-- "저희 ${businessInfo.businessName}에서는 ${businessInfo.differentiators}하게 ${businessInfo.expertise} 서비스를 제공하고 있어요"
+- "저희 ${businessInfo?.businessName || '전문업체'}에서는 ${businessInfo?.differentiators || '전문적'}하게 ${businessInfo?.expertise || '해당 분야'} 서비스를 제공하고 있어요"
 - "글만으로는 해결되지 않는 부분이 있거나 직접 해보기 어려우시다면"
 - "부담 없이 연락주세요. 제가 직접 친절하게 도와드릴게요"
 
@@ -467,9 +467,9 @@ ${referenceGuidance}
 
 ${keyword} 때문에 정말 답답하셨죠? 매번 이런 문제로 스트레스 받으시고, 이것저것 해봐도 제대로 안 되고, 시간만 계속 낭비되고 있으실 거예요.
 
-얼마 전에도 똑같은 고민으로 찾아오신 분이 계셨어요. ${keyword} 때문에 몇 달째 고생하고 계시더라고요. 처음엔 '정말 해결될까?' 하고 반신반의하셨는데, 저희가 ${businessInfo.differentiators}한 방법으로 차근차근 도와드렸더니 완전히 달라지셨어요. 지금은 오히려 주변 분들께 추천하실 정도로 만족하고 계세요.
+얼마 전에도 똑같은 고민으로 찾아오신 분이 계셨어요. ${keyword} 때문에 몇 달째 고생하고 계시더라고요. 처음엔 '정말 해결될까?' 하고 반신반의하셨는데, 저희가 ${businessInfo?.differentiators || '전문적'}한 방법으로 차근차근 도와드렸더니 완전히 달라지셨어요. 지금은 오히려 주변 분들께 추천하실 정도로 만족하고 계세요.
 
-${businessInfo.businessName}에서 ${businessInfo.expertise}해오면서 이런 케이스를 정말 많이 봤거든요. 복잡해 보이는 문제들도 ${businessInfo.differentiators}한 접근으로 의외로 간단하게 해결되는 경우가 대부분이에요. 이 글 하나로 여러분도 그런 변화를 경험하실 수 있을 거예요.
+${businessInfo?.businessName || '전문업체'}에서 ${businessInfo?.expertise || '해당 분야'} 일을 해오면서 이런 케이스를 정말 많이 봤거든요. 복잡해 보이는 문제들도 ${businessInfo?.differentiators || '전문적'}한 접근으로 의외로 간단하게 해결되는 경우가 대부분이에요. 이 글 하나로 여러분도 그런 변화를 경험하실 수 있을 거예요.
 
 ${subtitles[0] || `${keyword} 기본 개념 이해하기`}
 
@@ -503,9 +503,9 @@ ${keyword}를 사용하다 보면 예상치 못한 문제들이 생길 수 있�
 
 이제 ${keyword}에 대해 기본적인 내용들은 충분히 알아보셨죠. 하지만 직접 해보려니 복잡하고 시간도 많이 걸리실 거예요. 바쁜 일상에서 일일이 찾아가며 설정하기 어려우시죠.
 
-혹시 잘못 건드려서 문제라도 생기면 어쩌나 싶고요. ${businessInfo.businessName}에서는 ${businessInfo.differentiators}하게 ${businessInfo.expertise} 서비스를 제공합니다.
+혹시 잘못 건드려서 문제라도 생기면 어쩌나 싶고요. ${businessInfo?.businessName || '전문업체'}에서는 ${businessInfo?.differentiators || '전문적'}하게 ${businessInfo?.expertise || '해당 분야'} 서비스를 제공합니다.
 
-시간 아끼고 안전하게 해결하고 싶으시다면 지금 바로 ${businessInfo.businessName}에 문의해보세요. 전문가가 직접 도와드릴게요.`;
+시간 아끼고 안전하게 해결하고 싶으시다면 지금 바로 ${businessInfo?.businessName || '전문업체'}에 문의해보세요. 전문가가 직접 도와드릴게요.`;
 
           return fallbackContent;
         }

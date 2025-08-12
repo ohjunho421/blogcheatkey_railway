@@ -402,7 +402,8 @@ function checkCustomMorphemes(content: string, customMorphemes?: string): { used
 export function analyzeMorphemes(content: string, keyword: string, customMorphemes?: string): MorphemeAnalysis {
   console.log(`=== Morpheme Analysis for keyword: "${keyword}" ===`);
   
-  // Extract all morphemes from content
+  try {
+    // Extract all morphemes from content
   const allMorphemes = extractKoreanMorphemes(content);
   console.log(`Total morphemes extracted: ${allMorphemes.length}`);
   
@@ -502,6 +503,22 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
     customMorphemes: customMorphemeCheck,
     isCustomMorphemesOptimized
   };
+  
+  } catch (error) {
+    console.error(`Morpheme analysis failed for keyword "${keyword}":`, error);
+    return {
+      isOptimized: false,
+      isKeywordOptimized: false,
+      isLengthOptimized: false,
+      keywordMorphemeCount: 0,
+      characterCount: content.replace(/\s/g, '').length,
+      targetCharacterRange: '1500-1700자',
+      issues: ['형태소 분석 중 오류가 발생했습니다'],
+      suggestions: ['키워드를 다시 확인해주세요'],
+      customMorphemes: { used: [], missing: [] },
+      isCustomMorphemesOptimized: false
+    };
+  }
 }
 
 // Enhanced SEO analysis combining morpheme analysis with basic metrics

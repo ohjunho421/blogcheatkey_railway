@@ -42,6 +42,8 @@ export async function generateStrictMorphemeContent(
         }
       }
       
+      console.log(`Calling writeOptimizedBlogPost for "${keyword}"...`);
+      
       // Claude로 콘텐츠 생성
       const content = await writeOptimizedBlogPost(
         keyword,
@@ -52,9 +54,13 @@ export async function generateStrictMorphemeContent(
         referenceLinks
       );
       
+      console.log(`Content generated, length: ${content.length} characters`);
+      console.log(`Starting morpheme analysis for "${keyword}"...`);
+      
       // 형태소 분석
       const analysis = analyzeMorphemes(content, keyword, customMorphemes);
       
+      console.log(`Morpheme analysis completed`);
       console.log(`Attempt ${attempts} analysis:`, {
         isOptimized: analysis.isOptimized,
         characterCount: analysis.characterCount,
@@ -76,6 +82,19 @@ export async function generateStrictMorphemeContent(
       
     } catch (error) {
       console.error(`Generation attempt ${attempts} failed:`, error);
+      if (error instanceof Error) {
+        console.error(`Error stack:`, error.stack);
+      }
+      
+      // 에러가 발생하면 간단한 대체 콘텐츠 반환
+      if (attempts === maxAttempts) {
+        return {
+          content: `${keyword}에 대한 블로그 콘텐츠입니다. 자세한 정보를 제공하여 독자들에게 도움이 되고자 합니다.`,
+          analysis: { isOptimized: false, issues: ['생성 중 오류 발생'] },
+          attempts,
+          success: false
+        };
+      }
     }
   }
   
