@@ -13,6 +13,38 @@ import { enhancedSEOAnalysis } from "./services/morphemeAnalyzer";
 import { TitleGenerator } from "./services/titleGenerator";
 import bcrypt from "bcryptjs";
 
+// Helper function to get authenticated user ID
+async function getAuthenticatedUserId(req: any): Promise<number | null> {
+  // 실제 로그인한 사용자 ID 획득
+  let userId = (req.session as any)?.userId;
+  
+  // Authorization 헤더에서 세션 ID로 사용자 찾기
+  if (!userId && req.headers.authorization) {
+    const sessionId = req.headers.authorization.includes('Bearer') ? 
+      req.headers.authorization.replace('Bearer ', '') : null;
+    
+    if (sessionId) {
+      try {
+        // 세션 스토어에서 해당 세션 ID로 실제 사용자 찾기
+        const sessionStore = req.sessionStore;
+        await new Promise<void>((resolve) => {
+          sessionStore.get(sessionId, (err: any, session: any) => {
+            if (!err && session && session.userId) {
+              console.log("Found user from session:", session.userId);
+              userId = session.userId;
+            }
+            resolve();
+          });
+        });
+      } catch (error) {
+        console.error("Session lookup error:", error);
+      }
+    }
+  }
+  
+  return userId || null;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // Setup authentication middleware
