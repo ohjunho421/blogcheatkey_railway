@@ -493,32 +493,31 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
   const componentMatches = findKeywordComponentMatches(allMorphemes, keyword);
   const keywordComponents = extractKeywordComponents(keyword);
   
-  // 배포 버전과 동일한 매우 관대한 조건
-  const isCompleteKeywordOptimized = completeKeywordCount >= 1 && completeKeywordCount <= 50;
+  // Check complete keyword condition (5-7 times)
+  const isCompleteKeywordOptimized = completeKeywordCount >= 5 && completeKeywordCount <= 7;
   
-  // 형태소 조건도 매우 관대하게 (거의 항상 통과)
+  // Check individual component conditions (15-17 times each)
   let areComponentsOptimized = true;
   const componentIssues: string[] = [];
   
-  console.log(`Complete keyword "${keyword}" appears: ${completeKeywordCount} times (1-50 times acceptable)`);
+  console.log(`Complete keyword "${keyword}" appears: ${completeKeywordCount} times (5-7 times required)`);
   
   for (const component of keywordComponents) {
     const matches = componentMatches.get(component) || [];
     const count = matches.length;
     
-    // 매우 관대한 조건: 0-100회 사이면 모두 OK
-    if (count < 0 || count > 100) {
+    if (count < 15 || count > 17) {
       areComponentsOptimized = false;
-      if (count < 0) {
-        componentIssues.push(`${component}: ${count}회 (음수 오류)`);
+      if (count < 15) {
+        componentIssues.push(`${component}: ${count}회 (부족, 15-17회 필요)`);
       } else {
-        componentIssues.push(`${component}: ${count}회 (너무 많음, 100회 이하 필요)`);
+        componentIssues.push(`${component}: ${count}회 (과다, 15-17회 필요)`);
       }
     }
   }
   
-  // 매우 관대한 글자수 조건 (1000-2500자)
-  const isLengthOptimized = characterCount >= 1000 && characterCount <= 2500;
+  // Check length condition (1500-1700 characters excluding spaces)
+  const isLengthOptimized = characterCount >= 1500 && characterCount <= 1700;
   
   // Overall keyword optimization status
   const isKeywordOptimized = isCompleteKeywordOptimized && areComponentsOptimized;
@@ -534,14 +533,14 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
   const issues: string[] = [];
   const suggestions: string[] = [];
   
-  // 더 관대한 이슈 체크
+  // Add specific issues and suggestions
   if (!isCompleteKeywordOptimized) {
-    if (completeKeywordCount < 3) {
-      issues.push(`완전한 키워드 "${keyword}" 출현 횟수 부족: ${completeKeywordCount}회 (3회 이상 필요)`);
-      suggestions.push(`키워드 "${keyword}"를 더 자주 사용해주세요`);
-    } else if (completeKeywordCount > 20) {
-      issues.push(`완전한 키워드 "${keyword}" 출현 횟수 과다: ${completeKeywordCount}회 (20회 이하 필요)`);
-      suggestions.push(`키워드 "${keyword}"를 줄여주세요`);
+    if (completeKeywordCount < 5) {
+      issues.push(`완전한 키워드 "${keyword}" 출현 횟수 부족: ${completeKeywordCount}회 (5-7회 필요)`);
+      suggestions.push(`키워드 "${keyword}"를 5-7회 사용해주세요`);
+    } else if (completeKeywordCount > 7) {
+      issues.push(`완전한 키워드 "${keyword}" 출현 횟수 과다: ${completeKeywordCount}회 (5-7회 필요)`);
+      suggestions.push(`키워드 "${keyword}"를 7회 이하로 줄여주세요`);
     }
   }
   
