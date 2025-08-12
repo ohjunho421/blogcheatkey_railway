@@ -261,17 +261,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "키워드를 입력해주세요" });
       }
 
-      // 실제 로그인한 사용자 ID 획득
-      let userId = (req.session as any)?.userId;
-      
-      // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
-      if (!userId && req.headers.authorization) {
-        const storedUser = req.headers.authorization.includes('Bearer') ? 
-          req.headers.authorization.replace('Bearer ', '') : null;
-        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
-          userId = 1; // 슈퍼 유저
-        }
-      }
+      const userId = await getAuthenticatedUserId(req);
 
       if (!userId) {
         return res.status(401).json({ error: "인증이 필요합니다" });
@@ -293,17 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all projects for user
   app.get("/api/projects", async (req, res) => {
     try {
-      // 실제 로그인한 사용자 ID 획득
-      let userId = (req.session as any)?.userId;
-      
-      // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
-      if (!userId && req.headers.authorization) {
-        const storedUser = req.headers.authorization.includes('Bearer') ? 
-          req.headers.authorization.replace('Bearer ', '') : null;
-        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
-          userId = 1; // 슈퍼 유저
-        }
-      }
+      const userId = await getAuthenticatedUserId(req);
 
       if (!userId) {
         return res.status(401).json({ error: "인증이 필요합니다" });
@@ -1129,17 +1109,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get completed projects for history page
   app.get("/api/completed-projects", async (req, res) => {
     try {
-      // 실제 로그인한 사용자 ID 획득
-      let userId = (req.session as any)?.userId;
-      
-      // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
-      if (!userId && req.headers.authorization) {
-        const storedUser = req.headers.authorization.includes('Bearer') ? 
-          req.headers.authorization.replace('Bearer ', '') : null;
-        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
-          userId = 1; // 슈퍼 유저
-        }
-      }
+      const userId = await getAuthenticatedUserId(req);
 
       if (!userId) {
         return res.status(401).json({ error: "인증이 필요합니다" });
