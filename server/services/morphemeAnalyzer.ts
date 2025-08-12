@@ -50,14 +50,17 @@ function intelligentKoreanDecomposer(text: string): string[] {
     '냉각', '오일', '교체', '점검', '수리', '정비', '시기', '방법', '가격',
     '비용', '추천', '후기', '리뷰', '정보', '소식', '뉴스', '서비스', '업체',
     '회사', '전문', '맞춤', '개인', '온라인', '화상', '대면', '코딩', '개발',
-    '시스템', '데이터', '머신', '딥러닝', '빅데이터',
+    '시스템', '데이터', '머신', '딥러닝', '빅데이터', '언어', '치료', '심리',
+    '발달', '재활', '상담', '지원', '아이', '어린이', '유아', '청소년',
     
     // 한국어 3글자 핵심 명사  
     '오토바이', '하이브리드', '친환경', '경고등', '웹사이트', '홈페이지', '커뮤니티',
-    '프로그래밍', '소프트웨어', '데이터베이스', '인공지능',
+    '프로그래밍', '소프트웨어', '데이터베이스', '인공지능', '언어치료', '심리치료',
+    '발달재활', '언어발달', '심리상담',
     
-    // 한국어 4글자 이상 핵심 명사
-    '지구과학',
+    // 한국어 4글자 이상 핵심 명사 및 복합어
+    '지구과학', '우리아이', '아이심리', '심리지원', '지원서비스', '우리아이심리',
+    '심리지원서비스', '우리아이심리지원서비스',
     
     // 영어 단어들 (소문자로 저장)
     'bmw', 'audi', 'benz', 'mercedes', 'hyundai', 'kia', 'lg', 'samsung',
@@ -213,16 +216,37 @@ function intelligentKoreanDecomposer(text: string): string[] {
 export function extractKeywordComponents(keyword: string): string[] {
   const components: string[] = [];
   
-  // 지능적 분해 시스템을 우선 적용 (기존 패턴 매칭 대체)
   console.log(`=== Starting keyword decomposition for: "${keyword}" ===`);
   
-  // 전체 키워드를 지능적으로 분해 (한영숫자 혼합 지원)
-  const decomposed = intelligentKoreanDecomposer(keyword);
-  console.log(`Intelligent decomposition result: [${decomposed.join(', ')}]`);
-  
-  for (const comp of decomposed) {
-    if (!components.includes(comp) && comp.length >= 1) {
-      components.push(comp);
+  // Handle compound keywords with comma separator
+  if (keyword.includes(',')) {
+    console.log('Comma-separated compound keyword detected');
+    const parts = keyword.split(',').map(part => part.trim()).filter(Boolean);
+    console.log('Split parts:', parts);
+    
+    // For compound keywords, treat each complete part as the main component
+    for (const part of parts) {
+      if (part.length > 0) {
+        components.push(part);
+        
+        // Also decompose each part into sub-components for finer control
+        const subComponents = intelligentKoreanDecomposer(part);
+        for (const subComp of subComponents) {
+          if (subComp.length >= 2 && !components.includes(subComp)) {
+            components.push(subComp);
+          }
+        }
+      }
+    }
+  } else {
+    // Single keyword decomposition
+    const decomposed = intelligentKoreanDecomposer(keyword);
+    console.log(`Intelligent decomposition result: [${decomposed.join(', ')}]`);
+    
+    for (const comp of decomposed) {
+      if (!components.includes(comp) && comp.length >= 1) {
+        components.push(comp);
+      }
     }
   }
   
@@ -233,19 +257,70 @@ export function extractKeywordComponents(keyword: string): string[] {
 // Find complete keyword matches - 완전한 키워드의 정확한 출현만 카운트
 export function findCompleteKeywordMatches(morphemes: string[], keyword: string): string[] {
   const matches: string[] = [];
-  const lowerKeyword = keyword.toLowerCase();
-  
   console.log(`Looking for complete keyword: "${keyword}"`);
   
-  for (const morpheme of morphemes) {
-    const lowerMorpheme = morpheme.toLowerCase();
+  // Handle compound keywords with comma separator
+  if (keyword.includes(',')) {
+    const parts = keyword.split(',').map(part => part.trim()).filter(Boolean);
+    console.log('Looking for compound keyword parts:', parts);
     
-    // 완전한 키워드 자체 또는 조사가 붙은 형태만 인정 (예: 벤츠엔진경고등, 벤츠엔진경고등에, 벤츠엔진경고등을)
-    if (lowerMorpheme === lowerKeyword || 
-        (lowerMorpheme.startsWith(lowerKeyword) && 
-         lowerMorpheme.length <= lowerKeyword.length + 2)) { // 조사 최대 2글자
-      matches.push(morpheme);
-      console.log(`✓ Complete keyword match: "${morpheme}"`);
+    // For compound keywords, we need to be more selective about what counts as "complete"
+    // Count only instances where BOTH parts appear close together or as the full compound
+    let compoundMatches = 0;
+    
+    // Look for cases where both parts appear near each other in the text
+    const fullText = morphemes.join(' ').toLowerCase();
+    const part1 = parts[0].toLowerCase();
+    const part2 = parts[1]?.toLowerCase();
+    
+    if (part1 && part2) {
+      // Count occurrences where both parts appear within reasonable proximity (within 50 characters)
+      let searchIndex = 0;
+      while (searchIndex < fullText.length) {
+        const index1 = fullText.indexOf(part1, searchIndex);
+        if (index1 === -1) break;
+        
+        const index2 = fullText.indexOf(part2, index1);
+        if (index2 !== -1 && (index2 - index1) <= 50) {
+          compoundMatches++;
+          console.log(`✓ Compound keyword proximity match found: "${part1}" + "${part2}"`);
+          searchIndex = index1 + part1.length;
+        } else {
+          searchIndex = index1 + part1.length;
+        }
+      }
+      
+      // Add dummy matches to reach the compound count
+      for (let i = 0; i < compoundMatches; i++) {
+        matches.push(`${parts[0]}, ${parts[1]}`);
+      }
+    }
+    
+    // Also look for the complete compound keyword written together (less common)
+    const fullKeyword = keyword.replace(/,\s*/g, ''); // Remove comma and spaces
+    const lowerFullKeyword = fullKeyword.toLowerCase();
+    for (const morpheme of morphemes) {
+      const lowerMorpheme = morpheme.toLowerCase();
+      if (lowerMorpheme === lowerFullKeyword || 
+          (lowerMorpheme.startsWith(lowerFullKeyword) && 
+           lowerMorpheme.length <= lowerFullKeyword.length + 2)) {
+        matches.push(morpheme);
+        console.log(`✓ Complete compound keyword match: "${morpheme}"`);
+      }
+    }
+  } else {
+    // Single keyword matching
+    const lowerKeyword = keyword.toLowerCase();
+    for (const morpheme of morphemes) {
+      const lowerMorpheme = morpheme.toLowerCase();
+      
+      // 완전한 키워드 자체 또는 조사가 붙은 형태만 인정
+      if (lowerMorpheme === lowerKeyword || 
+          (lowerMorpheme.startsWith(lowerKeyword) && 
+           lowerMorpheme.length <= lowerKeyword.length + 2)) {
+        matches.push(morpheme);
+        console.log(`✓ Complete keyword match: "${morpheme}"`);
+      }
     }
   }
   
