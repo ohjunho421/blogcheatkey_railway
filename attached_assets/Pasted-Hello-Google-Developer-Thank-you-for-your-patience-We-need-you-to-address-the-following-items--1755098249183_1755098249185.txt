@@ -1,0 +1,40 @@
+Hello Google Developer,
+
+Thank you for your patience . We need you to address the following items for us to continue your app’s verification:
+
+Domain verification :
+
+Unfortunately, we’re seeing that the domain ownership of blog-master-ai-ocean26.replit.app is still pending or not verified
+Please ensure you are verifying your ownership of the domain with a Project Owner or Editor account for project ID blogcheatkey
+
+Alternatively, you can invite and onboard an account on the blog-master-ai-ocean26.replit.app domain to this project as a Project Owner or Editor, and we can validate your domain ownership without you needing to go through the Search Console process again.
+
+Privacy policy requirements : 
+
+We have noticed the privacy policy URL you provided is unresponsive: https://blogcheatkey.replit.app/privacy-policy.
+The privacy policy you submitted does not appear to be associated with your application's brand.
+Please take the following action(s) to continue with your request
+⤷ Update and resubmit your app in Cloud Console with the following:
+
+An accessible privacy policy URL (Learn more)
+⤷ Reply to this email with the following information:
+
+Confirmation the privacy policy has either been migrated to the same domain as your homepage, or updated to explicitly mention your application or the organization associated with your application’s homepage. In the latter case, you will not need to update your OAuth configuration. (Learn more)
+⤷ Verify your ownership of the following domains:
+
+https://blog-master-ai-ocean26.replit.app (Learn how)
+Important! Once you have addressed the issues above, reply directly to this email to confirm. You must reply to this email after fixing the highlighted issues to continue with the app verification process.
+
+Need to make changes to your verification request?
+
+Please make direct changes on the Cloud Console. Save and submit the changes when finished.
+
+No longer need access to these scopes?
+
+Please reply to this email to cancel the verification request.
+
+Need other help?
+
+For more information on OAuth Verification, you can read the terms or policies for the APIs or products your app uses, as well as the following resource:
+
+OAuth App Verification Help Center
