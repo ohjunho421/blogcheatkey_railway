@@ -18,12 +18,17 @@ passport.use(new GoogleStrategy({
     let user = await storage.getUserByGoogleId(profile.id);
     
     if (!user) {
-      // Create new user
+      // Create new user with Google OAuth
       user = await storage.createUser({
         googleId: profile.id,
         email: profile.emails?.[0]?.value || '',
         name: profile.displayName || '',
-        profileImage: profile.photos?.[0]?.value || ''
+        profileImage: profile.photos?.[0]?.value || '',
+        isEmailVerified: true,
+        subscriptionTier: 'basic',
+        canGenerateContent: true,
+        canGenerateImages: false,
+        canUseChatbot: false,
       });
     }
     
@@ -72,6 +77,23 @@ export function setupAuth(app: Express) {
   // Initialize Passport
   app.use(passport.initialize());
   app.use(passport.session());
+
+  // Google OAuth routes
+  app.get('/api/auth/google', 
+    passport.authenticate('google', { scope: ['profile', 'email'] })
+  );
+
+  app.get('/api/auth/google/callback',
+    passport.authenticate('google', { failureRedirect: '/' }),
+    (req, res) => {
+      // 성공시 세션에 사용자 ID 저장
+      if (req.user) {
+        (req.session as any).userId = (req.user as any).id;
+        console.log('Google login successful, user ID:', (req.user as any).id);
+      }
+      res.redirect('/');
+    }
+  );
 
   // Auth routes
   app.get('/api/auth/google',
