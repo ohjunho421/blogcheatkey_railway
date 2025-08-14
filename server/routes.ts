@@ -50,6 +50,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication middleware
   setupAuth(app);
 
+  // Google Search Console verification route
+  app.get('/google*.html', (req, res) => {
+    const filename = req.path.substring(1); // Remove leading slash
+    res.send(`google-site-verification: ${filename}`);
+  });
+
   // ===== AUTHENTICATION ROUTES =====
   
   // Login endpoint
