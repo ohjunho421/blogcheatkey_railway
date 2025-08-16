@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { FaGoogle } from "react-icons/fa";
+
 
 const loginSchema = z.object({
   email: z.string().email("올바른 이메일을 입력해주세요"),
@@ -96,9 +96,7 @@ export default function Login() {
     }
   };
 
-  const handleGoogleLogin = () => {
-    window.location.href = "/api/auth/google";
-  };
+
 
 
 
@@ -112,13 +110,7 @@ export default function Login() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {location.includes("error=google") && (
-            <Alert variant="destructive">
-              <AlertDescription>
-                구글 로그인에 실패했습니다. 다시 시도해주세요.
-              </AlertDescription>
-            </Alert>
-          )}
+
 
 
           <Form {...form}>
@@ -187,15 +179,16 @@ export default function Login() {
             </div>
           </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={handleGoogleLogin}
-          >
-            <FaGoogle className="mr-2 h-4 w-4" />
-            Google로 계속하기
-          </Button>
+          <Link href="/signup">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+            >
+              <Mail className="mr-2 h-4 w-4" />
+              이메일로회원가입하기
+            </Button>
+          </Link>
 
           <div className="text-center space-y-2">
             <p className="text-sm text-gray-600">
