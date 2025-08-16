@@ -45,6 +45,20 @@ async function getAuthenticatedUserId(req: any): Promise<number | null> {
   return userId || null;
 }
 
+// Helper function to get authenticated user with permissions
+async function getAuthenticatedUser(req: any): Promise<any | null> {
+  const userId = await getAuthenticatedUserId(req);
+  if (!userId) return null;
+  
+  try {
+    const user = await storage.getUserById(userId);
+    return user;
+  } catch (error) {
+    console.error("User lookup error:", error);
+    return null;
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // Setup authentication middleware
@@ -386,10 +400,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/projects/:id/analyze", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // 사용자 권한 확인
+      const user = await getAuthenticatedUser(req);
+      if (!user) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+      
+      // 콘텐츠 생성 권한 확인
+      if (!user.canGenerateContent) {
+        return res.status(403).json({ error: "콘텐츠 생성 권한이 없습니다. 관리자에게 문의하세요." });
+      }
+      
       const project = await storage.getBlogProject(id);
       
       if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
+      }
+      
+      // 프로젝트 소유자 확인
+      if (project.userId !== user.id && !user.isAdmin) {
+        return res.status(403).json({ error: "이 프로젝트에 접근할 권한이 없습니다" });
       }
 
       // Analyze keyword using Gemini
@@ -413,10 +444,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/projects/:id/research", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // 사용자 권한 확인
+      const user = await getAuthenticatedUser(req);
+      if (!user) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+      
+      // 콘텐츠 생성 권한 확인
+      if (!user.canGenerateContent) {
+        return res.status(403).json({ error: "콘텐츠 생성 권한이 없습니다. 관리자에게 문의하세요." });
+      }
+      
       const project = await storage.getBlogProject(id);
       
       if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
+      }
+      
+      // 프로젝트 소유자 확인
+      if (project.userId !== user.id && !user.isAdmin) {
+        return res.status(403).json({ error: "이 프로젝트에 접근할 권한이 없습니다" });
       }
 
       // Search research data using Perplexity
@@ -514,10 +562,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/projects/:id/generate", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // 사용자 권한 확인
+      const user = await getAuthenticatedUser(req);
+      if (!user) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+      
+      // 콘텐츠 생성 권한 확인
+      if (!user.canGenerateContent) {
+        return res.status(403).json({ error: "콘텐츠 생성 권한이 없습니다. 관리자에게 문의하세요." });
+      }
+      
       const project = await storage.getBlogProject(id);
       
       if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
+      }
+      
+      // 프로젝트 소유자 확인
+      if (project.userId !== user.id && !user.isAdmin) {
+        return res.status(403).json({ error: "이 프로젝트에 접근할 권한이 없습니다" });
       }
 
       // First update status to show generation is starting
@@ -743,9 +808,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "메시지를 입력해주세요" });
       }
 
+      // 사용자 권한 확인
+      const user = await getAuthenticatedUser(req);
+      if (!user) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+      
+      // 챗봇 사용 권한 확인
+      if (!user.canUseChatbot) {
+        return res.status(403).json({ error: "챗봇 사용 권한이 없습니다. Premium 구독이 필요합니다." });
+      }
+
       const project = await storage.getBlogProject(id);
       if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
+      }
+      
+      // 프로젝트 소유자 확인
+      if (project.userId !== user.id && !user.isAdmin) {
+        return res.status(403).json({ error: "이 프로젝트에 접근할 권한이 없습니다" });
       }
 
       // Save user message
