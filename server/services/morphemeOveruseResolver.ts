@@ -156,7 +156,7 @@ async function adjustOverusedMorphemes(
 절대 금지사항:
 - 글의 핵심 의미 변경
 - 부자연스러운 문장 구조
-- SEO 최적화 범위(1500-1700자) 벗어남
+- SEO 최적화 범위(1700-2000자) 벗어남
 - 완전한 키워드 "${keyword}" 5회 조건 위반`;
 
   const overuseInfo = overusedComponents.map(comp => 
@@ -182,7 +182,7 @@ ${content}
 조건:
 - 완전한 키워드 "${keyword}" 5회 유지
 - 개별 형태소는 15-17회 범위로 조정
-- 공백 제외 1500-1700자 범위 유지
+- 공백 제외 1700-2000자 범위 유지
 - 서론-본론-결론 구조 유지
 - 자연스러운 문체와 흐름 유지
 
