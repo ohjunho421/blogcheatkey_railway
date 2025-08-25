@@ -12,7 +12,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-// import { FaGoogle } from "react-icons/fa";
 
 
 const loginSchema = z.object({
