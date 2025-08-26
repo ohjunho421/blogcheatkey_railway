@@ -721,8 +721,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         // 자연스러운 줄바꿈 지점 찾기
-        function findNaturalBreakpoints(text: string): number[] {
-          const breakpoints = [];
+        function findNaturalBreakpoints(text: string): Array<{pos: number, priority: number}> {
+          const breakpoints: Array<{pos: number, priority: number}> = [];
           
           // 문장 부호 기준 분할점 (강한 분할점)
           const strongBreaks = /[.!?。]/g;
