@@ -34,8 +34,8 @@ export async function resolveMorphemeOveruse(
   const overusedComponents: OveruseAnalysis[] = [];
   
   // 강력한 형태소 빈도 제한 적용
-  const maxKeywordMorpheme = 17;  // 키워드 형태소 최대 17회
-  const maxNonKeywordMorpheme = 14; // 일반 형태소 최대 14회
+  const maxKeywordMorpheme = 20;  // 키워드 형태소 최대 20회
+  const maxNonKeywordMorpheme = 13; // 일반 형태소 최대 13회 (14회 미만)
   
   console.log(`강력한 빈도 제한: 키워드 형태소 최대 ${maxKeywordMorpheme}회, 일반 형태소 최대 ${maxNonKeywordMorpheme}회`);
   
@@ -46,7 +46,7 @@ export async function resolveMorphemeOveruse(
     let shouldProcess = false;
     
     if (isKeywordComponent) {
-      // 키워드 형태소: 17회 초과 절대 금지
+      // 키워드 형태소: 20회 초과 절대 금지
       targetCount = maxKeywordMorpheme;
       shouldProcess = count > maxKeywordMorpheme;
     } else {

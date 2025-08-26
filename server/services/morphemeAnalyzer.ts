@@ -493,7 +493,7 @@ function checkAllMorphemeFrequencies(content: string, keyword: string): { overus
   const overused: Array<{morpheme: string, count: number}> = [];
   for (const [morpheme, count] of Array.from(morphemeFrequency.entries())) {
     const isKeywordComponent = keywordComponentsLower.includes(morpheme);
-    const maxAllowed = isKeywordComponent ? 17 : 14;
+    const maxAllowed = isKeywordComponent ? 20 : 13;
     
     if (count > maxAllowed) {
       overused.push({ morpheme, count });
