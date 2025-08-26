@@ -700,58 +700,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // 모바일용 콘텐츠 포맷팅 함수 (개선된 버전)
+  // 모바일용 콘텐츠 포맷팅 함수 (프로젝트 4e075ea5 스타일)
   function formatContentForMobile(content: string): string {
     return content
       .split('\n')
       .map(line => {
         if (line.trim() === '') return '';
         
-        // 간단하고 효과적인 줄바꿈 처리
-        // 20자를 기준으로 자연스러운 지점에서 줄바꿈
-        if (line.length <= 20) {
+        // 매우 간단한 줄바꿈: 15자 기준
+        if (line.length <= 15) {
           return line;
         }
         
         const result = [];
-        let currentLine = '';
+        let currentSegment = '';
         
-        // 문장을 단어 단위로 분리
-        const words = line.split(' ');
-        
-        for (const word of words) {
-          const testLine = currentLine ? currentLine + ' ' + word : word;
+        // 글자 단위로 처리하여 정확한 15자 기준 줄바꿈
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
           
-          // 20자를 넘으면 줄바꿈
-          if (testLine.length > 20) {
-            if (currentLine) {
-              result.push(currentLine);
-              currentLine = word;
+          // 현재 세그먼트에 문자 추가 시 15자를 초과하는지 확인
+          if (currentSegment.length >= 15) {
+            // 자연스러운 분할점 찾기 (공백, 쉼표, 마침표 등)
+            if (char === ' ' || char === ',' || char === '.' || char === '!' || char === '?') {
+              result.push(currentSegment);
+              currentSegment = char === ' ' ? '' : char;
             } else {
-              // 단어 자체가 20자를 넘는 경우
-              if (word.length > 20) {
-                // 자연스러운 지점에서 분할 (조사나 접미사 기준)
-                const chunks = word.match(/.{1,18}(?=[가-힣]{2}|$)/g) || [word];
-                result.push(...chunks.slice(0, -1));
-                currentLine = chunks[chunks.length - 1];
-              } else {
-                currentLine = word;
-              }
+              currentSegment += char;
             }
           } else {
-            currentLine = testLine;
+            currentSegment += char;
           }
         }
         
-        if (currentLine) {
-          result.push(currentLine);
+        // 마지막 세그먼트 추가
+        if (currentSegment.trim()) {
+          result.push(currentSegment);
         }
         
         return result.join('\n');
       })
       .join('\n')
-      .replace(/\n\s*\n+/g, '\n\n') // 중복 빈 줄 정리
-      .replace(/^\n+|\n+$/g, ''); // 앞뒤 빈 줄 제거
+      .replace(/\n{3,}/g, '\n\n') // 3개 이상 연속 줄바꿈을 2개로 축약
+      .trim();
   }
 
   // ===== CHAT FUNCTIONALITY =====
