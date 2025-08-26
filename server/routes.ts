@@ -700,7 +700,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // 모바일용 콘텐츠 포맷팅 함수 (프로젝트 4f383ee4 복원)
+  // 모바일용 콘텐츠 포맷팅 함수 (강화된 줄바꿈)
   function formatContentForMobile(content: string): string {
     return content
       .split('\n')
@@ -720,80 +720,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return length;
         }
         
-        // 21자를 넘으면 줄바꿈 처리
-        if (getKoreanLength(line) > 21) {
-          const segments = [];
-          let currentSegment = '';
+        // 18자를 넘으면 줄바꿈 처리 (더 보수적으로)
+        if (getKoreanLength(line) > 18) {
+          const result = [];
+          let currentLine = '';
           
-          // 문장 부호나 쉼표 기준으로 먼저 나누기
-          const phrases = line.split(/([,.!?])/);
+          // 공백 기준으로 단어 분할
+          const words = line.split(' ');
           
-          for (let i = 0; i < phrases.length; i++) {
-            const phrase = phrases[i];
-            const testSegment = currentSegment + phrase;
+          for (const word of words) {
+            const testLine = currentLine ? currentLine + ' ' + word : word;
             
-            if (getKoreanLength(testSegment) > 21) {
-              if (currentSegment.trim()) {
-                segments.push(currentSegment.trim());
-                currentSegment = phrase;
+            if (getKoreanLength(testLine) > 18) {
+              // 현재 라인이 있으면 추가하고 새 라인 시작
+              if (currentLine.trim()) {
+                result.push(currentLine.trim());
+                currentLine = word;
               } else {
-                // 구문 자체가 너무 길 경우 단어 단위로 분할
-                const words = phrase.split(/(\s+)/);
-                let wordSegment = '';
+                // 단어 자체가 길면 강제 분할
+                const chars = Array.from(word);
+                let segment = '';
                 
-                for (const word of words) {
-                  const testWord = wordSegment + word;
-                  
-                  if (getKoreanLength(testWord) > 21) {
-                    if (wordSegment.trim()) {
-                      segments.push(wordSegment.trim());
-                      wordSegment = word;
+                for (const char of chars) {
+                  if (getKoreanLength(segment + char) > 18) {
+                    if (segment) {
+                      result.push(segment);
+                      segment = char;
                     } else {
-                      // 단어 자체가 너무 길 경우 자연스러운 지점에서 분할
-                      if (getKoreanLength(word) > 21) {
-                        let charSegment = '';
-                        
-                        for (const char of word) {
-                          if (getKoreanLength(charSegment + char) > 18) { // 15-21 범위 중간값
-                            if (charSegment.trim()) {
-                              segments.push(charSegment.trim());
-                              charSegment = char;
-                            }
-                          } else {
-                            charSegment += char;
-                          }
-                        }
-                        
-                        if (charSegment.trim()) {
-                          wordSegment = charSegment;
-                        }
-                      } else {
-                        wordSegment = word;
-                      }
+                      result.push(char);
                     }
                   } else {
-                    wordSegment += word;
+                    segment += char;
                   }
                 }
                 
-                currentSegment = wordSegment;
+                if (segment) {
+                  currentLine = segment;
+                }
               }
             } else {
-              currentSegment += phrase;
+              currentLine = testLine;
             }
           }
           
-          if (currentSegment.trim()) {
-            segments.push(currentSegment.trim());
+          // 마지막 라인 추가
+          if (currentLine.trim()) {
+            result.push(currentLine.trim());
           }
           
-          return segments.join('\n');
+          return result.join('\n');
         }
         
         return line;
       })
       .join('\n')
-      .replace(/\n\s*\n/g, '\n\n'); // 불필요한 빈 줄 정리
+      .replace(/\n{3,}/g, '\n\n') // 3개 이상 연속 줄바꿈을 2개로 축약
+      .trim();
   }
 
   // ===== CHAT FUNCTIONALITY =====
