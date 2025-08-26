@@ -700,7 +700,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // 모바일용 콘텐츠 포맷팅 함수 (강화된 줄바꿈)
+  // 모바일용 콘텐츠 포맷팅 함수 (한국어 문맥 고려)
   function formatContentForMobile(content: string): string {
     return content
       .split('\n')
@@ -720,52 +720,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return length;
         }
         
-        // 18자를 넘으면 줄바꿈 처리 (더 보수적으로)
-        if (getKoreanLength(line) > 18) {
+        // 자연스러운 줄바꿈 지점 찾기
+        function findNaturalBreakpoints(text: string): number[] {
+          const breakpoints = [];
+          
+          // 문장 부호 기준 분할점 (강한 분할점)
+          const strongBreaks = /[.!?。]/g;
+          let match;
+          while ((match = strongBreaks.exec(text)) !== null) {
+            breakpoints.push({ pos: match.index + 1, priority: 1 });
+          }
+          
+          // 쉼표, 세미콜론 (중간 분할점)
+          const mediumBreaks = /[,;]/g;
+          while ((match = mediumBreaks.exec(text)) !== null) {
+            breakpoints.push({ pos: match.index + 1, priority: 2 });
+          }
+          
+          // 조사나 어미 뒤 (약한 분할점)
+          const weakBreaks = /[는데요면서며고와과을를이가에서의로부터까지만도라든지거나하지만하기때문에][가-힣]*\s/g;
+          while ((match = weakBreaks.exec(text)) !== null) {
+            breakpoints.push({ pos: match.index + match[0].length, priority: 3 });
+          }
+          
+          // 공백 (최후 분할점)
+          const spaceBreaks = /\s+/g;
+          while ((match = spaceBreaks.exec(text)) !== null) {
+            breakpoints.push({ pos: match.index + match[0].length, priority: 4 });
+          }
+          
+          return breakpoints.sort((a, b) => a.pos - b.pos || a.priority - b.priority);
+        }
+        
+        // 20자를 넘으면 자연스러운 지점에서 줄바꿈
+        if (getKoreanLength(line) > 20) {
           const result = [];
-          let currentLine = '';
+          const breakpoints = findNaturalBreakpoints(line);
+          let lastBreak = 0;
+          let currentSegment = '';
           
-          // 공백 기준으로 단어 분할
-          const words = line.split(' ');
-          
-          for (const word of words) {
-            const testLine = currentLine ? currentLine + ' ' + word : word;
+          for (let i = 0; i < line.length; i++) {
+            currentSegment += line[i];
             
-            if (getKoreanLength(testLine) > 18) {
-              // 현재 라인이 있으면 추가하고 새 라인 시작
-              if (currentLine.trim()) {
-                result.push(currentLine.trim());
-                currentLine = word;
-              } else {
-                // 단어 자체가 길면 강제 분할
-                const chars = Array.from(word);
-                let segment = '';
-                
-                for (const char of chars) {
-                  if (getKoreanLength(segment + char) > 18) {
-                    if (segment) {
-                      result.push(segment);
-                      segment = char;
-                    } else {
-                      result.push(char);
-                    }
-                  } else {
-                    segment += char;
-                  }
-                }
-                
-                if (segment) {
-                  currentLine = segment;
+            // 현재 세그먼트가 18자를 넘으면 가장 가까운 자연스러운 분할점 찾기
+            if (getKoreanLength(currentSegment) > 18) {
+              let bestBreak = null;
+              
+              // 현재 위치에서 뒤로 가면서 가장 좋은 분할점 찾기
+              for (const bp of breakpoints.reverse()) {
+                if (bp.pos > lastBreak && bp.pos <= i) {
+                  bestBreak = bp;
+                  break;
                 }
               }
-            } else {
-              currentLine = testLine;
+              breakpoints.reverse(); // 원래 순서로 복원
+              
+              if (bestBreak) {
+                // 자연스러운 분할점에서 끊기
+                const segment = line.substring(lastBreak, bestBreak.pos).trim();
+                if (segment) {
+                  result.push(segment);
+                }
+                lastBreak = bestBreak.pos;
+                currentSegment = line.substring(bestBreak.pos, i + 1);
+              } else if (getKoreanLength(currentSegment) > 25) {
+                // 분할점이 없으면 강제로 끊기 (25자 초과시)
+                const segment = currentSegment.substring(0, currentSegment.length - 1).trim();
+                if (segment) {
+                  result.push(segment);
+                }
+                lastBreak = i;
+                currentSegment = line[i];
+              }
             }
           }
           
-          // 마지막 라인 추가
-          if (currentLine.trim()) {
-            result.push(currentLine.trim());
+          // 마지막 세그먼트 추가
+          const finalSegment = line.substring(lastBreak).trim();
+          if (finalSegment) {
+            result.push(finalSegment);
           }
           
           return result.join('\n');
