@@ -28,9 +28,10 @@ export async function generateStrictMorphemeContent(
       `공백 제외 정확히 1700-2000자 범위 안에서 글을 작성해주세요. (1700자 미만이나 2000자 초과 절대 금지)`,
       `키워드 "${keyword}"의 완전한 형태를 정확히 5-7회 사용해주세요.`,
       `키워드를 구성하는 각 형태소를 정확히 15-17회씩 사용해주세요.`,
-      `다른 모든 단어는 15회 미만으로 제한해주세요. (키워드 형태소만 15-17회 허용)`,
+      `키워드 형태소가 아닌 모든 단어는 14회 이하로 제한해주세요.`,
       `서론 600-700자, 본론 900-1100자, 결론 200-300자로 분량을 정확히 배치해주세요.`,
-      `어떤 단어도 17회를 초과하면 안됩니다. (검색엔진 스팸 인식)`
+      `어떤 단어도 17회를 초과하면 절대 안됩니다. (검색엔진 스팸 인식)`,
+      `키워드 형태소: 15-17회, 일반 단어: 14회 이하 엄격히 준수!`
     ];
     
     // 추가 형태소가 있으면 포함
@@ -66,25 +67,34 @@ export async function generateStrictMorphemeContent(
       keywordMorphemeCount: analysis.keywordMorphemeCount
     });
     
-    // 실제 글자수와 형태소 조건 검증
+    // 강력한 검증: 글자수, 키워드, 형태소 빈도 모든 조건 확인
     const isCharacterCountValid = analysis.characterCount >= 1700 && analysis.characterCount <= 2000;
     const isKeywordCountValid = analysis.keywordMorphemeCount >= 5 && analysis.keywordMorphemeCount <= 7;
     
-    console.log(`Validation results:`, {
+    // 과다 사용 형태소 검사 (20회 초과 방지)
+    const hasOverusedMorphemes = analysis.issues.some(issue => 
+      issue.includes('형태소 과다 사용') || issue.includes('초과 사용')
+    );
+    
+    console.log(`강력한 검증 결과:`, {
       characterCount: analysis.characterCount,
       isCharacterCountValid,
       keywordCount: analysis.keywordMorphemeCount,
       isKeywordCountValid,
-      isOptimized: analysis.isOptimized
+      hasOverusedMorphemes,
+      isOptimized: analysis.isOptimized,
+      issuesCount: analysis.issues.length
     });
     
-    // 조건 충족 여부와 관계없이 생성된 콘텐츠 반환 (사용자가 확인 가능)
-    console.log(`Content generation completed on attempt ${attempts}`);
+    // 모든 조건을 충족해야만 성공으로 처리
+    const allConditionsMet = isCharacterCountValid && isKeywordCountValid && !hasOverusedMorphemes;
+    
+    console.log(`Content generation completed on attempt ${attempts} - All conditions met: ${allConditionsMet}`);
     return {
       content,
       analysis: {
         ...analysis,
-        isOptimized: isCharacterCountValid && isKeywordCountValid,
+        isOptimized: allConditionsMet,
         isLengthOptimized: isCharacterCountValid,
         isKeywordOptimized: isKeywordCountValid
       },

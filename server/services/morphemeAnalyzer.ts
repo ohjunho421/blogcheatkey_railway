@@ -474,16 +474,50 @@ function checkCustomMorphemes(content: string, customMorphemes?: string): { used
   return { used, missing };
 }
 
+// 전체 형태소 빈도 검사 함수 (20회 초과 방지)
+function checkAllMorphemeFrequencies(content: string, keyword: string): { overused: Array<{morpheme: string, count: number}>, allCounts: Map<string, number> } {
+  console.log('🔍 전체 형태소 빈도 검사 시작...');
+  
+  const allMorphemes = extractKoreanMorphemes(content);
+  const keywordComponents = extractKeywordComponents(keyword);
+  const keywordComponentsLower = keywordComponents.map(comp => comp.toLowerCase());
+  
+  // 모든 형태소 빈도 계산
+  const morphemeFrequency = new Map<string, number>();
+  allMorphemes.forEach(morpheme => {
+    const cleanMorpheme = morpheme.toLowerCase();
+    morphemeFrequency.set(cleanMorpheme, (morphemeFrequency.get(cleanMorpheme) || 0) + 1);
+  });
+  
+  // 20회 초과 형태소 찾기
+  const overused: Array<{morpheme: string, count: number}> = [];
+  for (const [morpheme, count] of Array.from(morphemeFrequency.entries())) {
+    const isKeywordComponent = keywordComponentsLower.includes(morpheme);
+    const maxAllowed = isKeywordComponent ? 17 : 14;
+    
+    if (count > maxAllowed) {
+      overused.push({ morpheme, count });
+      console.log(`❌ "${morpheme}" 초과 사용: ${count}회 (최대 ${maxAllowed}회) ${isKeywordComponent ? '[키워드 형태소]' : '[일반 형태소]'}`);
+    }
+  }
+  
+  console.log(`전체 형태소 빈도 검사 완료. 초과 사용: ${overused.length}개`);
+  return { overused, allCounts: morphemeFrequency };
+}
+
 export function analyzeMorphemes(content: string, keyword: string, customMorphemes?: string): MorphemeAnalysis {
   console.log(`=== Morpheme Analysis for keyword: "${keyword}" ===`);
   
   try {
+    // 전체 형태소 빈도 먼저 검사
+    const frequencyCheck = checkAllMorphemeFrequencies(content, keyword);
+    
     // Extract all morphemes from content
-  const allMorphemes = extractKoreanMorphemes(content);
-  console.log(`Total morphemes extracted: ${allMorphemes.length}`);
-  
-  // Calculate character count (excluding spaces)
-  const characterCount = content.replace(/\s/g, '').length;
+    const allMorphemes = extractKoreanMorphemes(content);
+    console.log(`Total morphemes extracted: ${allMorphemes.length}`);
+    
+    // Calculate character count (excluding spaces)
+    const characterCount = content.replace(/\s/g, '').length;
   
   // Find complete keyword matches (minimum 5 required)
   const completeKeywordMatches = findCompleteKeywordMatches(allMorphemes, keyword);
@@ -526,8 +560,9 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
   const customMorphemeCheck = checkCustomMorphemes(content, customMorphemes);
   const isCustomMorphemesOptimized = customMorphemeCheck.missing.length === 0;
   
-  // 배포 버전과 동일: 글자수만 체크하고 항상 성공
-  const isOptimized = isLengthOptimized || characterCount >= 1000;
+  // 형태소 빈도 검사 결과 반영
+  const hasOverusedMorphemes = frequencyCheck.overused.length > 0;
+  const isOptimized = isLengthOptimized && isKeywordOptimized && !hasOverusedMorphemes;
   
   // Generate issues and suggestions
   const issues: string[] = [];
@@ -564,6 +599,14 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
   if (!isCustomMorphemesOptimized && customMorphemes) {
     issues.push(`누락된 필수 형태소: ${customMorphemeCheck.missing.join(', ')}`);
     suggestions.push(`다음 단어들을 글에 포함해주세요: ${customMorphemeCheck.missing.join(', ')}`);
+  }
+  
+  // 형태소 초과 사용 검사 결과 추가
+  if (hasOverusedMorphemes) {
+    for (const overused of frequencyCheck.overused) {
+      issues.push(`형태소 과다 사용: "${overused.morpheme}" ${overused.count}회 (최대 17회)`);
+    }
+    suggestions.push(`과다 사용된 형태소들을 동의어나 유의어로 교체해주세요`);
   }
 
   return {

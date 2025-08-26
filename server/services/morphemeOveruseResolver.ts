@@ -33,16 +33,11 @@ export async function resolveMorphemeOveruse(
   
   const overusedComponents: OveruseAnalysis[] = [];
   
-  // 키워드 형태소의 최소 출현 횟수 확인 (15회 이상이어야 함)
-  const keywordMorphemeCounts = keywordComponents.map(comp => {
-    const lowerComp = comp.toLowerCase();
-    return morphemeFrequency.get(lowerComp) || 0;
-  });
+  // 강력한 형태소 빈도 제한 적용
+  const maxKeywordMorpheme = 17;  // 키워드 형태소 최대 17회
+  const maxNonKeywordMorpheme = 14; // 일반 형태소 최대 14회
   
-  const minKeywordCount = Math.min(...keywordMorphemeCounts);
-  const maxAllowedForNonKeyword = Math.max(14, minKeywordCount - 1); // 키워드 형태소보다 1회 적게
-  
-  console.log(`키워드 형태소 최소 출현: ${minKeywordCount}회, 일반 형태소 최대 허용: ${maxAllowedForNonKeyword}회`);
+  console.log(`강력한 빈도 제한: 키워드 형태소 최대 ${maxKeywordMorpheme}회, 일반 형태소 최대 ${maxNonKeywordMorpheme}회`);
   
   // 모든 형태소 검사
   for (const [morpheme, count] of Array.from(morphemeFrequency.entries())) {
@@ -51,13 +46,13 @@ export async function resolveMorphemeOveruse(
     let shouldProcess = false;
     
     if (isKeywordComponent) {
-      // 키워드 형태소: 17회 초과 금지
-      targetCount = 17;
-      shouldProcess = count > 17;
+      // 키워드 형태소: 17회 초과 절대 금지
+      targetCount = maxKeywordMorpheme;
+      shouldProcess = count > maxKeywordMorpheme;
     } else {
-      // 일반 형태소: 키워드 형태소보다 적어야 함 (최대 maxAllowedForNonKeyword)
-      targetCount = maxAllowedForNonKeyword;
-      shouldProcess = count > maxAllowedForNonKeyword;
+      // 일반 형태소: 14회 초과 절대 금지
+      targetCount = maxNonKeywordMorpheme;
+      shouldProcess = count > maxNonKeywordMorpheme;
     }
     
     if (shouldProcess) {
