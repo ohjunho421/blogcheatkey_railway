@@ -50,15 +50,15 @@ export async function resolveMorphemeOveruse(
     let targetCount: number;
     let shouldProcess = false;
     
-    // 모든 형태소에 대해 20회 이상 절대 금지
+    // 모든 형태소에 대해 20회 이상 절대 금지 (키워드 형태소 포함)
     if (count >= 20) {
-      targetCount = isKeywordComponent ? 17 : 14;
+      targetCount = isKeywordComponent ? 19 : 14;
       shouldProcess = true;
       console.log(`🚨 CRITICAL: "${morpheme}" 20회 이상 출현 (${count}회) - 즉시 조정 필요!`);
     } else if (isKeywordComponent) {
-      // 키워드 형태소: 17회 초과 금지
-      targetCount = 17;
-      shouldProcess = count > 17;
+      // 키워드 형태소: 19회 초과 금지 (20회부터 스팸)
+      targetCount = 19;
+      shouldProcess = count > 19;
     } else {
       // 일반 형태소: 최대 14회, 키워드 형태소보다 적어야 함
       targetCount = Math.min(14, maxAllowedForNonKeyword);
