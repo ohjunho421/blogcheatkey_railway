@@ -493,31 +493,31 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
   const componentMatches = findKeywordComponentMatches(allMorphemes, keyword);
   const keywordComponents = extractKeywordComponents(keyword);
   
-  // Check complete keyword condition (정확히 5회만)
-  const isCompleteKeywordOptimized = completeKeywordCount === 5;
+  // Check complete keyword condition (5-7 times)
+  const isCompleteKeywordOptimized = completeKeywordCount >= 5 && completeKeywordCount <= 7;
   
-  // Check individual component conditions (15-19회, 절대 20회 이상 금지)
+  // Check individual component conditions (15-17 times each)
   let areComponentsOptimized = true;
   const componentIssues: string[] = [];
   
-  console.log(`Complete keyword "${keyword}" appears: ${completeKeywordCount} times (정확히 5회 필요)`);
+  console.log(`Complete keyword "${keyword}" appears: ${completeKeywordCount} times (5-7 times required)`);
   
   for (const component of keywordComponents) {
     const matches = componentMatches.get(component) || [];
     const count = matches.length;
     
-    if (count < 15 || count >= 20) {
+    if (count < 15 || count > 17) {
       areComponentsOptimized = false;
       if (count < 15) {
-        componentIssues.push(`${component}: ${count}회 (부족, 15-19회 필요)`);
+        componentIssues.push(`${component}: ${count}회 (부족, 15-17회 필요)`);
       } else {
-        componentIssues.push(`${component}: ${count}회 (과다, 20회 이상 절대 금지)`);
+        componentIssues.push(`${component}: ${count}회 (과다, 15-17회 필요)`);
       }
     }
   }
   
-  // Check length condition (1700-2000 characters excluding spaces)
-  const isLengthOptimized = characterCount >= 1700 && characterCount <= 2000;
+  // Check length condition (1500-1700 characters excluding spaces)
+  const isLengthOptimized = characterCount >= 1500 && characterCount <= 1700;
   
   // Overall keyword optimization status
   const isKeywordOptimized = isCompleteKeywordOptimized && areComponentsOptimized;
@@ -552,12 +552,12 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
   }
   
   if (!isLengthOptimized) {
-    if (characterCount < 1700) {
-      issues.push(`글자수 부족: ${characterCount}자 (1700-2000자 필요)`);
-      suggestions.push(`내용을 추가하여 1700자 이상으로 늘려주세요`);
-    } else if (characterCount > 2000) {
-      issues.push(`글자수 초과: ${characterCount}자 (1700-2000자 필요)`);
-      suggestions.push(`내용을 줄여서 2000자 이하로 맞춰주세요`);
+    if (characterCount < 1500) {
+      issues.push(`글자수 부족: ${characterCount}자 (1500-1700자 필요)`);
+      suggestions.push(`내용을 추가하여 1500자 이상으로 늘려주세요`);
+    } else if (characterCount > 1700) {
+      issues.push(`글자수 초과: ${characterCount}자 (1500-1700자 필요)`);
+      suggestions.push(`내용을 줄여서 1700자 이하로 맞춰주세요`);
     }
   }
   
@@ -572,7 +572,7 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
     isLengthOptimized,
     keywordMorphemeCount: completeKeywordCount,
     characterCount,
-    targetCharacterRange: '1700-2000자',
+    targetCharacterRange: '1500-1700자',
     issues,
     suggestions,
     customMorphemes: customMorphemeCheck,
@@ -587,7 +587,7 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
       isLengthOptimized: false,
       keywordMorphemeCount: 0,
       characterCount: content.replace(/\s/g, '').length,
-      targetCharacterRange: '1700-2000자',
+      targetCharacterRange: '1500-1700자',
       issues: ['형태소 분석 중 오류가 발생했습니다'],
       suggestions: ['키워드를 다시 확인해주세요'],
       customMorphemes: { used: [], missing: [] },

@@ -305,7 +305,7 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
                                   : 'hover:bg-muted/50 hover:shadow-sm'
                               }`}
                             >
-                              <div className="flex items-start flex-1">
+                              <div className="flex items-center flex-1">
                                 <div
                                   {...provided.dragHandleProps}
                                   className="mr-3 p-1 cursor-grab active:cursor-grabbing hover:bg-muted rounded transition-colors"
@@ -314,51 +314,51 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
                                   <GripVertical className="h-4 w-4 text-muted-foreground" />
                                 </div>
                                 {editingSubtitle === index ? (
-                                  <div className="flex-1">
-                                    <Textarea
-                                      value={editedSubtitles[index] || subtitle}
-                                      onChange={(e) => handleSubtitleEdit(index, e.target.value)}
-                                      className="w-full"
-                                      rows={2}
-                                      placeholder="소제목을 입력하세요"
-                                      autoFocus
-                                    />
-                                    <div className="flex justify-end space-x-2 mt-3">
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => {
-                                          setEditingSubtitle(null);
-                                          setEditedSubtitles([]);
-                                        }}
-                                        disabled={updateSubtitles.isPending}
-                                      >
-                                        취소
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        onClick={handleSaveSubtitles}
-                                        disabled={updateSubtitles.isPending}
-                                      >
-                                        {updateSubtitles.isPending ? "저장 중..." : "저장"}
-                                      </Button>
-                                    </div>
-                                  </div>
+                                  <Textarea
+                                    value={editedSubtitles[index] || subtitle}
+                                    onChange={(e) => handleSubtitleEdit(index, e.target.value)}
+                                    className="flex-1 mr-2"
+                                    rows={2}
+                                    placeholder="소제목을 입력하세요"
+                                    autoFocus
+                                  />
                                 ) : (
-                                  <div className="flex items-center justify-between flex-1">
-                                    <span className="text-sm">{index + 1}. {subtitle}</span>
+                                  <span className="text-sm flex-1">{index + 1}. {subtitle}</span>
+                                )}
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                {editingSubtitle === index ? (
+                                  <>
                                     <Button
                                       size="sm"
-                                      variant="ghost"
-                                      onClick={() => {
-                                        setEditingSubtitle(index);
-                                        setEditedSubtitles([...(project.subtitles || [])]);
-                                      }}
-                                      className="ml-2"
+                                      onClick={handleSaveSubtitles}
+                                      disabled={updateSubtitles.isPending}
                                     >
-                                      <Edit2 className="h-4 w-4" />
+                                      {updateSubtitles.isPending ? "저장 중..." : "저장"}
                                     </Button>
-                                  </div>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        setEditingSubtitle(null);
+                                        setEditedSubtitles([]);
+                                      }}
+                                      disabled={updateSubtitles.isPending}
+                                    >
+                                      취소
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setEditingSubtitle(index);
+                                      setEditedSubtitles([...(project.subtitles || [])]);
+                                    }}
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                  </Button>
                                 )}
                               </div>
                             </div>

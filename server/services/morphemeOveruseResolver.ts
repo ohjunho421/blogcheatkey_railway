@@ -40,29 +40,24 @@ export async function resolveMorphemeOveruse(
   });
   
   const minKeywordCount = Math.min(...keywordMorphemeCounts);
-  const maxAllowedForNonKeyword = Math.min(14, minKeywordCount - 1); // 키워드 형태소보다 1회 적고 최대 14회
+  const maxAllowedForNonKeyword = Math.max(14, minKeywordCount - 1); // 키워드 형태소보다 1회 적게
   
   console.log(`키워드 형태소 최소 출현: ${minKeywordCount}회, 일반 형태소 최대 허용: ${maxAllowedForNonKeyword}회`);
   
-  // 모든 형태소 검사 (20회 이상 절대 금지)
+  // 모든 형태소 검사
   for (const [morpheme, count] of Array.from(morphemeFrequency.entries())) {
     const isKeywordComponent = keywordComponents.some(comp => comp.toLowerCase() === morpheme);
     let targetCount: number;
     let shouldProcess = false;
     
-    // 모든 형태소에 대해 20회 이상 절대 금지 (키워드 형태소 포함)
-    if (count >= 20) {
-      targetCount = isKeywordComponent ? 19 : 14;
-      shouldProcess = true;
-      console.log(`🚨 CRITICAL: "${morpheme}" 20회 이상 출현 (${count}회) - 즉시 조정 필요!`);
-    } else if (isKeywordComponent) {
-      // 키워드 형태소: 19회 초과 금지 (20회부터 스팸)
-      targetCount = 19;
-      shouldProcess = count > 19;
+    if (isKeywordComponent) {
+      // 키워드 형태소: 17회 초과 금지
+      targetCount = 17;
+      shouldProcess = count > 17;
     } else {
-      // 일반 형태소: 최대 14회, 키워드 형태소보다 적어야 함
-      targetCount = Math.min(14, maxAllowedForNonKeyword);
-      shouldProcess = count > targetCount;
+      // 일반 형태소: 키워드 형태소보다 적어야 함 (최대 maxAllowedForNonKeyword)
+      targetCount = maxAllowedForNonKeyword;
+      shouldProcess = count > maxAllowedForNonKeyword;
     }
     
     if (shouldProcess) {
@@ -161,7 +156,7 @@ async function adjustOverusedMorphemes(
 절대 금지사항:
 - 글의 핵심 의미 변경
 - 부자연스러운 문장 구조
-- SEO 최적화 범위(1700-2000자) 벗어남
+- SEO 최적화 범위(1500-1700자) 벗어남
 - 완전한 키워드 "${keyword}" 5회 조건 위반`;
 
   const overuseInfo = overusedComponents.map(comp => 
@@ -187,7 +182,7 @@ ${content}
 조건:
 - 완전한 키워드 "${keyword}" 5회 유지
 - 개별 형태소는 15-17회 범위로 조정
-- 공백 제외 1700-2000자 범위 유지
+- 공백 제외 1500-1700자 범위 유지
 - 서론-본론-결론 구조 유지
 - 자연스러운 문체와 흐름 유지
 

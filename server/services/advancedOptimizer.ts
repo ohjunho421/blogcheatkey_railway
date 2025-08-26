@@ -137,12 +137,12 @@ function createSEOOptimizationPrompt(content: string, keyword: string, analysis:
 
 현재 상태:
 - 키워드: ${keyword}
-- 현재 글자수: ${analysis.characterCount}자 (목표: 1700-2000자)
+- 현재 글자수: ${analysis.characterCount}자 (목표: 1700-1800자)
 - 키워드 형태소 출현: ${analysis.keywordMorphemeCount}회 (목표: 15-17회)
 
 최적화 목표:
 1. 키워드 형태소를 정확히 15-17회 사용
-2. 공백 제외 1700-2000자 맞추기
+2. 공백 제외 1700-1800자 맞추기
 3. 키워드 형태소가 가장 많이 출현하는 단어가 되도록 조정
 4. 자연스러운 흐름 유지
 
@@ -158,7 +158,7 @@ function createReadabilityPrompt(content: string, keyword: string, analysis: any
 SEO 조건 (반드시 유지):
 - 키워드: ${keyword}
 - 키워드 형태소: 15-17회
-- 공백 제외: 1700-2000자
+- 공백 제외: 1700-1800자
 - 키워드 형태소가 가장 빈번한 단어
 
 가독성 개선 목표:
@@ -216,7 +216,7 @@ async function optimizeWithGemini(
 
   const systemPrompt = `당신은 SEO 최적화 전문가입니다. 다음 조건을 반드시 지켜주세요:
 1. 키워드 "${keyword}" 형태소를 정확히 15-17회 사용
-2. 공백 제외 1700-2000자 범위 유지
+2. 공백 제외 1700-1800자 범위 유지
 3. 자연스러운 흐름과 가독성 확보
 4. 키워드 형태소가 가장 빈번한 단어가 되도록 조정
 

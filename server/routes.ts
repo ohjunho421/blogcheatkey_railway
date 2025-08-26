@@ -45,20 +45,6 @@ async function getAuthenticatedUserId(req: any): Promise<number | null> {
   return userId || null;
 }
 
-// Helper function to get authenticated user with permissions
-async function getAuthenticatedUser(req: any): Promise<any | null> {
-  const userId = await getAuthenticatedUserId(req);
-  if (!userId) return null;
-  
-  try {
-    const user = await storage.getUserById(userId);
-    return user;
-  } catch (error) {
-    console.error("User lookup error:", error);
-    return null;
-  }
-}
-
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // Setup authentication middleware
@@ -400,27 +386,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/projects/:id/analyze", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      
-      // 사용자 권한 확인
-      const user = await getAuthenticatedUser(req);
-      if (!user) {
-        return res.status(401).json({ error: "인증이 필요합니다" });
-      }
-      
-      // 콘텐츠 생성 권한 확인
-      if (!user.canGenerateContent) {
-        return res.status(403).json({ error: "콘텐츠 생성 권한이 없습니다. 관리자에게 문의하세요." });
-      }
-      
       const project = await storage.getBlogProject(id);
       
       if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
-      }
-      
-      // 프로젝트 소유자 확인
-      if (project.userId !== user.id && !user.isAdmin) {
-        return res.status(403).json({ error: "이 프로젝트에 접근할 권한이 없습니다" });
       }
 
       // Analyze keyword using Gemini
@@ -444,27 +413,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/projects/:id/research", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      
-      // 사용자 권한 확인
-      const user = await getAuthenticatedUser(req);
-      if (!user) {
-        return res.status(401).json({ error: "인증이 필요합니다" });
-      }
-      
-      // 콘텐츠 생성 권한 확인
-      if (!user.canGenerateContent) {
-        return res.status(403).json({ error: "콘텐츠 생성 권한이 없습니다. 관리자에게 문의하세요." });
-      }
-      
       const project = await storage.getBlogProject(id);
       
       if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
-      }
-      
-      // 프로젝트 소유자 확인
-      if (project.userId !== user.id && !user.isAdmin) {
-        return res.status(403).json({ error: "이 프로젝트에 접근할 권한이 없습니다" });
       }
 
       // Search research data using Perplexity
@@ -562,27 +514,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/projects/:id/generate", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      
-      // 사용자 권한 확인
-      const user = await getAuthenticatedUser(req);
-      if (!user) {
-        return res.status(401).json({ error: "인증이 필요합니다" });
-      }
-      
-      // 콘텐츠 생성 권한 확인
-      if (!user.canGenerateContent) {
-        return res.status(403).json({ error: "콘텐츠 생성 권한이 없습니다. 관리자에게 문의하세요." });
-      }
-      
       const project = await storage.getBlogProject(id);
       
       if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
-      }
-      
-      // 프로젝트 소유자 확인
-      if (project.userId !== user.id && !user.isAdmin) {
-        return res.status(403).json({ error: "이 프로젝트에 접근할 권한이 없습니다" });
       }
 
       // First update status to show generation is starting
@@ -700,7 +635,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // 모바일용 콘텐츠 포맷팅 함수 (한국어 문맥 고려)
+  // 모바일용 콘텐츠 포맷팅 함수
   function formatContentForMobile(content: string): string {
     return content
       .split('\n')
@@ -720,95 +655,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return length;
         }
         
-        // 자연스러운 줄바꿈 지점 찾기
-        function findNaturalBreakpoints(text: string): Array<{pos: number, priority: number}> {
-          const breakpoints: Array<{pos: number, priority: number}> = [];
-          
-          // 문장 부호 기준 분할점 (강한 분할점)
-          const strongBreaks = /[.!?。]/g;
-          let match;
-          while ((match = strongBreaks.exec(text)) !== null) {
-            breakpoints.push({ pos: match.index + 1, priority: 1 });
-          }
-          
-          // 쉼표, 세미콜론 (중간 분할점)
-          const mediumBreaks = /[,;]/g;
-          while ((match = mediumBreaks.exec(text)) !== null) {
-            breakpoints.push({ pos: match.index + 1, priority: 2 });
-          }
-          
-          // 조사나 어미 뒤 (약한 분할점)
-          const weakBreaks = /[는데요면서며고와과을를이가에서의로부터까지만도라든지거나하지만하기때문에][가-힣]*\s/g;
-          while ((match = weakBreaks.exec(text)) !== null) {
-            breakpoints.push({ pos: match.index + match[0].length, priority: 3 });
-          }
-          
-          // 공백 (최후 분할점)
-          const spaceBreaks = /\s+/g;
-          while ((match = spaceBreaks.exec(text)) !== null) {
-            breakpoints.push({ pos: match.index + match[0].length, priority: 4 });
-          }
-          
-          return breakpoints.sort((a, b) => a.pos - b.pos || a.priority - b.priority);
-        }
-        
-        // 20자를 넘으면 자연스러운 지점에서 줄바꿈
-        if (getKoreanLength(line) > 20) {
-          const result = [];
-          const breakpoints = findNaturalBreakpoints(line);
-          let lastBreak = 0;
+        // 21자를 넘으면 줄바꿈 처리
+        if (getKoreanLength(line) > 21) {
+          const segments = [];
           let currentSegment = '';
           
-          for (let i = 0; i < line.length; i++) {
-            currentSegment += line[i];
+          // 문장 부호나 쉼표 기준으로 먼저 나누기
+          const phrases = line.split(/([,.!?])/);
+          
+          for (let i = 0; i < phrases.length; i++) {
+            const phrase = phrases[i];
+            const testSegment = currentSegment + phrase;
             
-            // 현재 세그먼트가 18자를 넘으면 가장 가까운 자연스러운 분할점 찾기
-            if (getKoreanLength(currentSegment) > 18) {
-              let bestBreak = null;
-              
-              // 현재 위치에서 뒤로 가면서 가장 좋은 분할점 찾기
-              for (const bp of breakpoints.reverse()) {
-                if (bp.pos > lastBreak && bp.pos <= i) {
-                  bestBreak = bp;
-                  break;
+            if (getKoreanLength(testSegment) > 21) {
+              if (currentSegment.trim()) {
+                segments.push(currentSegment.trim());
+                currentSegment = phrase;
+              } else {
+                // 구문 자체가 너무 길 경우 단어 단위로 분할
+                const words = phrase.split(/(\s+)/);
+                let wordSegment = '';
+                
+                for (const word of words) {
+                  const testWord = wordSegment + word;
+                  
+                  if (getKoreanLength(testWord) > 21) {
+                    if (wordSegment.trim()) {
+                      segments.push(wordSegment.trim());
+                      wordSegment = word;
+                    } else {
+                      // 단어 자체가 너무 길 경우 자연스러운 지점에서 분할
+                      if (getKoreanLength(word) > 21) {
+                        let charSegment = '';
+                        
+                        for (const char of word) {
+                          if (getKoreanLength(charSegment + char) > 18) { // 15-21 범위 중간값
+                            if (charSegment.trim()) {
+                              segments.push(charSegment.trim());
+                              charSegment = char;
+                            }
+                          } else {
+                            charSegment += char;
+                          }
+                        }
+                        
+                        if (charSegment.trim()) {
+                          wordSegment = charSegment;
+                        }
+                      } else {
+                        wordSegment = word;
+                      }
+                    }
+                  } else {
+                    wordSegment += word;
+                  }
                 }
+                
+                currentSegment = wordSegment;
               }
-              breakpoints.reverse(); // 원래 순서로 복원
-              
-              if (bestBreak) {
-                // 자연스러운 분할점에서 끊기
-                const segment = line.substring(lastBreak, bestBreak.pos).trim();
-                if (segment) {
-                  result.push(segment);
-                }
-                lastBreak = bestBreak.pos;
-                currentSegment = line.substring(bestBreak.pos, i + 1);
-              } else if (getKoreanLength(currentSegment) > 25) {
-                // 분할점이 없으면 강제로 끊기 (25자 초과시)
-                const segment = currentSegment.substring(0, currentSegment.length - 1).trim();
-                if (segment) {
-                  result.push(segment);
-                }
-                lastBreak = i;
-                currentSegment = line[i];
-              }
+            } else {
+              currentSegment += phrase;
             }
           }
           
-          // 마지막 세그먼트 추가
-          const finalSegment = line.substring(lastBreak).trim();
-          if (finalSegment) {
-            result.push(finalSegment);
+          if (currentSegment.trim()) {
+            segments.push(currentSegment.trim());
           }
           
-          return result.join('\n');
+          return segments.join('\n');
         }
         
         return line;
       })
       .join('\n')
-      .replace(/\n{3,}/g, '\n\n') // 3개 이상 연속 줄바꿈을 2개로 축약
-      .trim();
+      .replace(/\n\s*\n/g, '\n\n'); // 불필요한 빈 줄 정리
   }
 
   // ===== CHAT FUNCTIONALITY =====
@@ -823,25 +743,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "메시지를 입력해주세요" });
       }
 
-      // 사용자 권한 확인
-      const user = await getAuthenticatedUser(req);
-      if (!user) {
-        return res.status(401).json({ error: "인증이 필요합니다" });
-      }
-      
-      // 챗봇 사용 권한 확인
-      if (!user.canUseChatbot) {
-        return res.status(403).json({ error: "챗봇 사용 권한이 없습니다. Premium 구독이 필요합니다." });
-      }
-
       const project = await storage.getBlogProject(id);
       if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
-      }
-      
-      // 프로젝트 소유자 확인
-      if (project.userId !== user.id && !user.isAdmin) {
-        return res.status(403).json({ error: "이 프로젝트에 접근할 권한이 없습니다" });
       }
 
       // Save user message

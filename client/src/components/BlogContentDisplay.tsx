@@ -107,10 +107,6 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
       return response.json();
     },
     onSuccess: () => {
-      // 재생성 후 모바일 미리보기 콘텐츠 초기화
-      setMobilePreviewContent('');
-      setShowMobilePreview(false);
-      
       toast({
         title: "재생성 완료",
         description: "새로운 콘텐츠가 생성되었습니다.",

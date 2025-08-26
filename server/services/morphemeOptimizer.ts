@@ -88,7 +88,7 @@ export async function optimizeMorphemeUsage(
     const componentMatches = findKeywordComponentMatches(extractKoreanMorphemes(content), keyword);
     const matches = componentMatches.get(morpheme) || [];
     const currentCount = matches.length;
-    const targetCount = targetCounts[morpheme] || 17; // 기본 최대값 17 (15-17회 기준)
+    const targetCount = targetCounts[morpheme] || 20; // 기본 최대값 20
 
     if (currentCount > targetCount) {
       const overCount = currentCount - targetCount;
