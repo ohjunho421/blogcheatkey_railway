@@ -353,86 +353,116 @@ export function findKeywordComponentMatches(morphemes: string[], keyword: string
         // Korean coding-related terms
         isMatch = lowerMorpheme === '코딩' || lowerMorpheme === '튜닝' || lowerMorpheme === '프로그래밍' || lowerMorpheme === '설정';
       } else if (lowerComponent === '벤츠') {
-        // 벤츠 matches including compound words like 벤츠엔진경고등
-        isMatch = lowerMorpheme.includes('벤츠');
+        // 벤츠: 정확한 일치 또는 복합어 (단, 길이 체크로 과다 매칭 방지)
+        isMatch = lowerMorpheme === '벤츠' || 
+                  (lowerMorpheme.includes('벤츠') && lowerMorpheme.length >= 4);
       } else if (lowerComponent === '엔진') {
-        // 엔진 matches including compound words like 벤츠엔진경고등
-        isMatch = lowerMorpheme.includes('엔진');
+        // 엔진: 정확한 일치 또는 복합어 (단, 길이 체크로 과다 매칭 방지)  
+        isMatch = lowerMorpheme === '엔진' || 
+                  (lowerMorpheme.includes('엔진') && lowerMorpheme.length >= 4);
       } else if (lowerComponent === '경고') {
-        // 경고 matches including compound words and variations
-        isMatch = lowerMorpheme.includes('경고');
+        // 경고: 정확한 일치 또는 복합어 (단, 길이 체크로 과다 매칭 방지)
+        isMatch = lowerMorpheme === '경고' || 
+                  (lowerMorpheme.includes('경고') && lowerMorpheme.length >= 4);
       } else if (lowerComponent === '10w40') {
         // Oil grade matches including variations
         isMatch = lowerMorpheme === '10w40' || lowerMorpheme.includes('10w40');
       } else if (lowerComponent === '오일') {
-        // 오일 matches including compound words like 엔진오일
-        isMatch = lowerMorpheme.includes('오일');
+        // 오일: 정확한 일치 또는 의미 있는 복합어만
+        isMatch = lowerMorpheme === '오일' || 
+                  (lowerMorpheme.includes('오일') && lowerMorpheme.length >= 4);
       } else if (lowerComponent === '영어') {
-        // 영어 matches including compound words like 영어학원블로그
-        isMatch = lowerMorpheme.includes('영어');
+        // 영어: 정확한 일치 또는 의미 있는 복합어만
+        isMatch = lowerMorpheme === '영어' || 
+                  (lowerMorpheme.includes('영어') && lowerMorpheme.length >= 4);
       } else if (lowerComponent === '학원') {
-        // 학원 matches including compound words like 영어학원블로그
-        isMatch = lowerMorpheme.includes('학원');
+        // 학원: 정확한 일치 또는 의미 있는 복합어만
+        isMatch = lowerMorpheme === '학원' || 
+                  (lowerMorpheme.includes('학원') && lowerMorpheme.length >= 4);
       } else if (lowerComponent === '블로그') {
-        // 블로그 matches including compound words like 영어학원블로그
-        isMatch = lowerMorpheme.includes('블로그');
+        // 블로그: 정확한 일치 또는 의미 있는 복합어만
+        isMatch = lowerMorpheme === '블로그' || 
+                  (lowerMorpheme.includes('블로그') && lowerMorpheme.length >= 5);
       } else if (lowerComponent === '전기') {
-        // 전기 matches including compound words like 전기오토바이
-        isMatch = lowerMorpheme.includes('전기');
+        // 전기: 정확한 일치 또는 의미 있는 복합어만
+        isMatch = lowerMorpheme === '전기' || 
+                  (lowerMorpheme.includes('전기') && lowerMorpheme.length >= 4);
       } else if (lowerComponent === '오토바이') {
-        // 오토바이 matches including compound words like 전기오토바이
-        isMatch = lowerMorpheme.includes('오토바이');
+        // 오토바이: 정확한 일치 또는 의미 있는 복합어만
+        isMatch = lowerMorpheme === '오토바이' || 
+                  (lowerMorpheme.includes('오토바이') && lowerMorpheme.length >= 6);
       } else if (lowerComponent === '냉각수') {
-        // 냉각수 matches including compound words like 냉각수첨가제
-        isMatch = lowerMorpheme.includes('냉각수');
+        // 냉각수: 정확한 일치 또는 의미 있는 복합어만
+        isMatch = lowerMorpheme === '냉각수' || 
+                  (lowerMorpheme.includes('냉각수') && lowerMorpheme.length >= 5);
       } else if (lowerComponent === '첨가제') {
-        // 첨가제 matches including compound words like 냉각수첨가제
-        isMatch = lowerMorpheme.includes('첨가제');
+        // 첨가제: 정확한 일치 또는 의미 있는 복합어만
+        isMatch = lowerMorpheme === '첨가제' || 
+                  (lowerMorpheme.includes('첨가제') && lowerMorpheme.length >= 5);
       } else if (lowerComponent === '자동차') {
-        // 자동차 matches including compound words like 자동차부품
-        isMatch = lowerMorpheme.includes('자동차');
+        // 자동차: 정확한 일치 또는 의미 있는 복합어만
+        isMatch = lowerMorpheme === '자동차' || 
+                  (lowerMorpheme.includes('자동차') && lowerMorpheme.length >= 5);
       } else if (lowerComponent === '부품') {
-        // 부품 matches including compound words like 자동차부품
-        isMatch = lowerMorpheme.includes('부품');
+        // 부품: 정확한 일치 또는 의미 있는 복합어만
+        isMatch = lowerMorpheme === '부품' || 
+                  (lowerMorpheme.includes('부품') && lowerMorpheme.length >= 4);
       } else if (lowerComponent === '타이어') {
-        // 타이어 matches including compound words like 타이어교체시기
-        isMatch = lowerMorpheme.includes('타이어');
+        // 타이어: 정확한 일치 또는 의미 있는 복합어만
+        isMatch = lowerMorpheme === '타이어' || 
+                  (lowerMorpheme.includes('타이어') && lowerMorpheme.length >= 5);
       } else if (lowerComponent === '교체') {
-        // 교체 matches including compound words like 타이어교체시기, 엔진오일교체
-        isMatch = lowerMorpheme.includes('교체');
+        // 교체: 정확한 일치 또는 의미 있는 복합어만
+        isMatch = lowerMorpheme === '교체' || 
+                  (lowerMorpheme.includes('교체') && lowerMorpheme.length >= 4);
       } else if (lowerComponent === '시기') {
-        // 시기 matches including compound words like 타이어교체시기
-        isMatch = lowerMorpheme.includes('시기');
+        // 시기: 정확한 일치만 (너무 짧아서 과다 매칭 위험)
+        isMatch = lowerMorpheme === '시기';
       } else if (lowerComponent === '브레이크') {
-        // 브레이크 matches including compound words like 브레이크패드교체
-        isMatch = lowerMorpheme.includes('브레이크');
+        // 브레이크: 정확한 일치 또는 의미 있는 복합어만
+        isMatch = lowerMorpheme === '브레이크' || 
+                  (lowerMorpheme.includes('브레이크') && lowerMorpheme.length >= 6);
       } else if (lowerComponent === '패드') {
-        // 패드 matches including compound words like 브레이크패드교체
-        isMatch = lowerMorpheme.includes('패드');
+        // 패드: 정확한 일치만 (너무 짧아서 과다 매칭 위험)
+        isMatch = lowerMorpheme === '패드';
       } else if (lowerComponent === '에어컨') {
-        // 에어컨 matches including compound words like 에어컨필터교체
-        isMatch = lowerMorpheme.includes('에어컨');
+        // 에어컨: 정확한 일치 또는 의미 있는 복합어만
+        isMatch = lowerMorpheme === '에어컨' || 
+                  (lowerMorpheme.includes('에어컨') && lowerMorpheme.length >= 5);
       } else if (lowerComponent === '필터') {
-        // 필터 matches including compound words like 에어컨필터교체
-        isMatch = lowerMorpheme.includes('필터');
+        // 필터: 정확한 일치 또는 의미 있는 복합어만
+        isMatch = lowerMorpheme === '필터' || 
+                  (lowerMorpheme.includes('필터') && lowerMorpheme.length >= 4);
       } else if (lowerComponent === '배터리') {
-        // 배터리 matches including compound words like 배터리점검
-        isMatch = lowerMorpheme.includes('배터리');
+        // 배터리: 정확한 일치 또는 의미 있는 복합어만
+        isMatch = lowerMorpheme === '배터리' || 
+                  (lowerMorpheme.includes('배터리') && lowerMorpheme.length >= 5);
       } else if (lowerComponent === '점검') {
-        // 점검 matches including compound words like 배터리점검
-        isMatch = lowerMorpheme.includes('점검');
+        // 점검: 정확한 일치 또는 의미 있는 복합어만
+        isMatch = lowerMorpheme === '점검' || 
+                  (lowerMorpheme.includes('점검') && lowerMorpheme.length >= 4);
       } else if (lowerComponent === '하이브리드') {
-        // 하이브리드 matches including compound words like 하이브리드차량
-        isMatch = lowerMorpheme.includes('하이브리드');
+        // 하이브리드: 정확한 일치 또는 의미 있는 복합어만
+        isMatch = lowerMorpheme === '하이브리드' || 
+                  (lowerMorpheme.includes('하이브리드') && lowerMorpheme.length >= 7);
       } else if (lowerComponent === '차량') {
-        // 차량 matches including compound words like 하이브리드차량
-        isMatch = lowerMorpheme.includes('차량');
+        // 차량: 정확한 일치 또는 의미 있는 복합어만
+        isMatch = lowerMorpheme === '차량' || 
+                  (lowerMorpheme.includes('차량') && lowerMorpheme.length >= 4);
       } else if (lowerComponent === '친환경') {
-        // 친환경 matches including compound words like 친환경자동차
-        isMatch = lowerMorpheme.includes('친환경');
+        // 친환경: 정확한 일치 또는 의미 있는 복합어만
+        isMatch = lowerMorpheme === '친환경' || 
+                  (lowerMorpheme.includes('친환경') && lowerMorpheme.length >= 5);
       } else {
-        // Generic matching for other components
-        isMatch = lowerMorpheme === lowerComponent || lowerMorpheme.includes(lowerComponent);
+        // 더 정확한 매칭: 정확히 일치하거나 복합어의 일부로만 인정
+        if (lowerComponent.length >= 3) {
+          // 3글자 이상의 형태소는 정확히 일치하거나 복합어 내 포함
+          isMatch = lowerMorpheme === lowerComponent || 
+                    (lowerMorpheme.includes(lowerComponent) && lowerMorpheme.length > lowerComponent.length);
+        } else {
+          // 2글자 이하는 정확한 일치만 인정 (과다 매칭 방지)
+          isMatch = lowerMorpheme === lowerComponent;
+        }
       }
       
       if (isMatch) {
