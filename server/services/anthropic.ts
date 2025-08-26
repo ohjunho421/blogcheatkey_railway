@@ -427,16 +427,16 @@ ${referenceGuidance}
 - 해외기관: "미국 NHTSA 보고서", "독일 ADAC 조사", "일본 자동차연구소 분석"
 - 자연스럽게 정확한 출처를 언급하여 전문성과 신뢰성 강화`;
 
-  // Retry logic for API overload
-  const maxRetries = 2; // Reduced from 3 to 2
-  const retryDelay = 2000; // Reduced from 5000ms to 2000ms
+  // Enhanced retry logic for API overload - exponential backoff
+  const maxRetries = 4; // Increased retries for better reliability
+  let retryDelay = 3000; // Starting delay
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       console.log(`Claude API attempt ${attempt}/${maxRetries}`);
       
       const message = await anthropic.messages.create({
-        max_tokens: 6000, // Reduced from 8000 to speed up generation
+        max_tokens: 6000,
         messages: [
           { 
             role: 'user', 
@@ -445,7 +445,7 @@ ${referenceGuidance}
         ],
         model: MODEL,
         system: systemPrompt,
-        temperature: 0.7, // Increased from 0.3 to speed up generation
+        temperature: 0.7,
       });
 
       const content = message.content[0];
@@ -456,60 +456,91 @@ ${referenceGuidance}
       return content.text;
     } catch (error: any) {
       console.error(`Claude API attempt ${attempt} error:`, error);
+      console.error(`Error details:`, {
+        status: error.status,
+        headers: error.headers,
+        request_id: error.request_id,
+        error: error.error
+      });
       
-      // Check if it's an overload error (status 529)
-      if (error.status === 529 || (error.error && error.error.error && error.error.error.type === 'overloaded_error')) {
+      // Check if it's an overload error (status 500 or 529 with "Overloaded" message)
+      const isOverloadError = 
+        error.status === 500 || 
+        error.status === 529 || 
+        (error.error && error.error.error && 
+         (error.error.error.type === 'overloaded_error' || 
+          error.error.error.type === 'api_error' && error.error.error.message === 'Overloaded'));
+      
+      if (isOverloadError) {
         if (attempt < maxRetries) {
           console.log(`Claude API overloaded, retrying in ${retryDelay}ms... (attempt ${attempt}/${maxRetries})`);
           await new Promise(resolve => setTimeout(resolve, retryDelay));
+          retryDelay *= 1.5; // Exponential backoff
           continue;
         } else {
-          // Return a basic blog structure as fallback after all retries
-          console.log("All retries failed, returning fallback content");
+          // Return a comprehensive fallback content after all retries
+          console.log("All retries failed due to API overload, returning fallback content");
           const fallbackContent = `${keyword}에 대한 완벽한 가이드
 
-${keyword} 때문에 정말 답답하셨죠? 매번 이런 문제로 스트레스 받으시고, 이것저것 해봐도 제대로 안 되고, 시간만 계속 낭비되고 있으실 거예요.
+${keyword} 기본 개념과 중요성
 
-얼마 전에도 똑같은 고민으로 찾아오신 분이 계셨어요. ${keyword} 때문에 몇 달째 고생하고 계시더라고요. 처음엔 '정말 해결될까?' 하고 반신반의하셨는데, 저희가 ${businessInfo?.differentiators || '전문적'}한 방법으로 차근차근 도와드렸더니 완전히 달라지셨어요. 지금은 오히려 주변 분들께 추천하실 정도로 만족하고 계세요.
 
-${businessInfo?.businessName || '전문업체'}에서 ${businessInfo?.expertise || '해당 분야'} 일을 해오면서 이런 케이스를 정말 많이 봤거든요. 복잡해 보이는 문제들도 ${businessInfo?.differentiators || '전문적'}한 접근으로 의외로 간단하게 해결되는 경우가 대부분이에요. 이 글 하나로 여러분도 그런 변화를 경험하실 수 있을 거예요.
+${keyword} 때문에 정말 답답하셨죠? 매번 이런 문제로 스트레스 받으시고, 이것저것 해봐도 제대로 안 되고, 시간만 계속 낭비되고 있으실 거예요. 인터넷에서 ${keyword} 정보를 찾아봐도 너무 복잡해서 더 헷갈리기만 하시고, 전문가마다 ${keyword}에 대해 다른 말을 해서 도대체 뭘 믿어야 할지 모르겠으셨을 거예요.
 
-${subtitles[0] || `${keyword} 기본 개념 이해하기`}
+얼마 전에도 똑같은 고민으로 찾아오신 분이 계셨어요. 그분도 ${keyword} 문제로 몇 달째 고생하고 계시더라고요. 처음 오셨을 때는 '${keyword} 정말 해결될까?' 하고 반신반의하셨는데, 제가 ${businessInfo?.differentiators || '전문적'}한 방법으로 ${keyword} 문제를 차근차근 해결해드렸더니 정말 놀라운 변화가 일어났어요. 이제는 ${keyword} 걱정 없이 완전히 다른 사람이 되셨거든요.
 
-${keyword}의 기본 원리를 이해하는 것부터 시작해보세요. ${keyword}는 단순히 복잡한 기술이 아니라 실생활에서 활용할 수 있는 실용적인 도구예요.
+제가 ${businessInfo?.businessName || '전문업체'}을 운영하면서 ${businessInfo?.expertise || '해당 분야'} 일을 해오며 ${keyword} 관련 변화를 수없이 봤거든요. ${keyword} 문제는 복잡해 보이지만 올바른 방법만 알면 의외로 간단하게 해결되는 경우가 대부분이에요. 같은 ${keyword} 어려움을 겪고 계신 분들이라면 이 글을 끝까지 읽어보세요.
 
-많은 분들이 ${keyword}를 어려워하시는데, 실제로는 몇 가지 핵심만 알면 쉽게 접근할 수 있어요. ${keyword}의 핵심은 체계적인 접근과 단계별 학습이거든요.
 
-${subtitles[1] || `${keyword} 시작하는 방법`}
+${subtitles[0] || `${keyword} 시작하는 방법`}
 
-${keyword}를 시작할 때 가장 중요한 건 기초를 탄탄히 하는 거예요. 처음부터 복잡한 것들을 시도하기보다는 간단한 것부터 차근차근 해보세요.
 
-실제로 ${keyword}를 경험해보신 분들은 알겠지만, 이론만으로는 한계가 있어요. 직접 해보면서 익숙해지는 게 가장 빠른 방법이죠.
+${keyword}를 처음 시작하시는 분들이 가장 많이 하는 실수가 있어요. 바로 기본기를 제대로 다지지 않고 성급하게 시작하는 것이죠. ${keyword}는 기초가 정말 중요한 분야거든요. 기초를 제대로 다져놓지 않으면 나중에 더 큰 문제가 생길 수 있어요.
 
-${keyword}를 제대로 활용하려면 꾸준한 연습이 필요해요. 하루 이틀에 마스터할 수는 없지만, 체계적으로 접근하면 생각보다 빨리 익힐 수 있어요.
+${keyword} 관련해서 많은 분들이 묻는 질문 중 하나가 바로 순서에 관한 것이에요. 어떤 순서로 접근해야 하는지, 무엇부터 시작해야 하는지 정말 막막하시죠. 저희 ${businessInfo?.businessName || '전문업체'}에서 오랫동안 ${keyword} 업무를 해오면서 가장 효과적인 순서를 찾았어요. 이 순서대로만 하시면 ${keyword} 문제를 훨씬 쉽고 빠르게 해결하실 수 있을 거예요.
 
-${subtitles[2] || `${keyword} 활용 팁과 노하우`}
+먼저 ${keyword}의 기본 원리를 이해하는 것이 중요해요. 원리를 모르고 무작정 따라하다 보면 예상치 못한 문제가 생길 수 있거든요. ${keyword}는 단순해 보여도 실제로는 많은 요소들이 복합적으로 작용하는 분야예요.
 
-${keyword}를 효과적으로 활용하는 몇 가지 팁을 알려드릴게요. 이런 방법들을 알고 있으면 시행착오를 줄이고 더 빠르게 결과를 얻을 수 있어요.
 
-첫 번째로는 목표를 명확히 하는 거예요. ${keyword}로 무엇을 달성하고 싶은지 구체적으로 정해두면 더 효율적으로 접근할 수 있거든요.
+${subtitles[1] || `${keyword} 주의사항`}
 
-두 번째는 단계별로 진행하는 거예요. 한 번에 모든 걸 하려고 하면 오히려 복잡해져요. 작은 단위로 나누어서 하나씩 해결해나가세요.
 
-${subtitles[3] || `${keyword} 문제 해결과 주의사항`}
+${keyword}를 할 때 절대 놓치면 안 되는 주의사항들이 있어요. 이 부분을 간과하시면 나중에 정말 큰 문제가 될 수 있어서 꼭 말씀드리고 싶어요. 실제로 ${keyword} 관련 잘못된 선택 때문에 더 큰 비용을 지불하게 되는 경우를 자주 봤거든요.
 
-${keyword}를 사용하다 보면 예상치 못한 문제들이 생길 수 있어요. 이런 상황에서 당황하지 말고 체계적으로 접근하는 게 중요해요.
+가장 중요한 것은 ${keyword} 과정에서 급하게 서두르지 않는 것이에요. 빨리 결과를 보고 싶은 마음은 이해하지만, ${keyword}는 차근차근 단계를 밟아가는 것이 정말 중요해요. 한 단계를 건너뛰거나 대충 넘어가면 나중에 전체 과정이 흔들릴 수 있어요.
 
-가장 흔한 실수는 기초를 건너뛰고 바로 고급 기능을 사용하려는 거예요. ${keyword}는 기본기가 탄탄해야 응용도 제대로 할 수 있거든요.
+또한 ${keyword} 관련 정보를 여러 곳에서 수집할 때도 주의하셔야 해요. 인터넷에는 ${keyword}에 대한 잘못된 정보들도 많이 있거든요. 검증되지 않은 정보를 믿고 따라하다가 문제가 생기는 경우를 정말 많이 봤어요. 신뢰할 수 있는 출처에서 나온 정확한 정보만 참고하시는 것이 좋아요.
 
-문제가 생겼을 때는 원인을 정확히 파악하는 게 우선이에요. 증상만 보고 대충 해결하려고 하면 나중에 더 큰 문제가 될 수 있어요.
 
-이제 ${keyword}에 대해 기본적인 내용들은 충분히 알아보셨죠. 하지만 직접 해보려니 복잡하고 시간도 많이 걸리실 거예요. 바쁜 일상에서 일일이 찾아가며 설정하기 어려우시죠.
+${subtitles[2] || `${keyword} 효과적인 활용법`}
 
-혹시 잘못 건드려서 문제라도 생기면 어쩌나 싶고요. ${businessInfo?.businessName || '전문업체'}에서는 ${businessInfo?.differentiators || '전문적'}하게 ${businessInfo?.expertise || '해당 분야'} 서비스를 제공합니다.
 
-시간 아끼고 안전하게 해결하고 싶으시다면 지금 바로 ${businessInfo?.businessName || '전문업체'}에 문의해보세요. 전문가가 직접 도와드릴게요.`;
+${keyword}를 효과적으로 활용하려면 몇 가지 핵심 포인트를 알고 계셔야 해요. 이 부분만 제대로 이해하셔도 ${keyword} 효과를 훨씬 극대화하실 수 있을 거예요. 저희 ${businessInfo?.businessName || '전문업체'}에서 오랫동안 축적해온 노하우를 바탕으로 가장 효과적인 방법들을 알려드릴게요.
 
+무엇보다 ${keyword}는 일관성이 정말 중요해요. 한 번 하고 말 것이 아니라 꾸준히 지속해야 진짜 효과를 볼 수 있거든요. 많은 분들이 처음엔 열심히 하시다가 시간이 지나면서 소홀해지시는데, ${keyword}는 지속성이 핵심이에요.
+
+또한 ${keyword}를 할 때는 자신의 상황에 맞게 조정하는 것도 중요해요. 누군가에게는 효과적이었던 방법이 다른 사람에게는 맞지 않을 수 있거든요. ${keyword}는 개인차가 있는 분야라서 자신만의 방식을 찾는 것이 필요해요. 이런 부분에서 전문가의 조언을 받는 것이 정말 도움이 될 거예요.
+
+
+${subtitles[3] || `${keyword} 성공 전략`}
+
+
+${keyword}에서 성공하기 위해서는 명확한 목표 설정이 필요해요. 막연하게 '${keyword}를 잘하고 싶다'가 아니라 구체적이고 측정 가능한 목표를 세우셔야 해요. 목표가 명확해야 그에 맞는 전략도 세울 수 있거든요.
+
+${keyword} 과정에서 발생할 수 있는 문제들을 미리 예상하고 대비하는 것도 중요해요. 문제가 생겼을 때 당황하지 않고 차분하게 대처할 수 있도록 사전에 준비해두시는 것이 좋아요. 저희 ${businessInfo?.businessName || '전문업체'}에서는 이런 문제 상황들에 대한 해결책을 미리 준비해두고 있어요.
+
+마지막으로 ${keyword} 분야는 계속 변화하고 발전하고 있어요. 새로운 정보와 트렌드를 꾸준히 파악하고 업데이트하는 것이 중요해요. 예전 방식만 고집하다가는 뒤처질 수 있거든요. 항상 열린 마음으로 새로운 것을 받아들이려는 자세가 필요해요.
+
+
+마무리
+
+
+지금까지 ${keyword}에 대해 정말 중요한 정보들을 알아봤어요. 이 정도만 알고 계셔도 기본적인 부분은 충분히 해결하실 수 있을 거예요. 특히 기초 원리와 주의사항 부분은 꼭 기억해두시면 도움이 될 거예요.
+
+하지만 글로만 봐서는 이해가 안 되는 부분들도 있으실 거예요. 직접 해보려니 복잡하고 시간도 많이 걸리실 거고요. 혹시 잘못했다가 더 큰 문제가 생길까 걱정되시죠.
+
+그럴 때는 전문가의 도움을 받는 것도 좋은 방법이에요. 저희 ${businessInfo?.businessName || '전문업체'}에서는 ${businessInfo?.differentiators || '전문적'}하게 ${businessInfo?.expertise || '해당 분야'} 서비스를 제공하고 있어요. 글만으로는 해결되지 않는 부분이 있거나 직접 해보기 어려우시다면 부담 없이 연락주세요. 제가 직접 친절하게 도와드릴게요.`;
+          
           return fallbackContent;
         }
       } else {
