@@ -4,11 +4,11 @@
 This is a full-stack TypeScript application for generating SEO-optimized blog content using multiple AI models (Gemini, Claude, Perplexity, OpenAI). It aims to produce high-quality, keyword-optimized blog posts with proper SEO metrics, citations, and infographic images. Users can copy text content and download individual infographics. The project's vision is to leverage AI for efficient and effective content creation, addressing market needs for scalable and high-quality digital marketing assets.
 
 ## Recent Changes (August 26, 2025)
-- **MAJOR OPTIMIZATION**: Implemented project 4e075ea5-819d-4f00-b471-64b16c93d1d3 style optimization
-- **Morpheme Frequency Reduction**: Changed from 15-17 occurrences to 4-7 occurrences per component (매우 보수적)
-- **Complete Keyword Reduction**: Changed from 5-7 to 3-5 occurrences for complete keyword
-- **Mobile Copy Enhancement**: Simplified to 15-character line breaks for optimal mobile display
-- **Conservative SEO Guidelines**: Reduced all morpheme targets to prevent keyword spam detection
+- **CONFIGURATION RESTORATION**: Reverted to project 4f383ee4-7941-4ffe-922b-53f88ff5c307 settings
+- **Morpheme Frequency**: Restored original 15-17 occurrences per component
+- **Complete Keyword**: Restored original 5-7 occurrences for complete keyword  
+- **Mobile Copy**: Restored Korean-aware 21-character line break formatting
+- **SEO Guidelines**: Restored proven keyword optimization targets
 - **Enhanced Error Handling**: Maintained deployment version a43e2530 single-attempt success logic
 
 ## User Preferences

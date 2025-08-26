@@ -493,25 +493,25 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
   const componentMatches = findKeywordComponentMatches(allMorphemes, keyword);
   const keywordComponents = extractKeywordComponents(keyword);
   
-  // Check complete keyword condition (3-5 times)
-  const isCompleteKeywordOptimized = completeKeywordCount >= 3 && completeKeywordCount <= 5;
+  // Check complete keyword condition (5-7 times)
+  const isCompleteKeywordOptimized = completeKeywordCount >= 5 && completeKeywordCount <= 7;
   
-  // Check individual component conditions (4-7 times each, 매우 보수적 빈도)
+  // Check individual component conditions (15-17 times each)
   let areComponentsOptimized = true;
   const componentIssues: string[] = [];
   
-  console.log(`Complete keyword "${keyword}" appears: ${completeKeywordCount} times (3-5 times required)`);
+  console.log(`Complete keyword "${keyword}" appears: ${completeKeywordCount} times (5-7 times required)`);
   
   for (const component of keywordComponents) {
     const matches = componentMatches.get(component) || [];
     const count = matches.length;
     
-    if (count < 4 || count > 7) {
+    if (count < 15 || count > 17) {
       areComponentsOptimized = false;
-      if (count < 4) {
-        componentIssues.push(`${component}: ${count}회 (부족, 4-7회 권장)`);
+      if (count < 15) {
+        componentIssues.push(`${component}: ${count}회 (부족, 15-17회 필요)`);
       } else {
-        componentIssues.push(`${component}: ${count}회 (과다, 4-7회 권장)`);
+        componentIssues.push(`${component}: ${count}회 (과다, 15-17회 필요)`);
       }
     }
   }
