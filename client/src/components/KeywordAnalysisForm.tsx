@@ -299,36 +299,32 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
-                              className={`flex items-center justify-between p-3 bg-card rounded border transition-all duration-200 ${
+                              className={`p-3 bg-card rounded border transition-all duration-200 ${
                                 snapshot.isDragging 
                                   ? 'bg-primary/10 border-primary shadow-lg transform rotate-2' 
                                   : 'hover:bg-muted/50 hover:shadow-sm'
                               }`}
                             >
-                              <div className="flex items-center flex-1">
-                                <div
-                                  {...provided.dragHandleProps}
-                                  className="mr-3 p-1 cursor-grab active:cursor-grabbing hover:bg-muted rounded transition-colors"
-                                  title="드래그하여 순서 변경"
-                                >
-                                  <GripVertical className="h-4 w-4 text-muted-foreground" />
-                                </div>
-                                {editingSubtitle === index ? (
-                                  <Textarea
-                                    value={editedSubtitles[index] || subtitle}
-                                    onChange={(e) => handleSubtitleEdit(index, e.target.value)}
-                                    className="flex-1 mr-2"
-                                    rows={2}
-                                    placeholder="소제목을 입력하세요"
-                                    autoFocus
-                                  />
-                                ) : (
-                                  <span className="text-sm flex-1">{index + 1}. {subtitle}</span>
-                                )}
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                {editingSubtitle === index ? (
-                                  <>
+                              {editingSubtitle === index ? (
+                                <div className="space-y-3">
+                                  <div className="flex items-center">
+                                    <div
+                                      {...provided.dragHandleProps}
+                                      className="mr-3 p-1 cursor-grab active:cursor-grabbing hover:bg-muted rounded transition-colors"
+                                      title="드래그하여 순서 변경"
+                                    >
+                                      <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                    </div>
+                                    <Textarea
+                                      value={editedSubtitles[index] || subtitle}
+                                      onChange={(e) => handleSubtitleEdit(index, e.target.value)}
+                                      className="flex-1"
+                                      rows={2}
+                                      placeholder="소제목을 입력하세요"
+                                      autoFocus
+                                    />
+                                  </div>
+                                  <div className="flex justify-end space-x-2">
                                     <Button
                                       size="sm"
                                       onClick={handleSaveSubtitles}
@@ -347,8 +343,20 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
                                     >
                                       취소
                                     </Button>
-                                  </>
-                                ) : (
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center flex-1">
+                                    <div
+                                      {...provided.dragHandleProps}
+                                      className="mr-3 p-1 cursor-grab active:cursor-grabbing hover:bg-muted rounded transition-colors"
+                                      title="드래그하여 순서 변경"
+                                    >
+                                      <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                    </div>
+                                    <span className="text-sm flex-1">{index + 1}. {subtitle}</span>
+                                  </div>
                                   <Button
                                     size="sm"
                                     variant="ghost"
@@ -359,8 +367,8 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
                                   >
                                     <Edit2 className="h-4 w-4" />
                                   </Button>
-                                )}
-                              </div>
+                                </div>
+                              )}
                             </div>
                           )}
                         </Draggable>
