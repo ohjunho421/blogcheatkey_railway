@@ -66,11 +66,28 @@ export async function generateStrictMorphemeContent(
       keywordMorphemeCount: analysis.keywordMorphemeCount
     });
     
-    // 배포 버전 a43e2530과 동일: 항상 성공 처리
-    console.log(`SUCCESS: Content accepted on attempt ${attempts} (배포 버전 a43e2530 로직)`);
+    // 실제 글자수와 형태소 조건 검증
+    const isCharacterCountValid = analysis.characterCount >= 1700 && analysis.characterCount <= 2000;
+    const isKeywordCountValid = analysis.keywordMorphemeCount >= 5 && analysis.keywordMorphemeCount <= 7;
+    
+    console.log(`Validation results:`, {
+      characterCount: analysis.characterCount,
+      isCharacterCountValid,
+      keywordCount: analysis.keywordMorphemeCount,
+      isKeywordCountValid,
+      isOptimized: analysis.isOptimized
+    });
+    
+    // 조건 충족 여부와 관계없이 생성된 콘텐츠 반환 (사용자가 확인 가능)
+    console.log(`Content generation completed on attempt ${attempts}`);
     return {
       content,
-      analysis: { ...analysis, isOptimized: true },
+      analysis: {
+        ...analysis,
+        isOptimized: isCharacterCountValid && isKeywordCountValid,
+        isLengthOptimized: isCharacterCountValid,
+        isKeywordOptimized: isKeywordCountValid
+      },
       attempts,
       success: true
     };

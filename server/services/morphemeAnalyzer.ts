@@ -516,8 +516,8 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
     }
   }
   
-  // Check length condition (1500-1700 characters excluding spaces)
-  const isLengthOptimized = characterCount >= 1500 && characterCount <= 1700;
+  // Check length condition (1700-2000 characters excluding spaces)
+  const isLengthOptimized = characterCount >= 1700 && characterCount <= 2000;
   
   // Overall keyword optimization status
   const isKeywordOptimized = isCompleteKeywordOptimized && areComponentsOptimized;
@@ -552,12 +552,12 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
   }
   
   if (!isLengthOptimized) {
-    if (characterCount < 1500) {
-      issues.push(`글자수 부족: ${characterCount}자 (1500-1700자 필요)`);
-      suggestions.push(`내용을 추가하여 1500자 이상으로 늘려주세요`);
-    } else if (characterCount > 1700) {
-      issues.push(`글자수 초과: ${characterCount}자 (1500-1700자 필요)`);
-      suggestions.push(`내용을 줄여서 1700자 이하로 맞춰주세요`);
+    if (characterCount < 1700) {
+      issues.push(`글자수 부족: ${characterCount}자 (1700-2000자 필요)`);
+      suggestions.push(`내용을 추가하여 1700자 이상으로 늘려주세요`);
+    } else if (characterCount > 2000) {
+      issues.push(`글자수 초과: ${characterCount}자 (1700-2000자 필요)`);
+      suggestions.push(`내용을 줄여서 2000자 이하로 맞춰주세요`);
     }
   }
   
@@ -572,7 +572,7 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
     isLengthOptimized,
     keywordMorphemeCount: completeKeywordCount,
     characterCount,
-    targetCharacterRange: '1500-1700자',
+    targetCharacterRange: '1700-2000자',
     issues,
     suggestions,
     customMorphemes: customMorphemeCheck,
@@ -587,7 +587,7 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
       isLengthOptimized: false,
       keywordMorphemeCount: 0,
       characterCount: content.replace(/\s/g, '').length,
-      targetCharacterRange: '1500-1700자',
+      targetCharacterRange: '1700-2000자',
       issues: ['형태소 분석 중 오류가 발생했습니다'],
       suggestions: ['키워드를 다시 확인해주세요'],
       customMorphemes: { used: [], missing: [] },
