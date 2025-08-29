@@ -493,7 +493,7 @@ function checkAllMorphemeFrequencies(content: string, keyword: string): { overus
   const overused: Array<{morpheme: string, count: number}> = [];
   for (const [morpheme, count] of Array.from(morphemeFrequency.entries())) {
     const isKeywordComponent = keywordComponentsLower.includes(morpheme);
-    const maxAllowed = isKeywordComponent ? 20 : 13;
+    const maxAllowed = isKeywordComponent ? 17 : 13;
     
     if (count > maxAllowed) {
       overused.push({ morpheme, count });
@@ -540,12 +540,12 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
     const matches = componentMatches.get(component) || [];
     const count = matches.length;
     
-    if (count < 15 || count > 20) {
+    if (count < 15 || count > 17) {
       areComponentsOptimized = false;
       if (count < 15) {
-        componentIssues.push(`${component}: ${count}회 (부족, 15-17회 권장)`);
-      } else if (count > 20) {
-        componentIssues.push(`${component}: ${count}회 (과다, 최대 20회)`);
+        componentIssues.push(`${component}: ${count}회 (부족, 15-17회 필요)`);
+      } else if (count > 17) {
+        componentIssues.push(`${component}: ${count}회 (과다, 15-17회 필요)`);
       }
     }
   }
@@ -583,7 +583,7 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
     for (const issue of componentIssues) {
       issues.push(`형태소 출현 횟수 불균형: ${issue}`);
     }
-    suggestions.push(`키워드 구성 요소들(${keywordComponents.join(', ')})을 각각 15-17회 사용하되, 최대 20회를 넘지 마세요`);
+    suggestions.push(`키워드 구성 요소들(${keywordComponents.join(', ')})을 각각 정확히 15-17회씩 사용해주세요`);
   }
   
   if (!isLengthOptimized) {
@@ -604,7 +604,7 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
   // 형태소 초과 사용 검사 결과 추가
   if (hasOverusedMorphemes) {
     for (const overused of frequencyCheck.overused) {
-      const maxAllowed = keywordComponents.includes(overused.morpheme) ? 20 : 13;
+      const maxAllowed = keywordComponents.includes(overused.morpheme) ? 17 : 13;
       issues.push(`형태소 과다 사용: "${overused.morpheme}" ${overused.count}회 (최대 ${maxAllowed}회)`);
     }
     suggestions.push(`과다 사용된 형태소들을 동의어나 유의어로 교체해주세요`);
