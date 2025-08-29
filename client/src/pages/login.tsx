@@ -96,9 +96,9 @@ export default function Login() {
     }
   };
 
-  const handleGoogleLogin = () => {
-    window.location.href = "/api/auth/google";
-  };
+  // const handleGoogleLogin = () => {
+  //   window.location.href = "/api/auth/google";
+  // };
 
 
 
@@ -112,6 +112,7 @@ export default function Login() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Google 로그인 오류 Alert 주석 처리
           {location.includes("error=google") && (
             <Alert variant="destructive">
               <AlertDescription>
@@ -119,6 +120,7 @@ export default function Login() {
               </AlertDescription>
             </Alert>
           )}
+          */}
 
 
           <Form {...form}>
@@ -176,6 +178,7 @@ export default function Login() {
             </form>
           </Form>
 
+          {/* 소셜 로그인 버튼 주석 처리
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t" />
@@ -196,6 +199,30 @@ export default function Login() {
             <FaGoogle className="mr-2 h-4 w-4" />
             Google로 계속하기
           </Button>
+          */}
+
+          {/* 이메일 가입 유도 버튼으로 교체 */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                계정이 없으시다면
+              </span>
+            </div>
+          </div>
+
+          <Link href="/signup">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+            >
+              <Mail className="mr-2 h-4 w-4" />
+              이메일로 회원가입하기
+            </Button>
+          </Link>
 
           <div className="text-center space-y-2">
             <p className="text-sm text-gray-600">

@@ -67,9 +67,9 @@ export default function Signup() {
     }
   };
 
-  const handleGoogleSignup = () => {
-    window.location.href = "/api/auth/google";
-  };
+  // const handleGoogleSignup = () => {
+  //   window.location.href = "/api/auth/google";
+  // };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -171,6 +171,7 @@ export default function Signup() {
             </form>
           </Form>
 
+          {/* 소셜 로그인 버튼 주석 처리
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t" />
@@ -207,6 +208,7 @@ export default function Signup() {
             </svg>
             구글로 시작하기
           </Button>
+          */}
 
           <div className="text-center">
             <p className="text-sm text-gray-600">
