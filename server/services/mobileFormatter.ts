@@ -15,11 +15,8 @@ const KOREAN_PARTICLES = new Set([
   '은', '는', '이', '가', '을', '를', '에', '에서', '로', '으로', '와', '과', '의', '도', '만', '까지', '부터', '처럼', '같이', '보다', '마다', '조차', '라도', '나마', '이나', '라면'
 ]);
 
-// 한국어 어미들 (동사/형용사와 분리되면 안됨)  
-const KOREAN_ENDINGS = new Set([
-  'ㅂ니다', '습니다', '입니다', '됩니다', '합니다', '했습니다', '겠습니다',
-  '다', '죠', '요', '네요', '어요', '아요', '에요', '세요', '해요'
-]);
+// 한국어 연결사들 (자연스러운 줄바꿈 포인트)
+const KOREAN_CONJUNCTIONS = ['그리고', '또한', '하지만', '그러나', '따라서', '그래서'];
 
 // 문장 끝 구두점들
 const SENTENCE_ENDINGS = /([.!?…？！。]+["'"')\]\s]*)/g;
@@ -42,28 +39,63 @@ function getKoreanLength(text: string): number {
 }
 
 /**
- * 한국어 단어 경계 체크 (조사, 어미 등 고려)
+ * 자연스러운 줄바꿈 위치인지 체크 (단순화된 규칙)
  */
-function canBreakHere(text: string, position: number): boolean {
+function isSafeBreakPoint(text: string, position: number): boolean {
   if (position >= text.length) return true;
+  if (position === 0) return true;
   
-  // 현재 위치 이후 단어 추출
   const remainingText = text.slice(position);
-  const nextWord = remainingText.split(/\s+/)[0];
+  const nextChar = remainingText[0];
   
-  // 조사나 어미로 시작하면 줄바꿈 금지
+  // 구두점으로 시작하면 줄바꿈 안함
+  if (LEADING_PUNCTUATION.has(nextChar)) return false;
+  
+  // 다음 단어가 조사로 시작하면 줄바꿈 안함
+  const nextWord = remainingText.split(/\s+/)[0];
   for (const particle of Array.from(KOREAN_PARTICLES)) {
     if (nextWord.startsWith(particle)) return false;
   }
   
-  for (const ending of Array.from(KOREAN_ENDINGS)) {
-    if (nextWord.endsWith(ending)) return false;
+  return true;
+}
+
+/**
+ * 자연스러운 줄바꿈 위치 찾기
+ */
+function findSafeBreakPoints(text: string): number[] {
+  const safePoints: number[] = [0]; // 시작점
+  
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+    
+    // 공백 다음
+    if (char === ' ' && nextChar && nextChar !== ' ') {
+      if (isSafeBreakPoint(text, i + 1)) {
+        safePoints.push(i + 1);
+      }
+    }
+    
+    // 쉼표나 마침표 다음
+    if ((char === ',' || char === '.' || char === '，' || char === '。') && nextChar === ' ') {
+      if (isSafeBreakPoint(text, i + 2)) {
+        safePoints.push(i + 2);
+      }
+    }
+    
+    // 연결사 다음
+    for (const conjunction of KOREAN_CONJUNCTIONS) {
+      if (text.slice(i).startsWith(conjunction + ' ')) {
+        const afterPos = i + conjunction.length + 1;
+        if (isSafeBreakPoint(text, afterPos)) {
+          safePoints.push(afterPos);
+        }
+      }
+    }
   }
   
-  // 구두점으로 시작하면 줄바꿈 금지
-  if (LEADING_PUNCTUATION.has(remainingText[0])) return false;
-  
-  return true;
+  return safePoints;
 }
 
 /**
@@ -223,55 +255,51 @@ function formatLongSentenceKorean(sentence: string, maxWidth: number): string[] 
 }
 
 /**
- * 한국어 규칙을 고려해서 강제로 줄을 분리
+ * 자연스러운 한국어 줄바꿈 (lastSafePos 방식)
  */
 function forceBreakLineKorean(text: string, maxWidth: number): string[] {
   const lines: string[] = [];
-  let currentLine = '';
+  const safeBreakPoints = findSafeBreakPoints(text);
   
-  // 그래피컬 문자 단위로 분리 시도
-  if (typeof Intl !== 'undefined' && Intl.Segmenter) {
-    try {
-      const segmenter = new Intl.Segmenter('ko', { granularity: 'grapheme' });
-      const segments = Array.from(segmenter.segment(text));
+  let currentStart = 0;
+  
+  while (currentStart < text.length) {
+    let bestEnd = currentStart;
+    let lastSafeEnd = currentStart;
+    
+    // 현재 위치에서 maxWidth 내에서 가장 긴 부분 찾기
+    for (let i = currentStart; i < text.length; i++) {
+      const segment = text.slice(currentStart, i + 1);
+      const segmentLength = getKoreanLength(segment);
       
-      for (const segment of segments) {
-        const testLine = currentLine + segment.segment;
-        if (getKoreanLength(testLine) <= maxWidth && canBreakHere(text, currentLine.length)) {
-          currentLine += segment.segment;
-        } else {
-          if (currentLine) {
-            lines.push(currentLine);
-          }
-          currentLine = segment.segment;
+      if (segmentLength <= maxWidth) {
+        bestEnd = i + 1;
+        
+        // 안전한 줄바꿈 포인트인지 확인
+        if (safeBreakPoints.includes(i + 1) || i === text.length - 1) {
+          lastSafeEnd = i + 1;
         }
-      }
-    } catch (e) {
-      // fallback
-    }
-  }
-  
-  // fallback: 한국어 고려한 문자 단위 분리
-  if (lines.length === 0) {
-    let position = 0;
-    for (const char of text) {
-      const testLine = currentLine + char;
-      if (getKoreanLength(testLine) <= maxWidth && canBreakHere(text, position)) {
-        currentLine += char;
       } else {
-        if (currentLine) {
-          lines.push(currentLine);
-        }
-        currentLine = char;
+        break;
       }
-      position++;
+    }
+    
+    // 안전한 줄바꿈 위치가 있으면 그곳에서, 없으면 최대한 긴 곳에서 자르기
+    const endPos = lastSafeEnd > currentStart ? lastSafeEnd : bestEnd;
+    const line = text.slice(currentStart, endPos).trim();
+    
+    if (line) {
+      lines.push(line);
+    }
+    
+    currentStart = endPos;
+    
+    // 무한루프 방지
+    if (currentStart === endPos && endPos < text.length) {
+      currentStart++;
     }
   }
   
-  if (currentLine) {
-    lines.push(currentLine);
-  }
-
   return lines.length > 0 ? lines : [text];
 }
 
