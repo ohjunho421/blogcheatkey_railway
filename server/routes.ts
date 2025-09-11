@@ -1079,6 +1079,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 사용자 통계와 함께 조회 (슈퍼 관리자만)
+  app.get("/api/admin/users/stats", requireSuperAdmin, async (req, res) => {
+    try {
+      const usersWithStats = await storage.getUsersWithStats();
+      res.json(usersWithStats);
+    } catch (error) {
+      console.error("Admin get users with stats error:", error);
+      res.status(500).json({ error: "사용자 통계 조회에 실패했습니다" });
+    }
+  });
+
   // 사용자 권한 업데이트 (슈퍼 관리자만) - 무통장 입금 후 수동으로 권한 부여
   app.put("/api/admin/users/:id/permissions", requireSuperAdmin, async (req, res) => {
     try {
