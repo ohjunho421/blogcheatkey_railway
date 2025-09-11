@@ -236,7 +236,7 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
                           {section.text}
                         </div>
                       ) : (
-                        <div className="mb-2 break-words">
+                        <div className="mb-2 whitespace-pre-wrap break-keep">
                           {section.text || '\u00A0'}
                         </div>
                       )}
@@ -332,13 +332,9 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
                     </span>
                   </div>
                   <div className="bg-white dark:bg-gray-800 p-3 rounded border max-w-xs mx-auto">
-                    <div className="text-xs leading-relaxed font-normal text-gray-800 dark:text-gray-200" 
+                    <div className="text-xs leading-relaxed font-normal text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-keep" 
                          style={{ lineHeight: '1.6' }}>
-                      {mobilePreviewContent.split('\n').map((line, index) => (
-                        <div key={index} className={line.trim() === '' ? 'mb-2' : 'mb-1'}>
-                          {line || '\u00A0'}
-                        </div>
-                      ))}
+                      {mobilePreviewContent}
                     </div>
                   </div>
                 </div>

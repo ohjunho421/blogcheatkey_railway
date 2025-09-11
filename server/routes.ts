@@ -11,6 +11,7 @@ import { searchResearch, getDetailedResearch } from "./services/perplexity";
 import { analyzeSEOOptimization } from "./services/seoOptimizer";
 import { enhancedSEOAnalysis } from "./services/morphemeAnalyzer";
 import { TitleGenerator } from "./services/titleGenerator";
+import { formatForMobile } from "./services/mobileFormatter";
 import bcrypt from "bcryptjs";
 
 // Helper function to get authenticated user ID
@@ -650,8 +651,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let content = project.generatedContent;
       
       if (format === 'mobile') {
-        // 모바일용 포맷팅: 15-21자 한글 기준, 문맥상 자연스러운 줄바꿈
-        content = formatContentForMobile(project.generatedContent);
+        // 모바일용 포맷팅: 구두점 규칙 적용된 스마트 줄바꿈
+        content = formatForMobile(project.generatedContent, 30);
       }
 
       res.json({ content });
@@ -661,106 +662,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // 모바일용 콘텐츠 포맷팅 함수
-  function formatContentForMobile(content: string): string {
-    return content
-      .split('\n')
-      .map(line => {
-        if (line.trim() === '') return '';
-        
-        // 한글 문자 개수 기준으로 계산 (영어, 숫자, 특수문자는 0.5로 계산)
-        function getKoreanLength(text: string): number {
-          let length = 0;
-          for (const char of text) {
-            if (/[가-힣]/.test(char)) {
-              length += 1; // 한글은 1
-            } else {
-              length += 0.5; // 영어, 숫자, 특수문자는 0.5
-            }
-          }
-          return length;
-        }
-
-        // 구두점이 단독으로 줄이 되지 않도록 하는 함수
-        function isPunctuation(text: string): boolean {
-          return /^[,.!?\s]*$/.test(text);
-        }
-        
-        // 21자를 넘으면 줄바꿈 처리
-        if (getKoreanLength(line) > 21) {
-          const segments = [];
-          let currentSegment = '';
-          
-          // 문장 부호나 쉼표 기준으로 먼저 나누기
-          const phrases = line.split(/([,.!?])/);
-          
-          for (let i = 0; i < phrases.length; i++) {
-            const phrase = phrases[i];
-            
-            // 구두점인 경우 항상 이전 세그먼트에 붙이기
-            if (isPunctuation(phrase) && phrase.trim() !== '') {
-              currentSegment += phrase;
-              continue;
-            }
-            
-            const testSegment = currentSegment + phrase;
-            
-            if (getKoreanLength(testSegment) > 21 && currentSegment.trim() !== '') {
-              // 현재 세그먼트를 저장하고 새로운 세그먼트 시작
-              segments.push(currentSegment.trim());
-              currentSegment = phrase;
-            } else {
-              currentSegment += phrase;
-              
-              // 만약 현재 세그먼트가 너무 길고 단어 분할이 필요한 경우
-              if (getKoreanLength(currentSegment) > 21 && !isPunctuation(phrase)) {
-                // 단어 단위로 분할
-                const words = currentSegment.split(/(\s+)/);
-                let wordSegment = '';
-                const wordSegments = [];
-                
-                for (const word of words) {
-                  const testWord = wordSegment + word;
-                  
-                  if (getKoreanLength(testWord) > 21 && wordSegment.trim() !== '') {
-                    wordSegments.push(wordSegment.trim());
-                    wordSegment = word;
-                  } else {
-                    wordSegment += word;
-                  }
-                }
-                
-                if (wordSegment.trim()) {
-                  wordSegments.push(wordSegment.trim());
-                }
-                
-                // 마지막 세그먼트를 제외하고 모두 segments에 추가
-                if (wordSegments.length > 1) {
-                  segments.push(...wordSegments.slice(0, -1));
-                  currentSegment = wordSegments[wordSegments.length - 1] || '';
-                }
-              }
-            }
-          }
-          
-          // 마지막 세그먼트 추가
-          if (currentSegment.trim()) {
-            segments.push(currentSegment.trim());
-          }
-          
-          // 구두점만 있는 줄 제거
-          const filteredSegments = segments.filter(segment => 
-            segment.trim() !== '' && !isPunctuation(segment)
-          );
-          
-          return filteredSegments.join('\n');
-        }
-        
-        return line;
-      })
-      .join('\n')
-      .replace(/\n\s*\n/g, '\n\n'); // 불필요한 빈 줄 정리
-  }
 
   // ===== CHAT FUNCTIONALITY =====
   
