@@ -41,6 +41,7 @@ export interface IStorage {
   getUsersWithStats(): Promise<(User & { completedProjectsCount: number; totalProjectsCount: number })[]>;
   updateUserPermissions(userId: number, permissions: UpdateUserPermissions): Promise<User>;
   makeUserAdmin(email: string): Promise<User | null>;
+  checkAndExpireSubscriptions(): Promise<User[]>;
   
   // Authentication methods
   loginUser(email: string, password: string): Promise<User | null>;
@@ -296,6 +297,32 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return updated || null;
+  }
+
+  async checkAndExpireSubscriptions(): Promise<User[]> {
+    const now = new Date();
+    
+    // 만료된 구독을 찾아서 권한 비활성화
+    const expiredUsers = await db
+      .update(users)
+      .set({
+        subscriptionTier: "basic",
+        canGenerateContent: false,
+        canGenerateImages: false,
+        canUseChatbot: false,
+        isActive: false,
+        updatedAt: now
+      })
+      .where(
+        and(
+          sql`${users.subscriptionExpiresAt} IS NOT NULL`,
+          sql`${users.subscriptionExpiresAt} < ${now}`,
+          eq(users.isActive, true)
+        )
+      )
+      .returning();
+
+    return expiredUsers;
   }
 
   async loginUser(email: string, password: string): Promise<User | null> {

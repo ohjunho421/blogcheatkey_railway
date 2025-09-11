@@ -258,8 +258,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // ===== BLOG PROJECT ROUTES =====
   
-  // Create new blog project
-  app.post("/api/projects", async (req, res) => {
+  // Create new blog project (with subscription expiry check)
+  app.post("/api/projects", checkSubscriptionExpiry, async (req, res) => {
     try {
       const { keyword } = req.body;
       
@@ -1050,6 +1050,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "업체 정보 삭제에 실패했습니다" });
     }
   });
+
+  // 구독 만료 자동 체크 미들웨어
+  const checkSubscriptionExpiry = async (req: any, res: any, next: any) => {
+    try {
+      // 정기적으로 만료된 구독들을 체크하고 비활성화
+      await storage.checkAndExpireSubscriptions();
+      next();
+    } catch (error) {
+      console.error("Subscription expiry check error:", error);
+      next(); // 에러가 발생해도 계속 진행
+    }
+  };
 
   // ===== ADMIN ROUTES =====
   
