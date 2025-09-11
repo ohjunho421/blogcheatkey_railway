@@ -654,6 +654,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           return length;
         }
+
+        // 구두점이 단독으로 줄이 되지 않도록 하는 함수
+        function isPunctuation(text: string): boolean {
+          return /^[,.!?\s]*$/.test(text);
+        }
         
         // 21자를 넘으면 줄바꿈 처리
         if (getKoreanLength(line) > 21) {
@@ -665,64 +670,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           for (let i = 0; i < phrases.length; i++) {
             const phrase = phrases[i];
+            
+            // 구두점인 경우 항상 이전 세그먼트에 붙이기
+            if (isPunctuation(phrase) && phrase.trim() !== '') {
+              currentSegment += phrase;
+              continue;
+            }
+            
             const testSegment = currentSegment + phrase;
             
-            if (getKoreanLength(testSegment) > 21) {
-              if (currentSegment.trim()) {
-                segments.push(currentSegment.trim());
-                currentSegment = phrase;
-              } else {
-                // 구문 자체가 너무 길 경우 단어 단위로 분할
-                const words = phrase.split(/(\s+)/);
+            if (getKoreanLength(testSegment) > 21 && currentSegment.trim() !== '') {
+              // 현재 세그먼트를 저장하고 새로운 세그먼트 시작
+              segments.push(currentSegment.trim());
+              currentSegment = phrase;
+            } else {
+              currentSegment += phrase;
+              
+              // 만약 현재 세그먼트가 너무 길고 단어 분할이 필요한 경우
+              if (getKoreanLength(currentSegment) > 21 && !isPunctuation(phrase)) {
+                // 단어 단위로 분할
+                const words = currentSegment.split(/(\s+)/);
                 let wordSegment = '';
+                const wordSegments = [];
                 
                 for (const word of words) {
                   const testWord = wordSegment + word;
                   
-                  if (getKoreanLength(testWord) > 21) {
-                    if (wordSegment.trim()) {
-                      segments.push(wordSegment.trim());
-                      wordSegment = word;
-                    } else {
-                      // 단어 자체가 너무 길 경우 자연스러운 지점에서 분할
-                      if (getKoreanLength(word) > 21) {
-                        let charSegment = '';
-                        
-                        for (const char of word) {
-                          if (getKoreanLength(charSegment + char) > 18) { // 15-21 범위 중간값
-                            if (charSegment.trim()) {
-                              segments.push(charSegment.trim());
-                              charSegment = char;
-                            }
-                          } else {
-                            charSegment += char;
-                          }
-                        }
-                        
-                        if (charSegment.trim()) {
-                          wordSegment = charSegment;
-                        }
-                      } else {
-                        wordSegment = word;
-                      }
-                    }
+                  if (getKoreanLength(testWord) > 21 && wordSegment.trim() !== '') {
+                    wordSegments.push(wordSegment.trim());
+                    wordSegment = word;
                   } else {
                     wordSegment += word;
                   }
                 }
                 
-                currentSegment = wordSegment;
+                if (wordSegment.trim()) {
+                  wordSegments.push(wordSegment.trim());
+                }
+                
+                // 마지막 세그먼트를 제외하고 모두 segments에 추가
+                if (wordSegments.length > 1) {
+                  segments.push(...wordSegments.slice(0, -1));
+                  currentSegment = wordSegments[wordSegments.length - 1] || '';
+                }
               }
-            } else {
-              currentSegment += phrase;
             }
           }
           
+          // 마지막 세그먼트 추가
           if (currentSegment.trim()) {
             segments.push(currentSegment.trim());
           }
           
-          return segments.join('\n');
+          // 구두점만 있는 줄 제거
+          const filteredSegments = segments.filter(segment => 
+            segment.trim() !== '' && !isPunctuation(segment)
+          );
+          
+          return filteredSegments.join('\n');
         }
         
         return line;
