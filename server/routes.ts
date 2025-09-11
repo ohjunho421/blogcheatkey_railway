@@ -118,7 +118,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 쿠키 세션이 없으면 Authorization 헤더 확인
       if (!userId && req.headers.authorization) {
         const token = req.headers.authorization.replace('Bearer ', '');
-        console.log("Using Authorization token:", token);
+        console.log("Attempting authorization token authentication");
         
         // 세션 스토어에서 토큰으로 세션 검색
         try {
@@ -130,7 +130,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   console.error("Session store get error:", err);
                   resolve();
                 } else if (session && session.userId) {
-                  console.log("Found session from token:", session);
+                  console.log("Found valid session from authorization token");
                   userId = session.userId;
                 }
                 resolve();
@@ -141,10 +141,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Session lookup error:", error);
         }
         
-        // 세션에서 못 찾으면 토큰이 유효한 세션 ID인지 확인
-        if (!userId && token === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
-          console.log("Using direct token authentication for known session");
-          userId = 1; // 슈퍼유저 ID 사용
+        // 개발 환경에서만 임시 사용자 ID 사용 (실제 운영에서는 제거 필요)
+        if (!userId && process.env.NODE_ENV === 'development') {
+          console.log("Using development user ID - remove in production");
+          userId = 1; // 개발용 임시 사용자 ID
         }
       }
       
@@ -256,6 +256,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // 구독 만료 자동 체크 미들웨어
+  const checkSubscriptionExpiry = async (req: any, res: any, next: any) => {
+    try {
+      // 정기적으로 만료된 구독들을 체크하고 비활성화
+      await storage.checkAndExpireSubscriptions();
+      next();
+    } catch (error) {
+      console.error("Subscription expiry check error:", error);
+      next(); // 에러가 발생해도 계속 진행
+    }
+  };
+  
   // ===== BLOG PROJECT ROUTES =====
   
   // Create new blog project (with subscription expiry check)
@@ -312,12 +324,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userId = (req.session as any)?.userId;
       
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
-      if (!userId && req.headers.authorization) {
-        const storedUser = req.headers.authorization.includes('Bearer') ? 
-          req.headers.authorization.replace('Bearer ', '') : null;
-        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
-          userId = 1; // 슈퍼 유저
-        }
+      // 개발 환경에서만 임시 사용자 ID 사용
+      if (!userId && process.env.NODE_ENV === 'development') {
+        userId = 1; // 개발용 임시 사용자 ID
       }
 
       if (!userId) {
@@ -351,12 +360,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userId = (req.session as any)?.userId;
       
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
-      if (!userId && req.headers.authorization) {
-        const storedUser = req.headers.authorization.includes('Bearer') ? 
-          req.headers.authorization.replace('Bearer ', '') : null;
-        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
-          userId = 1; // 슈퍼 유저
-        }
+      // 개발 환경에서만 임시 사용자 ID 사용
+      if (!userId && process.env.NODE_ENV === 'development') {
+        userId = 1; // 개발용 임시 사용자 ID
       }
 
       if (!userId) {
@@ -900,12 +906,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userId = (req.session as any)?.userId;
       
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
-      if (!userId && req.headers.authorization) {
-        const storedUser = req.headers.authorization.includes('Bearer') ? 
-          req.headers.authorization.replace('Bearer ', '') : null;
-        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
-          userId = 1; // 슈퍼 유저
-        }
+      // 개발 환경에서만 임시 사용자 ID 사용
+      if (!userId && process.env.NODE_ENV === 'development') {
+        userId = 1; // 개발용 임시 사용자 ID
       }
 
       if (!userId) {
@@ -927,12 +930,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userId = (req.session as any)?.userId;
       
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
-      if (!userId && req.headers.authorization) {
-        const storedUser = req.headers.authorization.includes('Bearer') ? 
-          req.headers.authorization.replace('Bearer ', '') : null;
-        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
-          userId = 1; // 슈퍼 유저
-        }
+      // 개발 환경에서만 임시 사용자 ID 사용
+      if (!userId && process.env.NODE_ENV === 'development') {
+        userId = 1; // 개발용 임시 사용자 ID
       }
 
       if (!userId) {
@@ -954,12 +954,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userId = (req.session as any)?.userId;
       
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
-      if (!userId && req.headers.authorization) {
-        const storedUser = req.headers.authorization.includes('Bearer') ? 
-          req.headers.authorization.replace('Bearer ', '') : null;
-        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
-          userId = 1; // 슈퍼 유저
-        }
+      // 개발 환경에서만 임시 사용자 ID 사용
+      if (!userId && process.env.NODE_ENV === 'development') {
+        userId = 1; // 개발용 임시 사용자 ID
       }
 
       if (!userId) {
@@ -989,12 +986,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userId = (req.session as any)?.userId;
       
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
-      if (!userId && req.headers.authorization) {
-        const storedUser = req.headers.authorization.includes('Bearer') ? 
-          req.headers.authorization.replace('Bearer ', '') : null;
-        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
-          userId = 1; // 슈퍼 유저
-        }
+      // 개발 환경에서만 임시 사용자 ID 사용
+      if (!userId && process.env.NODE_ENV === 'development') {
+        userId = 1; // 개발용 임시 사용자 ID
       }
 
       if (!userId) {
@@ -1025,12 +1019,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userId = (req.session as any)?.userId;
       
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
-      if (!userId && req.headers.authorization) {
-        const storedUser = req.headers.authorization.includes('Bearer') ? 
-          req.headers.authorization.replace('Bearer ', '') : null;
-        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
-          userId = 1; // 슈퍼 유저
-        }
+      // 개발 환경에서만 임시 사용자 ID 사용
+      if (!userId && process.env.NODE_ENV === 'development') {
+        userId = 1; // 개발용 임시 사용자 ID
       }
 
       if (!userId) {
@@ -1050,18 +1041,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "업체 정보 삭제에 실패했습니다" });
     }
   });
-
-  // 구독 만료 자동 체크 미들웨어
-  const checkSubscriptionExpiry = async (req: any, res: any, next: any) => {
-    try {
-      // 정기적으로 만료된 구독들을 체크하고 비활성화
-      await storage.checkAndExpireSubscriptions();
-      next();
-    } catch (error) {
-      console.error("Subscription expiry check error:", error);
-      next(); // 에러가 발생해도 계속 진행
-    }
-  };
 
   // ===== ADMIN ROUTES =====
   
@@ -1164,12 +1143,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userId = (req.session as any)?.userId;
       
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
-      if (!userId && req.headers.authorization) {
-        const storedUser = req.headers.authorization.includes('Bearer') ? 
-          req.headers.authorization.replace('Bearer ', '') : null;
-        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
-          userId = 1; // 슈퍼 유저
-        }
+      // 개발 환경에서만 임시 사용자 ID 사용
+      if (!userId && process.env.NODE_ENV === 'development') {
+        userId = 1; // 개발용 임시 사용자 ID
       }
 
       if (!userId) {
