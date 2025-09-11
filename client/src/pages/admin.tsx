@@ -151,7 +151,7 @@ export default function AdminPage() {
                         {user.email}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-500">
-                        가입일: {new Date(user.createdAt).toLocaleDateString('ko-KR')}
+                        가입일: {user.createdAt ? new Date(user.createdAt).toLocaleDateString('ko-KR') : '정보 없음'}
                       </p>
                     </div>
 

@@ -20,6 +20,7 @@ export const users = pgTable("users", {
   isAdmin: boolean("is_admin").default(false),
   subscriptionTier: text("subscription_tier").default("basic"), // basic, premium
   subscriptionExpiresAt: timestamp("subscription_expires_at"),
+  paymentDate: timestamp("payment_date"), // 입금일 - 한달 후 자동 만료 계산용
   // Feature permissions (can be individually granted by admin)
   canGenerateContent: boolean("can_generate_content").default(false),
   canGenerateImages: boolean("can_generate_images").default(false),
@@ -185,6 +186,7 @@ export const updateUserPermissionsSchema = z.object({
   isAdmin: z.boolean().optional(),
   subscriptionTier: z.enum(["basic", "premium"]).optional(),
   subscriptionExpiresAt: z.string().datetime().optional().nullable(),
+  paymentDate: z.string().datetime().optional().nullable(),
   canGenerateContent: z.boolean().optional(),
   canGenerateImages: z.boolean().optional(),
   canUseChatbot: z.boolean().optional(),
