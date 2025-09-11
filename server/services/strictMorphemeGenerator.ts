@@ -17,7 +17,7 @@ export async function generateStrictMorphemeContent(
   referenceLinks?: any,
   customMorphemes?: string
 ): Promise<StrictGenerationResult> {
-  const maxAttempts = 3; // 최대 3회 시도
+  const maxAttempts = 10; // 최대 10회 시도 (조건을 만족할 때까지)
   
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
