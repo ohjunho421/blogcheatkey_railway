@@ -187,15 +187,12 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
         <CardContent className="space-y-4">
           <div>
             <Label htmlFor="keyword">블로그 주제 키워드 <span className="text-red-500">*</span></Label>
-            <p className="text-xs text-muted-foreground mb-2">
-              문장이 아닌 단어나 키워드로 입력해주세요 (예: "엔진오일교체방법" ❌ → "엔진오일교체" ✅)
-            </p>
             <div className="flex gap-2">
               <Input
                 id="keyword"
                 value={project ? project.keyword : keyword}
                 onChange={(e) => setKeyword(e.target.value)}
-                placeholder="단어로 입력 예: 엔진오일교체, 자동차수리, 레스토랑창업"
+                placeholder="예: 엔진오일교체, 자동차수리, 레스토랑창업"
                 disabled={!!project}
                 className="flex-1"
               />

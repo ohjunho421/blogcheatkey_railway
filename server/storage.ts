@@ -1,6 +1,6 @@
 import { users, userBusinessInfo, blogProjects, chatMessages, completedProjects, type User, type InsertUser, type UserBusinessInfo, type InsertUserBusinessInfo, type BlogProject, type InsertBlogProject, type ChatMessage, type InsertChatMessage, type CompletedProject, type InsertCompletedProject, type UpdateUserPermissions } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -38,10 +38,8 @@ export interface IStorage {
   
   // Admin methods
   getAllUsers(): Promise<User[]>;
-  getUsersWithStats(): Promise<(User & { completedProjectsCount: number; totalProjectsCount: number })[]>;
   updateUserPermissions(userId: number, permissions: UpdateUserPermissions): Promise<User>;
   makeUserAdmin(email: string): Promise<User | null>;
-  checkAndExpireSubscriptions(): Promise<User[]>;
   
   // Authentication methods
   loginUser(email: string, password: string): Promise<User | null>;
@@ -205,68 +203,12 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users).orderBy(users.createdAt);
   }
 
-  async getUsersWithStats(): Promise<(User & { completedProjectsCount: number; totalProjectsCount: number })[]> {
-    // Get users with their project statistics
-    const usersWithStats = await db
-      .select({
-        id: users.id,
-        email: users.email,
-        password: users.password,
-        name: users.name,
-        profileImage: users.profileImage,
-        googleId: users.googleId,
-        kakaoId: users.kakaoId,
-        naverId: users.naverId,
-        isEmailVerified: users.isEmailVerified,
-        isActive: users.isActive,
-        isAdmin: users.isAdmin,
-        subscriptionTier: users.subscriptionTier,
-        subscriptionExpiresAt: users.subscriptionExpiresAt,
-        paymentDate: users.paymentDate,
-        canGenerateContent: users.canGenerateContent,
-        canGenerateImages: users.canGenerateImages,
-        canUseChatbot: users.canUseChatbot,
-        createdAt: users.createdAt,
-        updatedAt: users.updatedAt,
-        completedProjectsCount: sql<number>`COALESCE((SELECT COUNT(*) FROM ${completedProjects} WHERE ${completedProjects.userId} = ${users.id}), 0)`,
-        totalProjectsCount: sql<number>`COALESCE((SELECT COUNT(*) FROM ${blogProjects} WHERE ${blogProjects.userId} = ${users.id}), 0)`,
-      })
-      .from(users)
-      .orderBy(users.createdAt);
-
-    return usersWithStats as (User & { completedProjectsCount: number; totalProjectsCount: number })[];
-  }
-
   async updateUserPermissions(userId: number, permissions: UpdateUserPermissions): Promise<User> {
     const updateData: any = { ...permissions, updatedAt: new Date() };
     
     // Convert subscriptionExpiresAt string to Date if provided
     if (permissions.subscriptionExpiresAt) {
       updateData.subscriptionExpiresAt = new Date(permissions.subscriptionExpiresAt);
-    }
-    
-    // Convert paymentDate string to Date if provided and set auto expiry
-    if (permissions.paymentDate) {
-      updateData.paymentDate = new Date(permissions.paymentDate);
-      // 입금일로부터 한 달 후 자동 만료 설정
-      const expirationDate = new Date(permissions.paymentDate);
-      expirationDate.setMonth(expirationDate.getMonth() + 1);
-      updateData.subscriptionExpiresAt = expirationDate;
-    }
-    
-    // 구독등급에 따른 자동 권한 부여
-    if (permissions.subscriptionTier) {
-      if (permissions.subscriptionTier === "basic") {
-        updateData.canGenerateContent = true;
-        updateData.canGenerateImages = false;
-        updateData.canUseChatbot = false;
-        updateData.isActive = true;
-      } else if (permissions.subscriptionTier === "premium") {
-        updateData.canGenerateContent = true;
-        updateData.canGenerateImages = true;
-        updateData.canUseChatbot = true;
-        updateData.isActive = true;
-      }
     }
     
     const [updated] = await db
@@ -297,32 +239,6 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     return updated || null;
-  }
-
-  async checkAndExpireSubscriptions(): Promise<User[]> {
-    const now = new Date();
-    
-    // 만료된 구독을 찾아서 권한 비활성화
-    const expiredUsers = await db
-      .update(users)
-      .set({
-        subscriptionTier: "basic",
-        canGenerateContent: false,
-        canGenerateImages: false,
-        canUseChatbot: false,
-        isActive: false,
-        updatedAt: now
-      })
-      .where(
-        and(
-          sql`${users.subscriptionExpiresAt} IS NOT NULL`,
-          sql`${users.subscriptionExpiresAt} < ${now}`,
-          eq(users.isActive, true)
-        )
-      )
-      .returning();
-
-    return expiredUsers;
   }
 
   async loginUser(email: string, password: string): Promise<User | null> {

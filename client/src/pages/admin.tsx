@@ -17,9 +17,9 @@ export default function AdminPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Get all users with stats
-  const { data: users, isLoading: usersLoading } = useQuery<(User & { completedProjectsCount: number; totalProjectsCount: number })[]>({
-    queryKey: ["/api/admin/users/stats"],
+  // Get all users
+  const { data: users, isLoading: usersLoading } = useQuery<User[]>({
+    queryKey: ["/api/admin/users"],
   });
 
   // Update user permissions mutation
@@ -28,7 +28,7 @@ export default function AdminPage() {
       return await apiRequest("PUT", `/api/admin/users/${userId}/permissions`, permissions);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/users/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({
         title: "권한 업데이트 완료",
         description: "사용자 권한이 성공적으로 업데이트되었습니다.",
@@ -49,7 +49,7 @@ export default function AdminPage() {
       return await apiRequest("POST", "/api/admin/make-admin", { email, adminSecret });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/users/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({
         title: "관리자 권한 부여 완료",
         description: "사용자에게 관리자 권한이 부여되었습니다.",
@@ -151,46 +151,14 @@ export default function AdminPage() {
                         {user.email}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-500">
-                        가입일: {user.createdAt ? new Date(user.createdAt).toLocaleDateString('ko-KR') : '정보 없음'}
+                        가입일: {new Date(user.createdAt).toLocaleDateString('ko-KR')}
                       </p>
-                      {user.paymentDate && (
-                        <p className="text-xs text-blue-600 dark:text-blue-400">
-                          입금일: {new Date(user.paymentDate).toLocaleDateString('ko-KR')}
-                        </p>
-                      )}
-                      {user.subscriptionExpiresAt && (
-                        <p className="text-xs text-red-600 dark:text-red-400">
-                          만료일: {new Date(user.subscriptionExpiresAt).toLocaleDateString('ko-KR')}
-                        </p>
-                      )}
-                      <div className="text-xs text-green-600 dark:text-green-400 flex gap-4">
-                        <span>작성 글: {user.completedProjectsCount}개</span>
-                        <span>전체 프로젝트: {user.totalProjectsCount}개</span>
-                      </div>
                     </div>
 
                     <div className="space-y-4 min-w-[300px]">
-                      {/* 입금일 입력 */}
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">입금일 입력 (한달 후 자동 만료)</Label>
-                        <Input
-                          type="date"
-                          onChange={(e) => {
-                            if (e.target.value) {
-                              const paymentDate = new Date(e.target.value).toISOString();
-                              handlePermissionUpdate(user.id, { 
-                                paymentDate: paymentDate,
-                                isActive: true
-                              });
-                            }
-                          }}
-                          className="text-sm"
-                        />
-                      </div>
-
                       {/* 구독 등급 설정 */}
                       <div className="space-y-2">
-                        <Label className="text-sm font-medium">구독 등급 (자동 권한 부여)</Label>
+                        <Label className="text-sm font-medium">구독 등급</Label>
                         <Select
                           value={user.subscriptionTier || "basic"}
                           onValueChange={(value) => 
@@ -209,8 +177,21 @@ export default function AdminPage() {
                         </Select>
                       </div>
 
-                      {/* 수동 권한 스위치들 (구독등급 설정 시 자동으로 변경됨) */}
+                      {/* 권한 스위치들 */}
                       <div className="grid grid-cols-2 gap-3">
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id={`admin-${user.id}`}
+                            checked={user.isAdmin ?? false}
+                            onCheckedChange={(checked) => 
+                              handlePermissionUpdate(user.id, { isAdmin: checked })
+                            }
+                          />
+                          <Label htmlFor={`admin-${user.id}`} className="text-sm">
+                            관리자
+                          </Label>
+                        </div>
+
                         <div className="flex items-center space-x-2">
                           <Switch
                             id={`active-${user.id}`}
@@ -250,7 +231,7 @@ export default function AdminPage() {
                           </Label>
                         </div>
 
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 col-span-2">
                           <Switch
                             id={`chatbot-${user.id}`}
                             checked={user.canUseChatbot ?? false}
@@ -262,10 +243,6 @@ export default function AdminPage() {
                             챗봇 이용
                           </Label>
                         </div>
-                      </div>
-                      
-                      <div className="text-xs text-gray-500 mt-2">
-                        ※ 구독 등급 설정 시 해당 권한들이 자동으로 활성화됩니다
                       </div>
                     </div>
                   </div>
@@ -320,48 +297,6 @@ export default function AdminPage() {
                     {makeAdminMutation.isPending ? "처리 중..." : "관리자 권한 부여"}
                   </Button>
                 </form>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>관리자 권한 관리</CardTitle>
-                <CardDescription>
-                  기존 사용자의 관리자 권한을 관리합니다.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {users?.filter(user => user.isAdmin).map((admin) => (
-                    <div key={admin.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <Crown className="h-5 w-5 text-yellow-500" />
-                        <div>
-                          <div className="font-medium">{admin.name}</div>
-                          <div className="text-sm text-gray-500">{admin.email}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          id={`admin-permission-${admin.id}`}
-                          checked={admin.isAdmin ?? false}
-                          onCheckedChange={(checked) => 
-                            handlePermissionUpdate(admin.id, { isAdmin: checked })
-                          }
-                        />
-                        <Label htmlFor={`admin-permission-${admin.id}`} className="text-sm">
-                          관리자 권한
-                        </Label>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {users?.filter(user => user.isAdmin).length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                      현재 관리자 권한을 가진 사용자가 없습니다.
-                    </div>
-                  )}
-                </div>
               </CardContent>
             </Card>
 
