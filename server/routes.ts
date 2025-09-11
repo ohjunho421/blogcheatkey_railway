@@ -542,6 +542,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Content generation completed in ${generationResult.attempts} attempts. Success: ${generationResult.success}`);
 
+      // ✅ SEO 최적화 검증 성공 시에만 저장 및 완료 처리
+      if (!generationResult.success) {
+        console.log(`❌ SEO 최적화 조건 미달성으로 콘텐츠 생성 실패`);
+        await storage.updateBlogProject(id, {
+          status: "data_collection", // 상태를 이전 단계로 되돌림
+        });
+        
+        return res.status(422).json({ 
+          error: "SEO 최적화 조건을 만족하지 않습니다",
+          analysis: seoAnalysis,
+          issues: seoAnalysis.issues || [],
+          suggestions: seoAnalysis.suggestions || []
+        });
+      }
+
       const updatedProject = await storage.updateBlogProject(id, {
         generatedContent: finalContent,
         seoMetrics: seoAnalysis,
@@ -596,6 +611,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const seoAnalysis = regenerationResult.analysis;
       
       console.log(`Content regeneration completed in ${regenerationResult.attempts} attempts. Success: ${regenerationResult.success}`);
+
+      // ✅ SEO 최적화 검증 성공 시에만 저장 및 완료 처리  
+      if (!regenerationResult.success) {
+        console.log(`❌ SEO 최적화 조건 미달성으로 콘텐츠 재생성 실패`);
+        return res.status(422).json({ 
+          error: "SEO 최적화 조건을 만족하지 않습니다",
+          analysis: seoAnalysis,
+          issues: seoAnalysis.issues || [],
+          suggestions: seoAnalysis.suggestions || []
+        });
+      }
 
       const updatedProject = await storage.updateBlogProject(id, {
         generatedContent: finalContent,

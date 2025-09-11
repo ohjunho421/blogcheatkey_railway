@@ -90,11 +90,29 @@ export async function generateStrictMorphemeContent(
     const allConditionsMet = isCharacterCountValid && isKeywordCountValid && !hasOverusedMorphemes && analysis.isOptimized;
     
     console.log(`Content generation completed on attempt ${attempts} - All conditions met: ${allConditionsMet}`);
+    
+    // 검증 실패 시 성공을 false로 반환
+    if (!allConditionsMet) {
+      console.log(`❌ SEO 최적화 조건 미달성으로 콘텐츠 거부`);
+      console.log(`실패 원인: 글자수 ${isCharacterCountValid ? '✓' : '✗'}, 키워드 빈도 ${isKeywordCountValid ? '✓' : '✗'}, 형태소 과다사용 ${!hasOverusedMorphemes ? '✓' : '✗'}, 전체 최적화 ${analysis.isOptimized ? '✓' : '✗'}`);
+      return {
+        content,
+        analysis: {
+          ...analysis,
+          isOptimized: false,
+          isLengthOptimized: isCharacterCountValid,
+          isKeywordOptimized: isKeywordCountValid
+        },
+        attempts,
+        success: false
+      };
+    }
+    
     return {
       content,
       analysis: {
         ...analysis,
-        isOptimized: allConditionsMet,
+        isOptimized: true,
         isLengthOptimized: isCharacterCountValid,
         isKeywordOptimized: isKeywordCountValid
       },
@@ -108,12 +126,12 @@ export async function generateStrictMorphemeContent(
       console.error(`Error stack:`, error.stack);
     }
     
-    // 에러가 발생해도 기본 콘텐츠 반환
+    // 에러 발생 시 실패로 처리 (더 이상 기본 콘텐츠로 우회하지 않음)
     return {
-      content: `${keyword}에 대한 블로그 콘텐츠입니다. 자세한 정보를 제공하여 독자들에게 도움이 되고자 합니다.`,
-      analysis: { isOptimized: true, issues: [] }, // 성공으로 처리
+      content: `${keyword}에 대한 콘텐츠 생성 중 오류가 발생했습니다.`,
+      analysis: { isOptimized: false, issues: ['콘텐츠 생성 중 오류 발생'], keywordMorphemeCount: 0, characterCount: 0 },
       attempts: 1,
-      success: true
+      success: false
     };
   }
 }
