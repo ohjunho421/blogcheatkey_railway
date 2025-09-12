@@ -21,6 +21,7 @@ import { GenerateBlogButton } from "@/components/GenerateBlogButton";
 import { RequiredItemsCheck } from "@/components/RequiredItemsCheck";
 import { ContentGenerationProgress } from "@/components/ContentGenerationProgress";
 import { MessageSquare, FileText, Search, Building2, Sparkles, RotateCw, LogOut, User, ChevronDown, CreditCard, Shield } from "lucide-react";
+import blogCheatKeyLogo from "@assets/Gemini_Generated_Image_4aroxj4aroxj4aro_1757661484778.png";
 import PaymentModal from "@/components/PaymentModal";
 import Footer from "@/components/Footer";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -88,9 +89,11 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <FileText className="h-6 w-6 text-primary-foreground" />
-              </div>
+              <img 
+                src={blogCheatKeyLogo} 
+                alt="블로그치트키 로고" 
+                className="w-10 h-10 object-contain"
+              />
               <h1 className="text-2xl font-bold text-foreground">블로그치트키</h1>
             </div>
             <nav className="hidden md:flex space-x-6">
