@@ -101,10 +101,10 @@ function findSafeBreakPoints(text: string): number[] {
 /**
  * 한국어 기준 자연스러운 모바일 줄바꿈 포맷팅
  * @param text 원본 텍스트
- * @param maxWidth 최대 줄 너비 (한글 기준, 기본값: 28)
+ * @param maxWidth 최대 줄 너비 (한글 기준, 기본값: 22)
  * @returns 포맷팅된 텍스트
  */
-export function formatForMobile(text: string, maxWidth: number = 28): string {
+export function formatForMobile(text: string, maxWidth: number = 22): string {
   if (!text || text.trim() === '') return text;
 
   // 1. 텍스트 정규화
@@ -286,17 +286,27 @@ function forceBreakLineKorean(text: string, maxWidth: number): string[] {
     
     // 안전한 줄바꿈 위치가 있으면 그곳에서, 없으면 최대한 긴 곳에서 자르기
     const endPos = lastSafeEnd > currentStart ? lastSafeEnd : bestEnd;
-    const line = text.slice(currentStart, endPos).trim();
+    const line = text.slice(currentStart, endPos);
     
-    if (line) {
-      lines.push(line);
+    // trim()으로 단어가 지워지지 않도록 주의깊게 처리
+    const trimmedLine = line.replace(/^\s+/, '').replace(/\s+$/, '');
+    
+    if (trimmedLine && trimmedLine.length > 0) {
+      lines.push(trimmedLine);
     }
     
     currentStart = endPos;
     
-    // 무한루프 방지
+    // 무한루프 방지 - 진전이 없으면 한 글자씩 전진
     if (currentStart === endPos && endPos < text.length) {
-      currentStart++;
+      // 공백이 아닌 문자까지 건너뛰기
+      while (currentStart < text.length && /\s/.test(text[currentStart])) {
+        currentStart++;
+      }
+      // 여전히 같은 위치면 한 글자 전진
+      if (currentStart === endPos) {
+        currentStart++;
+      }
     }
   }
   
@@ -317,7 +327,7 @@ function applyPunctuationRules(lines: string[]): string[] {
     
     // 빈 줄이거나 구두점으로만 이루어진 줄은 이전 줄에 병합
     if (!trimmedLine || /^[,，。！？：；…)）\]］}>》」』〕%"'"']+$/.test(trimmedLine)) {
-      if (result.length > 0) {
+      if (result.length > 0 && trimmedLine) {
         result[result.length - 1] += (' ' + trimmedLine);
       }
       continue;
@@ -332,7 +342,7 @@ function applyPunctuationRules(lines: string[]): string[] {
       }
     }
     
-    result.push(currentLine);
+    result.push(trimmedLine || currentLine);
   }
   
   return result;

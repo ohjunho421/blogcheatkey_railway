@@ -651,8 +651,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let content = project.generatedContent;
       
       if (format === 'mobile') {
-        // 모바일용 포맷팅: 한국어 기준 자연스러운 줄바꿈 (28자 기준)
-        content = formatForMobile(project.generatedContent, 28);
+        // 모바일용 포맷팅: 한국어 기준 자연스러운 줄바꿈 (22자 기준)
+        content = formatForMobile(project.generatedContent, 22);
       }
 
       res.json({ content });
