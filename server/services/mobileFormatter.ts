@@ -163,28 +163,35 @@ function formatLine(line: string, maxWidth: number): string {
     if (getKoreanLength(potentialLine) <= maxWidth) {
       currentLine = potentialLine;
     } else {
-      // 현재 줄이 있으면 추가
-      if (currentLine) {
+      // 현재 줄이 있으면 추가 (앞서 손실 방지)
+      if (currentLine && currentLine.length > 0) {
         formattedLines.push(currentLine);
       }
       
       // 문장이 여전히 너무 길면 한국어 규칙으로 분리
       if (getKoreanLength(trimmedSentence) > maxWidth) {
         const subLines = formatLongSentenceKorean(trimmedSentence, maxWidth);
-        formattedLines.push(...subLines.slice(0, -1));
-        currentLine = subLines[subLines.length - 1] || '';
+        // 모든 라인을 추가하되 마지막 라인은 currentLine으로 설정
+        if (subLines.length > 0) {
+          formattedLines.push(...subLines.slice(0, -1));
+          currentLine = subLines[subLines.length - 1] || '';
+        } else {
+          currentLine = trimmedSentence;
+        }
       } else {
         currentLine = trimmedSentence;
       }
     }
   }
 
-  if (currentLine) {
+  // 마지막 줄 추가 (손실 방지)
+  if (currentLine && currentLine.length > 0) {
     formattedLines.push(currentLine);
   }
 
-  // 2. 구두점 규칙 적용
-  return applyPunctuationRules(formattedLines).join('\n');
+  // 2. 구두점 규칙 적용 (원본 보존 우선)
+  const finalLines = applyPunctuationRules(formattedLines);
+  return finalLines.join('\n');
 }
 
 /**
@@ -196,20 +203,27 @@ function splitBySentences(text: string): string[] {
     try {
       const segmenter = new Intl.Segmenter('ko', { granularity: 'sentence' });
       const segments = Array.from(segmenter.segment(text));
-      return segments.map(segment => segment.segment);
+      return segments.map(segment => segment.segment).filter(s => s.trim());
     } catch (e) {
       // fallback to regex
     }
   }
 
-  // fallback: 정규식 사용
-  const sentences = text.split(SENTENCE_ENDINGS).filter(s => s.trim());
+  // fallback: 정규식 사용 - 더 안전한 방법
   const result: string[] = [];
+  const parts = text.split(SENTENCE_ENDINGS);
   
-  for (let i = 0; i < sentences.length; i += 2) {
-    const sentence = sentences[i];
-    const ending = sentences[i + 1] || '';
-    result.push((sentence + ending).trim());
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (part && part.trim()) {
+      // 구두점이 분리되었다면 다시 합치기
+      if (i < parts.length - 1 && SENTENCE_ENDINGS.test(parts[i + 1])) {
+        result.push((part + parts[i + 1]).trim());
+        i++; // 구두점 부분 건너뛰기
+      } else {
+        result.push(part.trim());
+      }
+    }
   }
   
   return result.length > 0 ? result : [text];
@@ -225,29 +239,36 @@ function formatLongSentenceKorean(sentence: string, maxWidth: number): string[] 
   let currentLine = '';
 
   for (const part of parts) {
-    if (!part.trim()) continue;
+    const trimmedPart = part.trim();
+    if (!trimmedPart) continue;
     
-    const potentialLine = currentLine ? currentLine + part : part;
+    const potentialLine = currentLine ? currentLine + trimmedPart : trimmedPart;
     
     if (getKoreanLength(potentialLine) <= maxWidth) {
       currentLine = potentialLine;
     } else {
-      if (currentLine) {
+      // 현재 줄이 있으면 추가 (손실 방지)
+      if (currentLine && currentLine.length > 0) {
         lines.push(currentLine);
       }
       
       // 부분이 여전히 너무 길면 한국어 규칙으로 강제 분리
-      if (getKoreanLength(part) > maxWidth) {
-        const forcedLines = forceBreakLineKorean(part, maxWidth);
-        lines.push(...forcedLines.slice(0, -1));
-        currentLine = forcedLines[forcedLines.length - 1] || '';
+      if (getKoreanLength(trimmedPart) > maxWidth) {
+        const forcedLines = forceBreakLineKorean(trimmedPart, maxWidth);
+        if (forcedLines.length > 0) {
+          lines.push(...forcedLines.slice(0, -1));
+          currentLine = forcedLines[forcedLines.length - 1] || '';
+        } else {
+          currentLine = trimmedPart;
+        }
       } else {
-        currentLine = part;
+        currentLine = trimmedPart;
       }
     }
   }
 
-  if (currentLine) {
+  // 마지막 줄 추가 (손실 방지)
+  if (currentLine && currentLine.length > 0) {
     lines.push(currentLine);
   }
 
@@ -264,7 +285,7 @@ function forceBreakLineKorean(text: string, maxWidth: number): string[] {
   let currentStart = 0;
   
   while (currentStart < text.length) {
-    let bestEnd = currentStart;
+    let bestEnd = currentStart + 1; // 최소 한 글자는 포함
     let lastSafeEnd = currentStart;
     
     // 현재 위치에서 maxWidth 내에서 가장 긴 부분 찾기
@@ -286,27 +307,27 @@ function forceBreakLineKorean(text: string, maxWidth: number): string[] {
     
     // 안전한 줄바꿈 위치가 있으면 그곳에서, 없으면 최대한 긴 곳에서 자르기
     const endPos = lastSafeEnd > currentStart ? lastSafeEnd : bestEnd;
-    const line = text.slice(currentStart, endPos);
     
-    // trim()으로 단어가 지워지지 않도록 주의깊게 처리
-    const trimmedLine = line.replace(/^\s+/, '').replace(/\s+$/, '');
+    // 텍스트 추출 (공백 제거하지 않고 원본 그대로)
+    let line = text.slice(currentStart, endPos);
     
-    if (trimmedLine && trimmedLine.length > 0) {
-      lines.push(trimmedLine);
+    // 줄 시작의 공백만 제거 (끝의 공백은 보존)
+    line = line.replace(/^\s+/, '');
+    
+    // 의미있는 내용이 있으면 추가
+    if (line.length > 0) {
+      lines.push(line);
     }
     
+    // 다음 위치로 이동 (공백 건너뛰기)
     currentStart = endPos;
+    while (currentStart < text.length && text[currentStart] === ' ') {
+      currentStart++;
+    }
     
-    // 무한루프 방지 - 진전이 없으면 한 글자씩 전진
-    if (currentStart === endPos && endPos < text.length) {
-      // 공백이 아닌 문자까지 건너뛰기
-      while (currentStart < text.length && /\s/.test(text[currentStart])) {
-        currentStart++;
-      }
-      // 여전히 같은 위치면 한 글자 전진
-      if (currentStart === endPos) {
-        currentStart++;
-      }
+    // 무한루프 방지 - 진전이 없으면 강제로 한 글자 전진
+    if (currentStart === endPos && currentStart < text.length) {
+      currentStart++;
     }
   }
   
