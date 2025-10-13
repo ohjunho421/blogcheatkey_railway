@@ -35,10 +35,10 @@ function getKoreanLength(text: string): number {
 /**
  * 한국어 기준 자연스러운 모바일 줄바꿈 포맷팅
  * @param text 원본 텍스트
- * @param maxWidth 최대 줄 너비 (한글 기준, 기본값: 22)
+ * @param maxWidth 최대 줄 너비 (한글 기준, 기본값: 28)
  * @returns 포맷팅된 텍스트
  */
-export function formatForMobile(text: string, maxWidth: number = 22): string {
+export function formatForMobile(text: string, maxWidth: number = 28): string {
   if (!text || text.trim() === '') return text;
 
   // 1. 텍스트 정규화
