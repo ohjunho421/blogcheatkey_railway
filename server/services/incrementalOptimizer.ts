@@ -201,7 +201,7 @@ ${content}
 축소된 전체 글을 출력해주세요:`;
   
   const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash-exp',
+    model: 'gemini-2.5-pro',
     contents: [{
       role: 'user',
       parts: [{ text: prompt }]
@@ -259,7 +259,7 @@ ${content}
 수정된 전체 글을 출력해주세요:`;
   
   const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash-exp',
+    model: 'gemini-2.5-pro',
     contents: [{
       role: 'user',
       parts: [{ text: prompt }]
@@ -299,7 +299,7 @@ ${content}
 수정된 전체 글을 출력해주세요:`;
   
   const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash-exp',
+    model: 'gemini-2.5-pro',
     contents: [{
       role: 'user',
       parts: [{ text: prompt }]
