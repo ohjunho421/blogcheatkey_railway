@@ -65,16 +65,16 @@ export async function optimizeIncrementally(
     issues.push({
       type: 'keyword_count',
       description: `키워드 "${keyword}" ${deficit}회 부족`,
-      target: 5,
+      target: 10, // 중간값 (5-15의 중간)
       current: analysis.keywordMorphemeCount
     });
     console.log(`❌ 키워드 부족: ${analysis.keywordMorphemeCount}회 (${deficit}회 부족)`);
-  } else if (analysis.keywordMorphemeCount > 7) {
-    const excess = analysis.keywordMorphemeCount - 7;
+  } else if (analysis.keywordMorphemeCount > 15) {
+    const excess = analysis.keywordMorphemeCount - 15;
     issues.push({
       type: 'keyword_count',
       description: `키워드 "${keyword}" ${excess}회 초과`,
-      target: 7,
+      target: 10, // 중간값 (5-15의 중간)
       current: analysis.keywordMorphemeCount
     });
     console.log(`❌ 키워드 초과: ${analysis.keywordMorphemeCount}회 (${excess}회 초과)`);
@@ -143,7 +143,7 @@ export async function optimizeIncrementally(
     finalAnalysis.characterCount >= 1700 && 
     finalAnalysis.characterCount <= 2000 &&
     finalAnalysis.keywordMorphemeCount >= 5 &&
-    finalAnalysis.keywordMorphemeCount <= 7 &&
+    finalAnalysis.keywordMorphemeCount <= 15 &&
     hasNoOveruse; // 과다사용 문제도 확인
   
   console.log(`${isSuccess ? '✅' : '⚠️'} 부분 최적화 완료: ${fixed.length}개 수정`);
