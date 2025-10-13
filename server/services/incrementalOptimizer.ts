@@ -17,6 +17,7 @@ interface IncrementalOptimizationResult {
 
 /**
  * 조건에 안 맞는 부분만 찾아서 자연스럽게 수정하는 함수
+ * 재생성이 아닌 정밀한 부분 수정 방식 사용
  */
 export async function optimizeIncrementally(
   content: string,
@@ -24,7 +25,7 @@ export async function optimizeIncrementally(
   customMorphemes?: string
 ): Promise<IncrementalOptimizationResult> {
   
-  console.log('📊 부분 최적화 시작: 조건 미달 부분만 수정');
+  console.log('📊 부분 최적화 시작: 조건 미달 부분만 정밀 수정');
   
   // 1단계: 현재 상태 분석
   const analysis = analyzeMorphemes(content, keyword, customMorphemes);
@@ -32,6 +33,12 @@ export async function optimizeIncrementally(
   const fixed: string[] = [];
   
   let optimizedContent = content;
+  
+  console.log('현재 상태:', {
+    글자수: analysis.characterCount,
+    키워드빈도: analysis.keywordMorphemeCount,
+    최적화여부: analysis.isOptimized
+  });
   
   // 2단계: 문제점 파악
   console.log('🔍 문제점 파악 중...');

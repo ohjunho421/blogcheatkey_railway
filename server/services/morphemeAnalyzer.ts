@@ -1,3 +1,6 @@
+// Enhanced Korean morpheme extraction with Hangul library support
+// import Hangul from 'hangul-js'; // 현재는 사용하지 않음, 추후 확장 가능
+
 // Define MorphemeAnalysis type inline to avoid import issues
 interface MorphemeAnalysis {
   isOptimized: boolean;
@@ -12,7 +15,6 @@ interface MorphemeAnalysis {
   isCustomMorphemesOptimized: boolean;
 }
 
-// Simple Korean morpheme extraction function
 export function extractKoreanMorphemes(text: string): string[] {
   const morphemes: string[] = [];
   
@@ -27,7 +29,9 @@ export function extractKoreanMorphemes(text: string): string[] {
     if (matches) {
       for (const match of matches) {
         if (match.length >= 1) {
-          morphemes.push(match);
+          // 추가 처리: 한국어 단어인 경우 조사 분리
+          const processed = processKoreanWord(match);
+          morphemes.push(...processed);
         }
       }
     }
@@ -35,6 +39,47 @@ export function extractKoreanMorphemes(text: string): string[] {
   
   console.log(`Extracted morphemes:`, morphemes.slice(0, 20)); // First 20 for debugging
   return morphemes;
+}
+
+// 한국어 단어 처리 - 조사 분리 및 복합어 처리
+function processKoreanWord(word: string): string[] {
+  const result: string[] = [];
+  
+  // 한국어가 아닌 경우 그대로 반환
+  if (!/[가-힣]/.test(word)) {
+    return [word];
+  }
+  
+  // 한국어 조사/어미 패턴 (빈도 높은 순으로 정렬)
+  const postpositions = [
+    // 서술격 조사 및 어미 (우선 처리)
+    '입니다', '습니다', '였습니다', '했습니다', '됩니다',
+    // 복합 조사
+    '에서는', '에서도', '으로는', '로는', '에게는', '에서의',
+    // 기본 조사
+    '에서', '으로', '로부터', '까지', '에게', '한테',
+    '을', '를', '이', '가', '은', '는', '의', '에', '로',
+    '와', '과', '도', '만', '부터', '께', '더러',
+    // 용언 어미
+    '니다', '이다', '합니다', '입니', '있습니', '됩니'
+  ];
+  
+  // 조사 분리 시도 (긴 것부터 매칭)
+  for (const postposition of postpositions) {
+    if (word.endsWith(postposition) && word.length > postposition.length + 1) {
+      const stem = word.slice(0, -postposition.length);
+      // 어간이 의미있는 길이인 경우에만 분리 (한글 1글자 이상)
+      if (stem.length >= 1 && /[가-힣]/.test(stem)) {
+        result.push(stem);
+        // 조사도 필요하면 추가 가능 (현재는 어간만 반환)
+        return result;
+      }
+    }
+  }
+  
+  // 조사 분리가 안 된 경우 원본 반환
+  result.push(word);
+  return result;
 }
 
 // 지능적 복합어 분해 함수 (한국어 + 영어 + 숫자 혼합 지원)
