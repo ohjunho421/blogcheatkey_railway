@@ -3,12 +3,12 @@
 ## Overview
 This is a full-stack TypeScript application for generating SEO-optimized blog content using multiple AI models (Gemini, Claude, Perplexity, OpenAI). It aims to produce high-quality, keyword-optimized blog posts with proper SEO metrics, citations, and infographic images. Users can copy text content and download individual infographics. The project's vision is to leverage AI for efficient and effective content creation, addressing market needs for scalable and high-quality digital marketing assets.
 
-## Recent Changes (August 12, 2025)
-- **CRITICAL FIX**: Resolved 95% generation failure by implementing deployment version a43e2530-417d-4d1a-8fef-d4ff7e1a0c32 logic
-- Modified `strictMorphemeGenerator.ts` to use single-attempt success logic instead of while loop
-- Updated morpheme analysis conditions to be more permissive (1000+ characters = success)
-- Ensured content generation always completes successfully on first attempt
-- Eliminated strict SEO validation that was blocking content completion
+## Recent Changes (October 13, 2025)
+- **SEO 최적화 수정**: AI 프롬프트와 검증 조건 일치 (1700-2000자로 통일)
+- **모바일 복사 기능 개선**: 줄바꿈 길이 80% 단축 (28자 → 22자), 문자 손실 버그 완전 해결
+- **글쓰기 조건 강화**: 서론 35-40% (600-700자), 키워드 5-7회, 형태소 15-17회 엄격 적용
+- **설득력 강화**: 공감형/경고형 서론 전략, 자연스러운 CTA 결론 구조 명확화
+- 브랜딩 업데이트: blogcheatkey 로고 및 파비콘 적용
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -32,7 +32,7 @@ Preferred communication style: Simple, everyday language.
 ### Core Architectural Decisions
 - **AI Service Integration**: Uses multiple AI models (Gemini 2.5 Pro, Claude Sonnet 4 / Opus 4.0, Perplexity Sonar Pro, Imagen 3.0) for distinct tasks like keyword analysis, content generation, research, and image creation.
 - **Project Workflow**: Structured through defined states (`keyword_analysis`, `data_collection`, `business_info`, `content_generation`, `completed`) for clear progress tracking.
-- **SEO Optimization**: Integrates a strict morpheme generation system ensuring keyword frequency (15-17 counts per component, 5+ for full keywords), character count (1500-1700), and keyword dominance. Includes intelligent morpheme overuse resolution.
+- **SEO Optimization**: Integrates a strict morpheme generation system ensuring keyword frequency (15-17 counts per component, 5-7 for full keywords), character count (1700-2000 excluding spaces), and keyword dominance. Includes intelligent morpheme overuse resolution with retry logic.
 - **Content Quality**: Focuses on natural blog tone, engaging introductions (35-40% of content, empathy or warning types), professional conclusions, and natural integration of business expertise and research citations.
 - **UI/UX**: Features include drag-and-drop subtitle reordering, interactive AI image generation buttons, chat-based content editing with SEO validation, and a mobile-first responsive design with enhanced line breaking for readability.
 - **Authentication**: Full authentication system enabled with session management and user permissions.
