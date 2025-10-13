@@ -4,12 +4,14 @@
 This is a full-stack TypeScript application for generating SEO-optimized blog content using multiple AI models (Gemini, Claude, Perplexity, OpenAI). It aims to produce high-quality, keyword-optimized blog posts with proper SEO metrics, citations, and infographic images. Users can copy text content and download individual infographics. The project's vision is to leverage AI for efficient and effective content creation, addressing market needs for scalable and high-quality digital marketing assets.
 
 ## Recent Changes (October 13, 2025)
+- **최적화 시도 횟수 증가**: 3회 → 4회 시도로 변경, 4번 시도 후에는 조건 미달이어도 최종본 그대로 출력
+- **키워드 출현횟수 범위 확장**: 5-7회 → 5-15회로 확장 (더 유연한 SEO 최적화)
 - **부분 최적화 시스템 구축**: 전체 재생성 대신 조건 미달 부분만 AI로 자연스럽게 수정 (incrementalOptimizer.ts 추가)
 - **SEO 최적화 수정**: AI 프롬프트와 검증 조건 일치 (1700-2000자로 통일)
 - **서론 후킹 문장 강화**: 첫 1-2문장에 반드시 강력한 후킹 요소 포함 (공감형/경고형 패턴)
 - **서론-본론 구분 명확화**: 서론은 소제목 없이 작성, 추천소제목 1부터 본론 시작 (3부 구조: 서론 600-700자 / 본론 900-1100자 / 결론 200-300자)
 - **모바일 줄바꿈 최적화**: 28자 기준 적용, 자연스러운 한국어 줄바꿈 처리
-- **글쓰기 조건 강화**: 키워드 5-7회, 형태소 15-17회 엄격 적용
+- **글쓰기 조건 강화**: 키워드 5-15회, 형태소 15-17회 엄격 적용
 - **설득력 강화**: 공감형/경고형 서론 전략, 자연스러운 CTA 결론 구조 명확화
 - 브랜딩 업데이트: blogcheatkey 로고 및 파비콘 적용
 
