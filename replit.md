@@ -4,6 +4,7 @@
 This is a full-stack TypeScript application for generating SEO-optimized blog content using multiple AI models (Gemini, Claude, Perplexity, OpenAI). It aims to produce high-quality, keyword-optimized blog posts with proper SEO metrics, citations, and infographic images. Users can copy text content and download individual infographics. The project's vision is to leverage AI for efficient and effective content creation, addressing market needs for scalable and high-quality digital marketing assets.
 
 ## Recent Changes (October 13, 2025)
+- **부분 최적화 시스템 구축**: 전체 재생성 대신 조건 미달 부분만 AI로 자연스럽게 수정 (incrementalOptimizer.ts 추가)
 - **SEO 최적화 수정**: AI 프롬프트와 검증 조건 일치 (1700-2000자로 통일)
 - **서론 후킹 문장 강화**: 첫 1-2문장에 반드시 강력한 후킹 요소 포함 (공감형/경고형 패턴)
 - **서론-본론 구분 명확화**: 서론은 소제목 없이 작성, 추천소제목 1부터 본론 시작 (3부 구조: 서론 600-700자 / 본론 900-1100자 / 결론 200-300자)

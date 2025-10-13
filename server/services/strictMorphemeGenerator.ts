@@ -165,54 +165,59 @@ export async function generateStrictMorphemeContent(
       
       // 마지막 시도가 아니면 다음 시도로 계속
       if (attempt < maxAttempts) {
-        console.log(`⚠️ SEO 조건 미달성, 다음 시도 준비 (${attempt + 1}/${maxAttempts})`);
+        console.log(`⚠️ SEO 조건 미달성, 부분 최적화 시도 (${attempt + 1}/${maxAttempts})`);
         console.log(`실패 원인: 글자수 ${isCharacterCountValid ? '✓' : '✗'}, 키워드 빈도 ${isKeywordCountValid ? '✓' : '✗'}, 형태소 과다사용 ${!hasOverusedMorphemes ? '✓' : '✗'}, 전체 최적화 ${analysis.isOptimized ? '✓' : '✗'}`);
         
-        // 과다 사용 형태소가 있으면 해결 시도
-        if (hasOverusedMorphemes && attempt === 2) {
-          console.log('형태소 과다 사용 감지, 해결 시도...');
-          try {
-            const { resolveMorphemeOveruse } = await import('./morphemeOveruseResolver');
-            const resolved = await resolveMorphemeOveruse(content, keyword);
-            if (resolved.success) {
-              console.log('형태소 과다 사용 해결 성공');
-              // 해결된 콘텐츠로 재분석
-              const resolvedAnalysis = analyzeMorphemes(resolved.content, keyword, customMorphemes);
-              const resolvedAllConditions = 
-                resolvedAnalysis.characterCount >= 1700 && resolvedAnalysis.characterCount <= 2000 &&
-                resolvedAnalysis.keywordMorphemeCount >= 5 && resolvedAnalysis.keywordMorphemeCount <= 7 &&
-                resolvedAnalysis.isOptimized;
-              
-              if (resolvedAllConditions) {
-                return {
-                  content: resolved.content,
-                  analysis: resolvedAnalysis,
-                  attempts: attempt,
-                  success: true
-                };
-              }
-            }
-          } catch (resolveError) {
-            console.error('형태소 과다 사용 해결 실패:', resolveError);
+        // 🔧 부분 최적화 시도: 조건 미달 부분만 수정
+        console.log('🔧 부분 최적화 시작: 조건 미달 부분만 AI로 수정');
+        try {
+          const { optimizeIncrementally } = await import('./incrementalOptimizer');
+          const optimized = await optimizeIncrementally(content, keyword, customMorphemes);
+          
+          if (optimized.success) {
+            console.log(`✅ 부분 최적화 성공! ${optimized.fixed.length}개 문제 해결`);
+            const finalAnalysis = analyzeMorphemes(optimized.content, keyword, customMorphemes);
+            
+            // 실제 분석 결과를 존중 (강제 설정하지 않음)
+            const finalIsCharValid = finalAnalysis.characterCount >= 1700 && finalAnalysis.characterCount <= 2000;
+            const finalIsKeywordValid = finalAnalysis.keywordMorphemeCount >= 5 && finalAnalysis.keywordMorphemeCount <= 7;
+            const finalHasNoOveruse = !finalAnalysis.issues.some(issue => 
+              issue.includes('초과') || issue.includes('과다')
+            );
+            
+            return {
+              content: optimized.content,
+              analysis: {
+                ...finalAnalysis,
+                isOptimized: finalAnalysis.isOptimized,
+                isLengthOptimized: finalIsCharValid,
+                isKeywordOptimized: finalIsKeywordValid
+              },
+              attempts: attempt,
+              success: finalIsCharValid && finalIsKeywordValid && finalHasNoOveruse && finalAnalysis.isOptimized
+            };
+          } else {
+            console.log(`⚠️ 부분 최적화 실패, 전체 재생성 시도`);
           }
+        } catch (optimizeError) {
+          console.error('부분 최적화 실패:', optimizeError);
         }
         
         continue; // 다음 시도로
       }
       
-      // 3번 시도 후 그냥 생성된 콘텐츠 출력
-      console.log(`⚠️ 3번 시도 완료, SEO 조건 미달성이지만 생성된 콘텐츠 그대로 출력`);
+      // 3번 시도 후 최종 검증
+      console.log(`⚠️ 3번 시도 완료`);
       console.log(`최종 상태: 글자수 ${isCharacterCountValid ? '✓' : '✗'}, 키워드 빈도 ${isKeywordCountValid ? '✓' : '✗'}, 형태소 과다사용 ${!hasOverusedMorphemes ? '✓' : '✗'}, 전체 최적화 ${analysis.isOptimized ? '✓' : '✗'}`);
+      
+      // 실제로 모든 조건 충족했을 때만 성공
+      const finalSuccess = isCharacterCountValid && isKeywordCountValid && !hasOverusedMorphemes && analysis.isOptimized;
+      
       return {
         content,
-        analysis: {
-          ...analysis,
-          isOptimized: false,
-          isLengthOptimized: isCharacterCountValid,
-          isKeywordOptimized: isKeywordCountValid
-        },
+        analysis,
         attempts: maxAttempts,
-        success: true // 3번 시도 후에는 그냥 성공으로 처리
+        success: finalSuccess
       };
       
     } catch (error) {
@@ -229,13 +234,13 @@ export async function generateStrictMorphemeContent(
     }
   }
   
-  // 3번 시도 후 최종 처리
-  console.log(`⚠️ 3번 시도 완료 - 생성된 콘텐츠를 그대로 출력합니다`);
+  // 3번 시도 후 최종 처리 (에러로 도달)
+  console.log(`⚠️ 3번 시도 완료 - 모든 시도 실패`);
   return {
     content: `${keyword}에 대한 기본 콘텐츠가 생성되었습니다.`,
     analysis: { isOptimized: false, issues: ['SEO 조건 미달성'], keywordMorphemeCount: 0, characterCount: 0 },
     attempts: maxAttempts,
-    success: true // 3번 시도 후에는 무조건 성공 처리
+    success: false // 실패로 명확히 표시
   };
 }
 
