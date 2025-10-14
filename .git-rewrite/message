@@ -1,7 +1,0 @@
-Improve blog post generation speed while maintaining accuracy
-
-Reduces blog generation time by simplifying prompts, decreasing retry attempts/delays, and skipping the introduction/conclusion enhancement step.
-
-Replit-Commit-Author: Agent
-Replit-Commit-Session-Id: 9d931f5d-cc19-4cba-896f-4c42711aded3
-Replit-Commit-Screenshot-Url: https://storage.googleapis.com/screenshot-production-us-central1/022c5bc4-9df7-4d5c-aa3c-6aa3a38babe0/9d931f5d-cc19-4cba-896f-4c42711aded3/TJnunS0
