@@ -13,13 +13,17 @@ if (!process.env.DATABASE_URL) {
 
 const isProduction = process.env.NODE_ENV === 'production';
 const isNeonDb = process.env.DATABASE_URL.includes('neon.tech');
+const isRailway = process.env.RAILWAY_ENVIRONMENT || 
+                  process.env.DATABASE_URL.includes('railway') ||
+                  process.env.DATABASE_URL.includes('rlwy.net') ||
+                  process.env.DATABASE_URL.includes('railway.app');
 
 // 로컬 개발환경 또는 Railway: 일반 PostgreSQL 사용
 // 프로덕션 Replit: Neon Serverless 사용
 let pool: PgPool | NeonPool;
 let db: ReturnType<typeof drizzleNode> | ReturnType<typeof drizzleNeon>;
 
-if (!isProduction || !isNeonDb) {
+if (!isProduction || !isNeonDb || isRailway) {
   // 로컬 개발용 또는 Railway PostgreSQL 연결
   console.log('🔧 Using standard PostgreSQL for development/Railway');
   
