@@ -47,6 +47,15 @@ AI 기반 SEO 최적화 블로그 콘텐츠 생성 플랫폼
 
 ## 🚀 설치 및 실행
 
+### 배포 옵션
+
+#### Railway 배포 (Replit과 독립 운영)
+- **빠른 시작**: [RAILWAY_QUICK_START.md](RAILWAY_QUICK_START.md) 참고
+- **상세 가이드**: [RAILWAY_INDEPENDENT_SETUP.md](RAILWAY_INDEPENDENT_SETUP.md) 참고
+- **기본 배포**: [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) 참고
+
+⚠️ **중요**: Railway는 자체 PostgreSQL을 사용하여 Replit/Neon DB와 완전히 독립적으로 운영됩니다.
+
 ### 환경 변수 설정
 ```bash
 # AI API 키

@@ -36,7 +36,9 @@ export const sessions = pgTable(
     sess: jsonb("sess").notNull(),
     expire: timestamp("expire").notNull(),
   },
-  (table) => [index("IDX_session_expire").on(table.expire)],
+  (table) => [
+    index("IDX_session_expire").on(table.expire),
+  ],
 );
 
 export const userBusinessInfo = pgTable("user_business_info", {
