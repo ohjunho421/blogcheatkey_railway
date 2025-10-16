@@ -56,3 +56,8 @@ replit.nix
 Thumbs.db
 .DS_Store
 Desktop.ini
+# Temporary scripts
+cleanup-branches.ps1
+commit-*.ps1
+setup-*.ps1
+setup-*.js
