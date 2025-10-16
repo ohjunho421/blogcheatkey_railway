@@ -261,7 +261,7 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
             {/* Search Intent */}
             <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-4 border-l-4 border-primary">
               <h3 className="font-semibold text-foreground mb-2">검색 의도 분석</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground break-keep leading-relaxed">
                 {project.keywordAnalysis.searchIntent}
               </p>
             </div>
@@ -269,7 +269,7 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
             {/* User Concerns */}
             <div className="bg-orange-50 dark:bg-orange-950 rounded-lg p-4 border-l-4 border-orange-500">
               <h3 className="font-semibold text-foreground mb-2">사용자 고민사항</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground break-keep leading-relaxed">
                 {project.keywordAnalysis.userConcerns}
               </p>
             </div>
