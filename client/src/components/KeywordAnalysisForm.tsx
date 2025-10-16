@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -236,7 +237,7 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
                   }}
                   title="키워드 수정"
                 >
-                  <Edit2 className="h-4 w-4" />
+                  <Edit className="h-4 w-4" />
                 </Button>
               )}
             </div>
@@ -487,7 +488,7 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
                                       setEditedSubtitles([...(project.subtitles || [])]);
                                     }}
                                   >
-                                    <Edit2 className="h-4 w-4" />
+                                    <Edit className="h-4 w-4" />
                                   </Button>
                                 </div>
                               )}
