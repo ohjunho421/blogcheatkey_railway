@@ -16,7 +16,18 @@ CREATE TABLE IF NOT EXISTS user_activity_log (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
--- 3. 결제 기록 테이블 생성
+-- 3. user_activity_log 인덱스 생성
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_user_activity_user_id') THEN
+    CREATE INDEX idx_user_activity_user_id ON user_activity_log(user_id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_user_activity_created_at') THEN
+    CREATE INDEX idx_user_activity_created_at ON user_activity_log(created_at DESC);
+  END IF;
+END $$;
+
+-- 4. 결제 기록 테이블 생성
 CREATE TABLE IF NOT EXISTS payment_records (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id) NOT NULL,
@@ -34,12 +45,19 @@ CREATE TABLE IF NOT EXISTS payment_records (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- 4. 인덱스 생성 (성능 최적화)
-CREATE INDEX IF NOT EXISTS idx_user_activity_user_id ON user_activity_log(user_id);
-CREATE INDEX IF NOT EXISTS idx_user_activity_created_at ON user_activity_log(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_payment_records_user_id ON payment_records(user_id);
-CREATE INDEX IF NOT EXISTS idx_payment_records_status ON payment_records(payment_status);
-CREATE INDEX IF NOT EXISTS idx_payment_records_created_at ON payment_records(created_at DESC);
+-- 5. payment_records 인덱스 생성
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_payment_records_user_id') THEN
+    CREATE INDEX idx_payment_records_user_id ON payment_records(user_id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_payment_records_status') THEN
+    CREATE INDEX idx_payment_records_status ON payment_records(payment_status);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_indexes WHERE indexname = 'idx_payment_records_created_at') THEN
+    CREATE INDEX idx_payment_records_created_at ON payment_records(created_at DESC);
+  END IF;
+END $$;
 
 -- 완료 메시지
 SELECT 'Admin features migration completed successfully!' as status;
