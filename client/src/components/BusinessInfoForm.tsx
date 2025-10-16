@@ -110,13 +110,21 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
   // Save to user profile (reusable across projects)
   const saveToProfile = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest("POST", "/api/user/business-info", data);
-      return response.json();
+      // Check if user already has business info
+      if (savedBusinessInfo && savedBusinessInfo.id) {
+        // Update existing business info
+        const response = await apiRequest("PUT", `/api/user/business-info/${savedBusinessInfo.id}`, data);
+        return response.json();
+      } else {
+        // Create new business info
+        const response = await apiRequest("POST", "/api/user/business-info", data);
+        return response.json();
+      }
     },
     onSuccess: () => {
       toast({
         title: "업체 정보 저장 완료",
-        description: "업체 정보가 프로필에 저장되었습니다.",
+        description: savedBusinessInfo && savedBusinessInfo.id ? "업체 정보가 수정되었습니다." : "업체 정보가 프로필에 저장되었습니다.",
       });
     },
     onError: (error) => {
