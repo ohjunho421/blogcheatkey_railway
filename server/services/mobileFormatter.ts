@@ -35,10 +35,10 @@ function getKoreanLength(text: string): number {
 /**
  * 한국어 기준 자연스러운 모바일 줄바꿈 포맷팅
  * @param text 원본 텍스트
- * @param maxWidth 최대 줄 너비 (한글 기준, 기본값: 28)
+ * @param maxWidth 최대 줄 너비 (한글 기준, 기본값: 27)
  * @returns 포맷팅된 텍스트
  */
-export function formatForMobile(text: string, maxWidth: number = 28): string {
+export function formatForMobile(text: string, maxWidth: number = 27): string {
   if (!text || text.trim() === '') return text;
 
   // 1. 텍스트 정규화
@@ -94,17 +94,25 @@ function formatLineSimple(text: string, maxWidth: number): string {
 
       bestEnd = end;
 
-      // 안전한 줄바꿈 위치 찾기
+      // 안전한 줄바꿈 위치 찾기 (한국어 단어 단위)
       if (end < text.length) {
         const nextChar = text[end];
         const prevChar = text[end - 1];
         
-        // 공백 뒤는 안전
+        // 공백 뒤는 가장 안전 (단어 경계)
         if (prevChar === ' ' && nextChar !== ' ') {
           safeEnd = end;
         }
         // 쉼표, 마침표 뒤는 안전
         if (/[,，.。]/.test(prevChar) && nextChar === ' ') {
+          safeEnd = end;
+        }
+        // 한글 뒤 공백 (단어 단위 끊기)
+        if (/[가-힣]/.test(prevChar) && nextChar === ' ') {
+          safeEnd = end;
+        }
+        // 구두점 뒤 (문장 경계)
+        if (/[,，.。!！?？;；:：]/.test(prevChar)) {
           safeEnd = end;
         }
       }
