@@ -20,6 +20,10 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
   const [keyword, setKeyword] = useState("");
   const [editingSubtitle, setEditingSubtitle] = useState<number | null>(null);
   const [editedSubtitles, setEditedSubtitles] = useState<string[]>([]);
+  const [isEditingIntent, setIsEditingIntent] = useState(false);
+  const [isEditingConcerns, setIsEditingConcerns] = useState(false);
+  const [editedIntent, setEditedIntent] = useState("");
+  const [editedConcerns, setEditedConcerns] = useState("");
   const { toast } = useToast();
   const [, navigate] = useLocation();
 
@@ -111,6 +115,32 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
     onError: (error) => {
       toast({
         title: "수집 실패",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateKeywordAnalysis = useMutation({
+    mutationFn: async ({ searchIntent, userConcerns }: { searchIntent?: string; userConcerns?: string }) => {
+      const response = await apiRequest("PUT", `/api/projects/${project.id}/keyword-analysis`, {
+        searchIntent,
+        userConcerns
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      onRefresh();
+      setIsEditingIntent(false);
+      setIsEditingConcerns(false);
+      toast({
+        title: "저장 완료",
+        description: "키워드 분석이 업데이트되었습니다.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "저장 실패",
         description: error.message,
         variant: "destructive",
       });
@@ -258,18 +288,112 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
           <CardContent className="space-y-4">
             {/* Search Intent */}
             <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-4 border-l-4 border-primary">
-              <h3 className="font-semibold text-foreground mb-2">검색 의도 분석</h3>
-              <p className="text-sm text-muted-foreground break-keep leading-relaxed">
-                {project.keywordAnalysis.searchIntent}
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-semibold text-foreground">검색 의도 분석</h3>
+                {!isEditingIntent && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setIsEditingIntent(true);
+                      setEditedIntent(project.keywordAnalysis.searchIntent);
+                    }}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    수정
+                  </Button>
+                )}
+              </div>
+              {isEditingIntent ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={editedIntent}
+                    onChange={(e) => setEditedIntent(e.target.value)}
+                    className="text-sm min-h-[100px]"
+                    placeholder="검색 의도를 입력하세요..."
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => updateKeywordAnalysis.mutate({ searchIntent: editedIntent })}
+                      disabled={updateKeywordAnalysis.isPending}
+                    >
+                      <Save className="h-3 w-3 mr-1" />
+                      저장
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setIsEditingIntent(false);
+                        setEditedIntent("");
+                      }}
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      취소
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground break-keep leading-relaxed">
+                  {project.keywordAnalysis.searchIntent}
+                </p>
+              )}
             </div>
 
             {/* User Concerns */}
             <div className="bg-orange-50 dark:bg-orange-950 rounded-lg p-4 border-l-4 border-orange-500">
-              <h3 className="font-semibold text-foreground mb-2">사용자 고민사항</h3>
-              <p className="text-sm text-muted-foreground break-keep leading-relaxed">
-                {project.keywordAnalysis.userConcerns}
-              </p>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-semibold text-foreground">사용자 고민사항</h3>
+                {!isEditingConcerns && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setIsEditingConcerns(true);
+                      setEditedConcerns(project.keywordAnalysis.userConcerns);
+                    }}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    수정
+                  </Button>
+                )}
+              </div>
+              {isEditingConcerns ? (
+                <div className="space-y-2">
+                  <Textarea
+                    value={editedConcerns}
+                    onChange={(e) => setEditedConcerns(e.target.value)}
+                    className="text-sm min-h-[100px]"
+                    placeholder="사용자 고민사항을 입력하세요..."
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => updateKeywordAnalysis.mutate({ userConcerns: editedConcerns })}
+                      disabled={updateKeywordAnalysis.isPending}
+                    >
+                      <Save className="h-3 w-3 mr-1" />
+                      저장
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setIsEditingConcerns(false);
+                        setEditedConcerns("");
+                      }}
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      취소
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground break-keep leading-relaxed">
+                  {project.keywordAnalysis.userConcerns}
+                </p>
+              )}
             </div>
 
             {/* Suggested Subtitles */}

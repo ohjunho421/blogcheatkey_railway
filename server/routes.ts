@@ -464,6 +464,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== KEYWORD ANALYSIS UPDATE =====
+  
+  app.put("/api/projects/:id/keyword-analysis", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { searchIntent, userConcerns } = req.body;
+      
+      const project = await storage.getBlogProject(id);
+      if (!project) {
+        return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
+      }
+
+      const currentAnalysis = project.keywordAnalysis || {};
+      const updatedAnalysis = {
+        ...currentAnalysis,
+        ...(searchIntent !== undefined && { searchIntent }),
+        ...(userConcerns !== undefined && { userConcerns })
+      };
+
+      const updatedProject = await storage.updateBlogProject(id, {
+        keywordAnalysis: updatedAnalysis,
+      });
+
+      res.json(updatedProject);
+    } catch (error) {
+      console.error("Keyword analysis update error:", error);
+      res.status(500).json({ error: "키워드 분석 업데이트에 실패했습니다" });
+    }
+  });
+
   // ===== SUBTITLE MANAGEMENT =====
   
   app.post("/api/projects/:id/subtitles", async (req, res) => {
