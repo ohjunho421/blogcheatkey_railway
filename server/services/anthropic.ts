@@ -25,7 +25,9 @@ export async function writeOptimizedBlogPost(
   researchData: { content: string; citations: string[] },
   businessInfo: BusinessInfo,
   seoSuggestions?: string[],
-  referenceLinks?: ReferenceBlogLink[]
+  referenceLinks?: ReferenceBlogLink[],
+  searchIntent?: string,
+  userConcerns?: string
 ): Promise<string> {
   if (!process.env.ANTHROPIC_API_KEY && !process.env.ANTHROPIC_API_KEY_ENV_VAR) {
     throw new Error("Anthropic API key is not configured");
@@ -246,6 +248,17 @@ BMW 코딩 필수 준비물
 키워드: "${keyword}"
 
 소제목: ${subtitles?.map((s, i) => `${i + 1}.${s}`).join(' | ') || '1.기본개념 | 2.시작방법 | 3.활용팁 | 4.주의사항'}
+
+${searchIntent || userConcerns ? `
+📊 키워드 분석 인사이트:
+${searchIntent ? `• 검색 의도: ${searchIntent}` : ''}
+${userConcerns ? `• 사용자 고민: ${userConcerns}` : ''}
+
+💡 작성 지침:
+- 위 검색 의도를 고려하여 사용자가 진짜 원하는 정보를 정확히 제공하세요
+- 사용자의 고민사항을 서론에서 공감하고 본론에서 명확히 해결해주세요
+- 검색 의도에 맞는 톤과 깊이로 작성하세요 (정보 찾기 vs 비교 vs 문제 해결)
+` : ''}
 
 연구자료: ${researchData?.content || '관련 자료가 없습니다. 일반적인 지식을 바탕으로 작성해주세요.'}
 

@@ -1,16 +1,14 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Search, Brain, Edit2, ArrowRight, GripVertical } from "lucide-react";
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { Search, Brain, Lightbulb, GripVertical, Sparkles, Edit, Trash, Check, X, Plus, Save } from "lucide-react";
 import { useLocation } from "wouter";
-import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 
 interface KeywordAnalysisFormProps {
   onProjectCreated: (project: any) => void;

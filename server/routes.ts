@@ -539,7 +539,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         project.researchData as any,
         project.businessInfo as any,
         undefined, // referenceLinks
-        project.customMorphemes as string | undefined
+        project.customMorphemes as string | undefined,
+        (project.keywordAnalysis as any)?.searchIntent,
+        (project.keywordAnalysis as any)?.userConcerns
       );
       
       const finalContent = generationResult.content;
@@ -609,7 +611,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         project.subtitles as string[],
         project.researchData as any,
         project.businessInfo as any,
-        project.customMorphemes as string | undefined
+        project.customMorphemes as string | undefined,
+        (project.keywordAnalysis as any)?.searchIntent,
+        (project.keywordAnalysis as any)?.userConcerns
       );
       
       const finalContent = regenerationResult.content;

@@ -15,7 +15,9 @@ export async function generateStrictMorphemeContent(
   researchData: { content: string; citations: string[] },
   businessInfo: BusinessInfo,
   referenceLinks?: any,
-  customMorphemes?: string
+  customMorphemes?: string,
+  searchIntent?: string,
+  userConcerns?: string
 ): Promise<StrictGenerationResult> {
   const maxAttempts = 3; // 최대 3회 시도 (1회 생성 + 2회 부분 수정)
   let previousAnalysis: any = null; // 이전 시도 분석 결과 저장
@@ -103,7 +105,9 @@ export async function generateStrictMorphemeContent(
           researchData,
           businessInfo,
           seoSuggestions,
-          referenceLinks
+          referenceLinks,
+          searchIntent,
+          userConcerns
         );
         
         generatedContent = content; // 1차 생성 결과 저장
@@ -261,7 +265,9 @@ export async function regenerateWithStrictMorphemes(
   subtitles: string[],
   researchData: { content: string; citations: string[] },
   businessInfo: BusinessInfo,
-  customMorphemes?: string
+  customMorphemes?: string,
+  searchIntent?: string,
+  userConcerns?: string
 ): Promise<StrictGenerationResult> {
   // 기존 콘텐츠를 바탕으로 새로 생성 (동일한 로직 사용)
   return generateStrictMorphemeContent(
@@ -270,6 +276,8 @@ export async function regenerateWithStrictMorphemes(
     researchData,
     businessInfo,
     undefined,
-    customMorphemes
+    customMorphemes,
+    searchIntent,
+    userConcerns
   );
 }
