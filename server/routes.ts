@@ -759,46 +759,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
           type: 'external_tool_guide'
         });
       } else {
-        // Regular content editing
+        // Regular content editing - Enhanced version
         if (!project.generatedContent) {
           return res.status(404).json({ error: "편집할 콘텐츠가 없습니다" });
         }
 
-        // Get edited content from Gemini with SEO validation
-        const { editContent } = await import("./services/gemini.js");
-        const editedContent = await editContent(
-          project.generatedContent,
-          message,
-          project.keyword,
-          project.customMorphemes || undefined
-        );
+        try {
+          // Use enhanced chatbot with multi-version generation and evaluation
+          const { enhancedEditContent } = await import("./services/enhancedChatbot.js");
+          const result = await enhancedEditContent(
+            project.generatedContent,
+            message,
+            project.keyword,
+            project.customMorphemes || undefined
+          );
 
-        // Analyze morphemes to ensure SEO conditions are met
-        const { analyzeMorphemes } = await import("./services/morphemeAnalyzer.js");
-        const morphemeAnalysis = analyzeMorphemes(editedContent, project.keyword, project.customMorphemes || undefined);
-        
-        let responseMessage = "콘텐츠가 수정되었습니다.";
-        if (!morphemeAnalysis.isOptimized) {
-          responseMessage += `\n\n⚠️ SEO 최적화 상태:\n${morphemeAnalysis.issues.join('\n')}`;
-        } else {
-          responseMessage += "\n\n✅ SEO 최적화 조건을 만족합니다.";
+          const editedContent = result.bestVersion;
+          
+          // Analyze morphemes to ensure SEO conditions are met
+          const { analyzeMorphemes } = await import("./services/morphemeAnalyzer.js");
+          const morphemeAnalysis = analyzeMorphemes(editedContent, project.keyword, project.customMorphemes || undefined);
+          
+          // Create detailed response with analysis
+          let responseMessage = `✅ **콘텐츠 수정 완료**\n\n`;
+          responseMessage += `**📊 요청 분석:**\n`;
+          responseMessage += `• 수정 의도: ${result.analysis.intent}\n`;
+          responseMessage += `• 수정 대상: ${result.analysis.target}\n`;
+          responseMessage += `• 적용 전략: ${result.analysis.persuasionStrategy}\n\n`;
+          
+          responseMessage += `**🏆 최적 버전 선택 (${result.allVersions.length}개 버전 중):**\n`;
+          responseMessage += `• 품질 점수: ${result.allVersions[0]?.score.toFixed(1)}/10\n`;
+          
+          if (result.allVersions[0]?.strengths.length > 0) {
+            responseMessage += `• 강점: ${result.allVersions[0].strengths.slice(0, 2).join(', ')}\n`;
+          }
+          
+          if (!morphemeAnalysis.isOptimized) {
+            responseMessage += `\n⚠️ **SEO 최적화 상태:**\n${morphemeAnalysis.issues.slice(0, 3).join('\n')}`;
+          } else {
+            responseMessage += `\n✅ SEO 최적화 조건 충족`;
+          }
+
+          // Save assistant message
+          await storage.createChatMessage({
+            projectId: id,
+            role: "assistant",
+            content: responseMessage,
+          });
+
+          // Update project with edited content
+          const seoAnalysis = await analyzeSEOOptimization(editedContent, project.keyword);
+          const updatedProject = await storage.updateBlogProject(id, {
+            generatedContent: editedContent,
+            seoMetrics: seoAnalysis,
+          });
+
+          res.json({ 
+            success: true, 
+            type: 'edit', 
+            project: updatedProject,
+            analysis: result.analysis,
+            versions: result.allVersions.map(v => ({
+              score: v.score,
+              strengths: v.strengths,
+              weaknesses: v.weaknesses
+            }))
+          });
+        } catch (enhancedError) {
+          console.error("Enhanced chatbot error, falling back:", enhancedError);
+          
+          // Fallback to basic editing
+          const { editContent } = await import("./services/gemini.js");
+          const editedContent = await editContent(
+            project.generatedContent,
+            message,
+            project.keyword,
+            project.customMorphemes || undefined
+          );
+
+          await storage.createChatMessage({
+            projectId: id,
+            role: "assistant",
+            content: "콘텐츠가 수정되었습니다.",
+          });
+
+          const seoAnalysis = await analyzeSEOOptimization(editedContent, project.keyword);
+          const updatedProject = await storage.updateBlogProject(id, {
+            generatedContent: editedContent,
+            seoMetrics: seoAnalysis,
+          });
+
+          res.json({ success: true, type: 'edit', project: updatedProject });
         }
-
-        // Save assistant message
-        await storage.createChatMessage({
-          projectId: id,
-          role: "assistant",
-          content: responseMessage,
-        });
-
-        // Update project with edited content
-        const seoAnalysis = await analyzeSEOOptimization(editedContent, project.keyword);
-        const updatedProject = await storage.updateBlogProject(id, {
-          generatedContent: editedContent,
-          seoMetrics: seoAnalysis,
-        });
-
-        res.json({ success: true, type: 'edit', project: updatedProject });
       }
     } catch (error) {
       console.error("Chat error:", error);
