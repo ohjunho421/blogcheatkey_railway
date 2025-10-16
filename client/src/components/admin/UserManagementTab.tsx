@@ -101,8 +101,8 @@ export function UserManagementTab({ users }: UserManagementTabProps) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="basic">베이직 플랜 (30,000원)</SelectItem>
-                <SelectItem value="premium">프리미엄 플랜 (50,000원)</SelectItem>
+                <SelectItem value="basic">베이직 플랜 (50,000원)</SelectItem>
+                <SelectItem value="premium">프리미엄 플랜 (100,000원)</SelectItem>
               </SelectContent>
             </Select>
           </div>

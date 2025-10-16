@@ -100,8 +100,8 @@ pool.query(sql).then(() => {
 
 ```typescript
 const planPrices = {
-  basic: 30000,    // 30,000원
-  premium: 50000   // 50,000원
+  basic: 50000,    // 50,000원
+  premium: 100000  // 100,000원
 };
 ```
 
