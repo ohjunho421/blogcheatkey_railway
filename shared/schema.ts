@@ -24,6 +24,10 @@ export const users = pgTable("users", {
   canGenerateContent: boolean("can_generate_content").default(false),
   canGenerateImages: boolean("can_generate_images").default(false),
   canUseChatbot: boolean("can_use_chatbot").default(false),
+  // Token usage tracking
+  totalTokensUsed: integer("total_tokens_used").default(0),
+  monthlyTokensUsed: integer("monthly_tokens_used").default(0),
+  lastTokenResetAt: timestamp("last_token_reset_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -90,6 +94,35 @@ export const completedProjects = pgTable("completed_projects", {
   referenceData: jsonb("reference_data"), // Research sources and references
   seoMetrics: jsonb("seo_metrics"), // SEO analysis results
   createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User activity log for admin monitoring
+export const userActivityLog = pgTable("user_activity_log", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  activityType: text("activity_type").notNull(), // 'content_generated', 'image_generated', 'chatbot_used'
+  projectId: integer("project_id").references(() => blogProjects.id),
+  tokensUsed: integer("tokens_used").default(0),
+  details: jsonb("details"), // Additional activity details
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Payment records for subscription management
+export const paymentRecords = pgTable("payment_records", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  planType: text("plan_type").notNull(), // 'basic', 'premium'
+  amount: integer("amount").notNull(),
+  paymentMethod: text("payment_method").default("bank_transfer"), // 무통장 입금
+  paymentStatus: text("payment_status").default("pending"), // pending, confirmed, cancelled
+  depositorName: text("depositor_name"), // 입금자명
+  confirmationNote: text("confirmation_note"), // 관리자 확인 메모
+  confirmedBy: integer("confirmed_by").references(() => users.id), // 확인한 관리자 ID
+  confirmedAt: timestamp("confirmed_at"),
+  subscriptionStartDate: timestamp("subscription_start_date"),
+  subscriptionEndDate: timestamp("subscription_end_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Email login schema
@@ -194,6 +227,10 @@ export const updateUserPermissionsSchema = z.object({
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UserActivityLog = typeof userActivityLog.$inferSelect;
+export type InsertUserActivityLog = typeof userActivityLog.$inferInsert;
+export type PaymentRecord = typeof paymentRecords.$inferSelect;
+export type InsertPaymentRecord = typeof paymentRecords.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type EmailSignup = z.infer<typeof emailSignupSchema>;
 export type EmailLogin = z.infer<typeof emailLoginSchema>;

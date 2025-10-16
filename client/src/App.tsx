@@ -13,7 +13,7 @@ import History from "@/pages/history";
 import NotFound from "@/pages/not-found";
 import PricingPage from "@/pages/PricingPage";
 import PrivacyPolicy from "@/pages/privacy-policy";
-import AdminPage from "@/pages/admin";
+import AdminPage from "@/pages/admin-dashboard";
 
 import { useAuth } from "@/hooks/useAuth";
 

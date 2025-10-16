@@ -12,6 +12,7 @@ import { analyzeSEOOptimization } from "./services/seoOptimizer";
 import { enhancedSEOAnalysis } from "./services/morphemeAnalyzer";
 import { TitleGenerator } from "./services/titleGenerator";
 import { formatForMobile } from "./services/mobileFormatter";
+import { setupAdminRoutes } from "./admin-routes";
 import bcrypt from "bcryptjs";
 
 // Helper function to get authenticated user ID
@@ -50,6 +51,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Setup authentication middleware
   setupAuth(app);
+  
+  // Setup admin routes
+  setupAdminRoutes(app, storage);
 
   // Google Search Console verification route
   app.get('/google*.html', (req, res) => {
