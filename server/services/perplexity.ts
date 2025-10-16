@@ -21,6 +21,77 @@ interface PerplexityResponse {
   };
 }
 
+// Extract title from HTML
+async function fetchTitleFromUrl(url: string): Promise<string> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'text/html'
+      },
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const html = await response.text();
+    
+    // Try different title patterns
+    const patterns = [
+      /<title[^>]*>(.*?)<\/title>/i,
+      /<meta\s+property="og:title"\s+content="([^"]*)"/i,
+      /<meta\s+name="title"\s+content="([^"]*)"/i,
+      /<h1[^>]*>(.*?)<\/h1>/i
+    ];
+    
+    for (const pattern of patterns) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        let title = match[1].trim();
+        // Clean up title
+        title = title.replace(/<[^>]+>/g, ''); // Remove HTML tags
+        title = title.replace(/&nbsp;/g, ' ');
+        title = title.replace(/&quot;/g, '"');
+        title = title.replace(/&amp;/g, '&');
+        title = title.replace(/&#39;/g, "'");
+        title = title.replace(/&lt;/g, '<');
+        title = title.replace(/&gt;/g, '>');
+        
+        // Truncate if too long
+        if (title.length > 100) {
+          title = title.substring(0, 100) + '...';
+        }
+        
+        return title || getDefaultTitle(url);
+      }
+    }
+    
+    return getDefaultTitle(url);
+  } catch (error) {
+    console.warn(`Failed to fetch title from ${url}:`, error instanceof Error ? error.message : String(error));
+    return getDefaultTitle(url);
+  }
+}
+
+// Get default title from domain
+function getDefaultTitle(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    const domain = urlObj.hostname.replace('www.', '');
+    const domainName = domain.split('.')[0];
+    return domainName.charAt(0).toUpperCase() + domainName.slice(1) + ' 자료';
+  } catch {
+    return '참고 자료';
+  }
+}
+
 async function makePerplexityRequest(messages: any[], maxRetries = 3): Promise<PerplexityResponse> {
   const apiKey = process.env.PERPLEXITY_API_KEY;
   if (!apiKey) {
@@ -135,10 +206,24 @@ Find specific data points, statistics, research findings, and expert analysis wi
   ];
 
   const data = await makePerplexityRequest(messages);
+  const citations = data.citations || [];
+  
+  // Fetch titles for citations in parallel (max 10 to avoid overwhelming)
+  console.log(`📚 Fetching titles for ${citations.length} citations...`);
+  const citationsWithTitles = await Promise.all(
+    citations.slice(0, 10).map(async (url) => {
+      const title = await fetchTitleFromUrl(url);
+      console.log(`✓ ${url} → ${title}`);
+      return { url, title };
+    })
+  );
+  
+  console.log(`✅ Fetched ${citationsWithTitles.length} titles`);
   
   return {
     content: data.choices[0].message.content,
-    citations: data.citations || []
+    citations,
+    citationsWithTitles
   };
 }
 
