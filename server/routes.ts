@@ -908,6 +908,176 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
+  // ===== PROJECT SESSION MANAGEMENT =====
+  
+  // Save project as session
+  app.post("/api/projects/:id/sessions", async (req, res) => {
+    try {
+      const projectId = parseInt(req.params.id);
+      const { sessionName, sessionDescription } = req.body;
+      
+      const userId = await getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+
+      // Get current project state
+      const project = await storage.getBlogProject(projectId);
+      if (!project) {
+        return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
+      }
+
+      // Get chat history
+      const chatHistory = await storage.getChatMessages(projectId);
+
+      // Create session snapshot
+      const session = await storage.createProjectSession({
+        userId,
+        projectId,
+        sessionName: sessionName || `${project.keyword} - ${new Date().toLocaleDateString()}`,
+        sessionDescription,
+        keyword: project.keyword,
+        keywordAnalysis: project.keywordAnalysis as any,
+        subtitles: project.subtitles as any,
+        researchData: project.researchData as any,
+        businessInfo: project.businessInfo as any,
+        generatedContent: project.generatedContent,
+        seoMetrics: project.seoMetrics as any,
+        referenceLinks: project.referenceLinks as any,
+        generatedImages: project.generatedImages as any,
+        referenceBlogLinks: project.referenceBlogLinks as any,
+        customMorphemes: project.customMorphemes,
+        chatHistory: chatHistory as any, // Store as JSON
+      });
+
+      res.json({ success: true, session });
+    } catch (error) {
+      console.error("Save session error:", error);
+      res.status(500).json({ error: "세션 저장에 실패했습니다" });
+    }
+  });
+
+  // Get all sessions for user
+  app.get("/api/sessions", async (req, res) => {
+    try {
+      const userId = await getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+
+      const sessions = await storage.getProjectSessions(userId);
+      res.json(sessions);
+    } catch (error) {
+      console.error("Get sessions error:", error);
+      res.status(500).json({ error: "세션 목록 조회에 실패했습니다" });
+    }
+  });
+
+  // Load session into a new or existing project
+  app.post("/api/sessions/:sessionId/load", async (req, res) => {
+    try {
+      const sessionId = parseInt(req.params.sessionId);
+      const { createNew } = req.body; // Whether to create new project or update existing
+      
+      const userId = await getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+
+      // Get session data
+      const session = await storage.getProjectSession(sessionId);
+      if (!session) {
+        return res.status(404).json({ error: "세션을 찾을 수 없습니다" });
+      }
+
+      if (session.userId !== userId) {
+        return res.status(403).json({ error: "권한이 없습니다" });
+      }
+
+      // Create new project or update existing
+      let project;
+      if (createNew || !session.projectId) {
+        // Create new project from session
+        project = await storage.createBlogProject({
+          userId,
+          keyword: session.keyword,
+          status: 'completed',
+          keywordAnalysis: session.keywordAnalysis as any,
+          subtitles: session.subtitles as any,
+          researchData: session.researchData as any,
+          businessInfo: session.businessInfo as any,
+          generatedContent: session.generatedContent,
+          seoMetrics: session.seoMetrics as any,
+          referenceLinks: session.referenceLinks as any,
+          generatedImages: session.generatedImages as any,
+          referenceBlogLinks: session.referenceBlogLinks as any,
+          customMorphemes: session.customMorphemes,
+        });
+
+        // Restore chat history
+        if (session.chatHistory && Array.isArray(session.chatHistory)) {
+          for (const msg of session.chatHistory as any[]) {
+            await storage.createChatMessage({
+              projectId: project.id,
+              role: msg.role,
+              content: msg.content,
+              imageUrl: msg.imageUrl,
+            });
+          }
+        }
+      } else {
+        // Update existing project
+        project = await storage.updateBlogProject(session.projectId, {
+          keyword: session.keyword,
+          keywordAnalysis: session.keywordAnalysis as any,
+          subtitles: session.subtitles as any,
+          researchData: session.researchData as any,
+          businessInfo: session.businessInfo as any,
+          generatedContent: session.generatedContent,
+          seoMetrics: session.seoMetrics as any,
+          referenceLinks: session.referenceLinks as any,
+          generatedImages: session.generatedImages as any,
+          referenceBlogLinks: session.referenceBlogLinks as any,
+          customMorphemes: session.customMorphemes,
+        });
+      }
+
+      res.json({ success: true, project });
+    } catch (error) {
+      console.error("Load session error:", error);
+      res.status(500).json({ error: "세션 불러오기에 실패했습니다" });
+    }
+  });
+
+  // Delete session
+  app.delete("/api/sessions/:sessionId", async (req, res) => {
+    try {
+      const sessionId = parseInt(req.params.sessionId);
+      
+      const userId = await getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "인증이 필요합니다" });
+      }
+
+      // Verify ownership
+      const session = await storage.getProjectSession(sessionId);
+      if (!session) {
+        return res.status(404).json({ error: "세션을 찾을 수 없습니다" });
+      }
+
+      if (session.userId !== userId) {
+        return res.status(403).json({ error: "권한이 없습니다" });
+      }
+
+      await storage.deleteProjectSession(sessionId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Delete session error:", error);
+      res.status(500).json({ error: "세션 삭제에 실패했습니다" });
+    }
+  });
+
   // ===== BUSINESS INFO ROUTES =====
   
   // Get user business info

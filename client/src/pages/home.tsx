@@ -14,6 +14,7 @@ import { AIModelStatus } from "@/components/AIModelStatus";
 import { BusinessInfoForm } from "@/components/BusinessInfoForm";
 import { BlogContentDisplay } from "@/components/BlogContentDisplay";
 import { EditingChat } from "@/components/EditingChat";
+import { SessionManager } from "@/components/SessionManager";
 import { ReferenceLinks } from "@/components/ReferenceLinks";
 import { InfographicGallery } from "@/components/InfographicGallery";
 import { ReferenceBlogLinksForm } from "@/components/ReferenceBlogLinksForm";
@@ -249,6 +250,16 @@ export default function Home() {
               <BlogContentDisplay 
                 project={project as any} 
                 onRefresh={refetch}
+              />
+            )}
+
+            {/* Session Manager - Show when project exists */}
+            {project && (
+              <SessionManager 
+                currentProjectId={(project as any).id}
+                onSessionLoaded={(newProjectId) => {
+                  navigate(`/project/${newProjectId}`);
+                }}
               />
             )}
 

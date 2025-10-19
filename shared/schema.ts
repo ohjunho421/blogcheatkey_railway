@@ -84,6 +84,31 @@ export const chatMessages = pgTable("chat_messages", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Project sessions for saving/loading writing states
+export const projectSessions = pgTable("project_sessions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  projectId: integer("project_id").references(() => blogProjects.id),
+  sessionName: text("session_name").notNull(),
+  sessionDescription: text("session_description"),
+  // Snapshot of project state
+  keyword: text("keyword").notNull(),
+  keywordAnalysis: jsonb("keyword_analysis"),
+  subtitles: jsonb("subtitles"),
+  researchData: jsonb("research_data"),
+  businessInfo: jsonb("business_info"),
+  generatedContent: text("generated_content"),
+  seoMetrics: jsonb("seo_metrics"),
+  referenceLinks: jsonb("reference_links"),
+  generatedImages: jsonb("generated_images"),
+  referenceBlogLinks: jsonb("reference_blog_links"),
+  customMorphemes: text("custom_morphemes"),
+  // Chat history snapshot
+  chatHistory: jsonb("chat_history"), // Array of chat messages at time of save
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Completed projects for history page
 export const completedProjects = pgTable("completed_projects", {
   id: serial("id").primaryKey(),
@@ -181,6 +206,25 @@ export const insertCompletedProjectSchema = createInsertSchema(completedProjects
   seoMetrics: true,
 });
 
+export const insertProjectSessionSchema = createInsertSchema(projectSessions).pick({
+  userId: true,
+  projectId: true,
+  sessionName: true,
+  sessionDescription: true,
+  keyword: true,
+  keywordAnalysis: true,
+  subtitles: true,
+  researchData: true,
+  businessInfo: true,
+  generatedContent: true,
+  seoMetrics: true,
+  referenceLinks: true,
+  generatedImages: true,
+  referenceBlogLinks: true,
+  customMorphemes: true,
+  chatHistory: true,
+});
+
 export const insertUserBusinessInfoSchema = createInsertSchema(userBusinessInfo).pick({
   userId: true,
   businessName: true,
@@ -241,6 +285,8 @@ export type InsertBlogProject = z.infer<typeof insertBlogProjectSchema>;
 export type BlogProject = typeof blogProjects.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
+export type InsertProjectSession = z.infer<typeof insertProjectSessionSchema>;
+export type ProjectSession = typeof projectSessions.$inferSelect;
 export type InsertCompletedProject = z.infer<typeof insertCompletedProjectSchema>;
 export type CompletedProject = typeof completedProjects.$inferSelect;
 export type BusinessInfo = z.infer<typeof businessInfoSchema>;

@@ -1,4 +1,4 @@
-import { users, userBusinessInfo, blogProjects, chatMessages, completedProjects, type User, type InsertUser, type UserBusinessInfo, type InsertUserBusinessInfo, type BlogProject, type InsertBlogProject, type ChatMessage, type InsertChatMessage, type CompletedProject, type InsertCompletedProject, type UpdateUserPermissions } from "@shared/schema";
+import { users, userBusinessInfo, blogProjects, chatMessages, projectSessions, completedProjects, type User, type InsertUser, type UserBusinessInfo, type InsertUserBusinessInfo, type BlogProject, type InsertBlogProject, type ChatMessage, type InsertChatMessage, type ProjectSession, type InsertProjectSession, type CompletedProject, type InsertCompletedProject, type UpdateUserPermissions } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 
@@ -30,6 +30,12 @@ export interface IStorage {
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
   getChatMessages(projectId: number): Promise<ChatMessage[]>;
   deleteChatMessages(projectId: number): Promise<boolean>;
+  
+  // Project session methods
+  createProjectSession(session: InsertProjectSession): Promise<ProjectSession>;
+  getProjectSession(id: number): Promise<ProjectSession | undefined>;
+  getProjectSessions(userId: number): Promise<ProjectSession[]>;
+  deleteProjectSession(id: number): Promise<boolean>;
   
   // Completed project methods
   createCompletedProject(project: InsertCompletedProject): Promise<CompletedProject>;
@@ -287,6 +293,42 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(completedProjects)
       .where(eq(completedProjects.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Project session methods
+  async createProjectSession(session: InsertProjectSession): Promise<ProjectSession> {
+    const [created] = await db
+      .insert(projectSessions)
+      .values({
+        ...session,
+        updatedAt: new Date(),
+      })
+      .returning();
+    return created;
+  }
+
+  async getProjectSession(id: number): Promise<ProjectSession | undefined> {
+    const [session] = await db
+      .select()
+      .from(projectSessions)
+      .where(eq(projectSessions.id, id));
+    return session || undefined;
+  }
+
+  async getProjectSessions(userId: number): Promise<ProjectSession[]> {
+    const { desc } = await import("drizzle-orm");
+    return await db
+      .select()
+      .from(projectSessions)
+      .where(eq(projectSessions.userId, userId))
+      .orderBy(desc(projectSessions.updatedAt));
+  }
+
+  async deleteProjectSession(id: number): Promise<boolean> {
+    const result = await db
+      .delete(projectSessions)
+      .where(eq(projectSessions.id, id));
     return (result.rowCount ?? 0) > 0;
   }
 }
