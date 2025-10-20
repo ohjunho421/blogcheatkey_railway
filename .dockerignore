@@ -1,0 +1,76 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Development files
+.git
+.gitignore
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation
+*.md
+!README.md
+docs/
+.claude/
+
+# Test files
+tests/
+test/
+**/*.test.js
+**/*.test.ts
+**/*.spec.js
+**/*.spec.ts
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Build artifacts (will be rebuilt)
+dist/
+build/
+.next/
+out/
+
+# Local development
+.replit
+replit.md
+.local/
+.config/
+
+# Logs
+logs/
+*.log
+
+# Database
+*.sqlite
+*.db
+
+# Images and media
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.svg
+*.mp4
+*.mov
+
+# Scripts
+*.ps1
+*.sh
+*.bat
+
+# Backup files
+*.backup
+*.bak
+*.tmp

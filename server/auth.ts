@@ -56,6 +56,8 @@ export function setupAuth(app: Express) {
   app.set('trust proxy', 1);
   
   // Session configuration
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   app.use(session({
     store: new pgStore({
       conString: process.env.DATABASE_URL,
@@ -66,12 +68,13 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     name: 'connect.sid',
     cookie: {
-      secure: false,
-      httpOnly: false, // 개발용
+      secure: isProduction, // HTTPS에서는 true
+      httpOnly: true, // XSS 공격 방지
       maxAge: 24 * 60 * 60 * 1000,
-      sameSite: 'lax',
+      sameSite: isProduction ? 'none' : 'lax', // Cross-site 쿠키 허용
       domain: undefined
-    }
+    },
+    proxy: isProduction // Railway의 프록시 신뢰
   }));
 
   // Initialize Passport
@@ -92,18 +95,6 @@ export function setupAuth(app: Express) {
         console.log('Google login successful, user ID:', (req.user as any).id);
       }
       res.redirect('/');
-    }
-  );
-
-  // Auth routes
-  app.get('/api/auth/google',
-    passport.authenticate('google', { scope: ['profile', 'email'] })
-  );
-
-  app.get('/api/auth/google/callback',
-    passport.authenticate('google', { failureRedirect: '/' }),
-    (req, res) => {
-      res.redirect('/'); // Redirect to home page after successful login
     }
   );
 
