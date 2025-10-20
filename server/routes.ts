@@ -579,25 +579,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Content generation completed in ${generationResult.attempts} attempts. Success: ${generationResult.success}`);
 
-      // ✅ SEO 최적화 검증 성공 시에만 저장 및 완료 처리
+      // ✅ 3번 시도 후 조건 미달성이어도 현재 상태 그대로 저장
+      // 사용자에게 경고와 함께 콘텐츠 전달
+      let projectStatus = "completed";
+      let warningMessage = null;
+      
       if (!generationResult.success) {
-        console.log(`❌ SEO 최적화 조건 미달성으로 콘텐츠 생성 실패`);
-        await storage.updateBlogProject(id, {
-          status: "data_collection", // 상태를 이전 단계로 되돌림
-        });
-        
-        return res.status(422).json({ 
-          error: "SEO 최적화 조건을 만족하지 않습니다",
+        console.log(`⚠️ SEO 최적화 조건 미달성, 현재 상태 그대로 저장`);
+        projectStatus = "completed_with_warnings"; // 경고 있음 표시
+        warningMessage = {
+          type: "seo_optimization_incomplete",
+          message: `${generationResult.attempts}회 시도 후 일부 SEO 조건 미달성. 콘텐츠는 저장되었으나 수동 수정이 필요할 수 있습니다.`,
           analysis: seoAnalysis,
           issues: seoAnalysis.issues || [],
           suggestions: seoAnalysis.suggestions || []
-        });
+        };
       }
 
       const updatedProject = await storage.updateBlogProject(id, {
         generatedContent: finalContent,
         seoMetrics: seoAnalysis,
-        status: "completed",
+        status: projectStatus === "completed_with_warnings" ? "completed" : projectStatus,
       });
 
       // 완성된 글을 작성 내역에 저장
@@ -616,7 +618,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // 저장 실패해도 메인 프로세스는 계속 진행
       }
 
-      res.json(updatedProject);
+      // 경고 메시지가 있으면 함께 반환
+      if (warningMessage) {
+        res.json({
+          ...updatedProject,
+          warning: warningMessage
+        });
+      } else {
+        res.json(updatedProject);
+      }
     } catch (error) {
       console.error("Content generation error:", error);
       res.status(500).json({ error: "블로그 생성에 실패했습니다" });
@@ -651,24 +661,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Content regeneration completed in ${regenerationResult.attempts} attempts. Success: ${regenerationResult.success}`);
 
-      // ✅ SEO 최적화 검증 성공 시에만 저장 및 완료 처리  
+      // ✅ 3번 시도 후 조건 미달성이어도 현재 상태 그대로 저장
+      let projectStatus = "completed";
+      let warningMessage = null;
+      
       if (!regenerationResult.success) {
-        console.log(`❌ SEO 최적화 조건 미달성으로 콘텐츠 재생성 실패`);
-        return res.status(422).json({ 
-          error: "SEO 최적화 조건을 만족하지 않습니다",
+        console.log(`⚠️ SEO 최적화 조건 미달성, 현재 상태 그대로 저장`);
+        projectStatus = "completed_with_warnings";
+        warningMessage = {
+          type: "seo_optimization_incomplete",
+          message: `${regenerationResult.attempts}회 시도 후 일부 SEO 조건 미달성. 콘텐츠는 저장되었으나 수동 수정이 필요할 수 있습니다.`,
           analysis: seoAnalysis,
           issues: seoAnalysis.issues || [],
           suggestions: seoAnalysis.suggestions || []
-        });
+        };
       }
 
       const updatedProject = await storage.updateBlogProject(id, {
         generatedContent: finalContent,
         seoMetrics: seoAnalysis,
-        status: "completed",
+        status: projectStatus === "completed_with_warnings" ? "completed" : projectStatus,
       });
 
-      res.json(updatedProject);
+      // 경고 메시지가 있으면 함께 반환
+      if (warningMessage) {
+        res.json({
+          ...updatedProject,
+          warning: warningMessage
+        });
+      } else {
+        res.json(updatedProject);
+      }
     } catch (error) {
       console.error("Content regeneration error:", error);
       res.status(500).json({ error: "블로그 재생성에 실패했습니다" });
