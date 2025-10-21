@@ -32,11 +32,11 @@ export async function generateStrictMorphemeContent(
       // 기본 지침 (더 강화된 SEO 조건)
       const baseInstructions = [
         `🔥 공백 제외 정확히 1700-2000자 범위 안에서 글을 작성해주세요. (1700자 미만이나 2000자 초과 절대 금지)`,
-        `🎯 키워드 "${keyword}"의 완전한 형태를 정확히 5-15회 사용해주세요. (4회 이하나 16회 이상 절대 금지)`,
+        `🎯 키워드 "${keyword}"의 완전한 형태를 정확히 5-7회 사용해주세요. (4회 이하나 8회 이상 절대 금지)`,
         `🎯 중요: 키워드 "${keyword}"를 이루는 각각의 단어들을 15-17회씩 반복해주세요. 예를 들어 "영어학원 블로그"라는 키워드라면 "영어학원"이라는 단어와 "블로그"라는 단어를 각각 15-17회씩 사용하세요. (14회 이하나 18회 이상 절대 금지)`,
         `🚨 키워드를 구성하는 단어가 아닌 다른 모든 단어는 14회 미만으로 제한해주세요. (키워드 우위성 확보 필수)`,
         `📖 서론 600-700자 (전체의 35-40%), 본론 900-1100자, 결론 200-300자로 분량을 정확히 배치해주세요.`,
-        `⚠️ 어떤 단어도 20회를 초과하면 절대 안됩니다. (검색엔진 스팸 인식)`,
+        `⚠️ 어떤 단어도 18회를 초과하면 절대 안됩니다. (검색엔진 스팸 인식)`,
         `✅ 서론은 독자 공감형(전략 A) 또는 경고형(전략 B) 중 하나를 선택하여 스토리텔링 중심으로 작성`,
         `✅ 결론은 핵심 요약 + 한계 인정 + 부담없는 CTA 구조로 자연스럽게 작성`
       ];
@@ -67,8 +67,8 @@ export async function generateStrictMorphemeContent(
           const needed = 5 - previousAnalysis.keywordMorphemeCount;
           problems.push(`키워드 "${keyword}" ${needed}회 부족 (현재 ${previousAnalysis.keywordMorphemeCount}회)`);
           solutions.push(`서론/본론/결론에 "${keyword}"를 자연스럽게 ${needed}회 추가`);
-        } else if (previousAnalysis.keywordMorphemeCount > 15) {
-          const excess = previousAnalysis.keywordMorphemeCount - 15;
+        } else if (previousAnalysis.keywordMorphemeCount > 7) {
+          const excess = previousAnalysis.keywordMorphemeCount - 7;
           problems.push(`키워드 "${keyword}" ${excess}회 과다 (현재 ${previousAnalysis.keywordMorphemeCount}회)`);
           solutions.push(`어색한 위치의 "${keyword}"를 ${excess}회 제거하고 문장 자연스럽게 재작성`);
         }
@@ -93,7 +93,7 @@ export async function generateStrictMorphemeContent(
           seoSuggestions.push(`⏰ 다음이 마지막 시도입니다. 이번에 최대한 정확하게 수정해주세요!`);
         } else if (attempt === 3) {
           seoSuggestions.push(`\n🔥🔥🔥 최종 3차 수정 [매우 중요]: 마지막 기회입니다!`);
-          seoSuggestions.push(`📊 숫자 조건을 정확히 맞춰주세요: 글자수 1700-2000자, 키워드 5-15회`);
+          seoSuggestions.push(`📊 숫자 조건을 정확히 맞춰주세요: 글자수 1700-2000자, 키워드 5-7회`);
           seoSuggestions.push(`⚠️ 이번 시도가 실패하면 SEO 조건 미달로 완료됩니다. 반드시 모든 조건을 충족해주세요!`);
         }
       }
@@ -171,7 +171,7 @@ export async function generateStrictMorphemeContent(
       
       // 강력한 검증: 글자수, 키워드, 형태소 빈도 모든 조건 확인
       const isCharacterCountValid = analysis.characterCount >= 1700 && analysis.characterCount <= 2000;
-      const isKeywordCountValid = analysis.keywordMorphemeCount >= 5 && analysis.keywordMorphemeCount <= 15;
+      const isKeywordCountValid = analysis.keywordMorphemeCount >= 5 && analysis.keywordMorphemeCount <= 7;
       
       // 과다 사용 형태소 검사 (20회 초과 방지)
       const hasOverusedMorphemes = analysis.issues.some(issue => 

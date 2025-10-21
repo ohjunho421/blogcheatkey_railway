@@ -67,7 +67,7 @@ export function formatForMobile(text: string, maxWidth: number = 27): string {
 }
 
 /**
- * 단일 줄을 한국어 기준으로 포맷팅 (단순하고 안전한 방식)
+ * 단일 줄을 한국어 기준으로 포맷팅 (의미단위 중심)
  */
 function formatLineSimple(text: string, maxWidth: number): string {
   if (getKoreanLength(text) <= maxWidth) {
@@ -81,7 +81,12 @@ function formatLineSimple(text: string, maxWidth: number): string {
     // 현재 위치에서 시작해서 maxWidth 이내의 가장 긴 부분 찾기
     let end = pos + 1;
     let bestEnd = pos + 1;
-    let safeEnd = -1;
+    
+    // 의미단위 줄바꿈 위치 찾기 (우선순위별)
+    let spaceBreak = -1;        // 1순위: 공백 (어절 단위)
+    let sentenceBreak = -1;     // 2순위: 문장 끝 구두점 (.!?)
+    let clauseBreak = -1;       // 3순위: 절 구분 구두점 (,;:)
+    let koreanSyllable = -1;    // 4순위: 한글 음절 경계
 
     // maxWidth 내에서 가능한 한 긴 부분 찾기
     while (end <= text.length) {
@@ -94,40 +99,66 @@ function formatLineSimple(text: string, maxWidth: number): string {
 
       bestEnd = end;
 
-      // 안전한 줄바꿈 위치 찾기 (한국어 단어 단위)
+      // 의미단위 줄바꿈 위치 체크 (한국어 자연스러운 끊기)
       if (end < text.length) {
         const nextChar = text[end];
         const prevChar = text[end - 1];
         
-        // 공백 뒤는 가장 안전 (단어 경계)
-        if (prevChar === ' ' && nextChar !== ' ') {
-          safeEnd = end;
+        // 1순위: 공백 뒤 (어절 단위 - 가장 자연스러움)
+        if (prevChar === ' ') {
+          spaceBreak = end;
         }
-        // 쉼표, 마침표 뒤는 안전
-        if (/[,，.。]/.test(prevChar) && nextChar === ' ') {
-          safeEnd = end;
+        
+        // 2순위: 문장 끝 구두점 뒤 (.!?。！？)
+        if (/[.!?。！？]/.test(prevChar)) {
+          sentenceBreak = end;
+          // 공백이 뒤따르면 더 이상적
+          if (nextChar === ' ') {
+            sentenceBreak = end + 1;
+          }
         }
-        // 한글 뒤 공백 (단어 단위 끊기)
-        if (/[가-힣]/.test(prevChar) && nextChar === ' ') {
-          safeEnd = end;
+        
+        // 3순위: 절 구분 구두점 뒤 (,;:，；：)
+        if (/[,;:，；：]/.test(prevChar)) {
+          clauseBreak = end;
+          // 공백이 뒤따르면 더 이상적
+          if (nextChar === ' ') {
+            clauseBreak = end + 1;
+          }
         }
-        // 구두점 뒤 (문장 경계)
-        if (/[,，.。!！?？;；:：]/.test(prevChar)) {
-          safeEnd = end;
+        
+        // 4순위: 한글 음절 경계 (자음+모음 분리 방지)
+        if (/[가-힣]/.test(prevChar)) {
+          koreanSyllable = end;
         }
       }
       
       end++;
     }
 
-    // 안전한 위치가 있으면 그곳에서, 아니면 bestEnd에서 자르기
-    const cutPos = safeEnd > pos ? safeEnd : bestEnd;
+    // 우선순위에 따라 줄바꿈 위치 결정
+    let cutPos = bestEnd;
+    
+    if (spaceBreak > pos) {
+      // 1순위: 공백 (어절 단위)
+      cutPos = spaceBreak;
+    } else if (sentenceBreak > pos) {
+      // 2순위: 문장 끝
+      cutPos = sentenceBreak;
+    } else if (clauseBreak > pos) {
+      // 3순위: 절 구분
+      cutPos = clauseBreak;
+    } else if (koreanSyllable > pos) {
+      // 4순위: 한글 음절 경계
+      cutPos = koreanSyllable;
+    }
+    
     let line = text.slice(pos, cutPos);
 
     // 줄 끝 공백 제거
     line = line.trimEnd();
     
-    // 다음 위치로 이동 (공백 건너뛰기 - 하지만 안전하게)
+    // 다음 위치로 이동
     pos = cutPos;
     
     // 공백만 건너뛰기 (문자는 절대 건너뛰지 않음)
