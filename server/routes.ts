@@ -618,6 +618,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // 저장 실패해도 메인 프로세스는 계속 진행
       }
 
+      // 글 완성 시 자동으로 세션 저장
+      try {
+        const chatHistory = await storage.getChatMessages(id);
+        const sessionName = `${updatedProject.keyword} - ${new Date().toLocaleString('ko-KR', { 
+          year: 'numeric', 
+          month: '2-digit', 
+          day: '2-digit', 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        })}`;
+        
+        await storage.createProjectSession({
+          userId: updatedProject.userId!,
+          projectId: id,
+          sessionName,
+          sessionDescription: '자동 저장된 완성 글',
+          keyword: updatedProject.keyword,
+          keywordAnalysis: updatedProject.keywordAnalysis as any,
+          subtitles: updatedProject.subtitles as any,
+          researchData: updatedProject.researchData as any,
+          businessInfo: updatedProject.businessInfo as any,
+          generatedContent: finalContent,
+          seoMetrics: seoAnalysis as any,
+          referenceLinks: updatedProject.referenceLinks as any,
+          generatedImages: updatedProject.generatedImages as any,
+          referenceBlogLinks: updatedProject.referenceBlogLinks as any,
+          customMorphemes: updatedProject.customMorphemes || null,
+          chatHistory: chatHistory as any,
+        });
+        console.log(`Session automatically saved for project ${id}`);
+      } catch (sessionError) {
+        console.error("Failed to save session:", sessionError);
+        // 세션 저장 실패해도 메인 프로세스는 계속 진행
+      }
+
       // 경고 메시지가 있으면 함께 반환
       if (warningMessage) {
         res.json({
@@ -682,6 +717,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         seoMetrics: seoAnalysis,
         status: projectStatus === "completed_with_warnings" ? "completed" : projectStatus,
       });
+
+      // 재생성 시에도 자동으로 세션 저장
+      try {
+        const chatHistory = await storage.getChatMessages(id);
+        const sessionName = `${updatedProject.keyword} - ${new Date().toLocaleString('ko-KR', { 
+          year: 'numeric', 
+          month: '2-digit', 
+          day: '2-digit', 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        })}`;
+        
+        await storage.createProjectSession({
+          userId: updatedProject.userId!,
+          projectId: id,
+          sessionName,
+          sessionDescription: '재생성 후 자동 저장된 글',
+          keyword: updatedProject.keyword,
+          keywordAnalysis: updatedProject.keywordAnalysis as any,
+          subtitles: updatedProject.subtitles as any,
+          researchData: updatedProject.researchData as any,
+          businessInfo: updatedProject.businessInfo as any,
+          generatedContent: finalContent,
+          seoMetrics: seoAnalysis as any,
+          referenceLinks: updatedProject.referenceLinks as any,
+          generatedImages: updatedProject.generatedImages as any,
+          referenceBlogLinks: updatedProject.referenceBlogLinks as any,
+          customMorphemes: updatedProject.customMorphemes || null,
+          chatHistory: chatHistory as any,
+        });
+        console.log(`Session automatically saved after regeneration for project ${id}`);
+      } catch (sessionError) {
+        console.error("Failed to save session after regeneration:", sessionError);
+        // 세션 저장 실패해도 메인 프로세스는 계속 진행
+      }
 
       // 경고 메시지가 있으면 함께 반환
       if (warningMessage) {

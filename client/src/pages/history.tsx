@@ -1,12 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, Calendar, Tag, ExternalLink, Copy, ChevronLeft } from "lucide-react";
+import { FileText, Calendar, Tag, ExternalLink, Copy, ChevronLeft, FolderOpen, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
+import { apiRequest } from "@/lib/queryClient";
 
 interface CompletedProject {
   id: number;
@@ -18,14 +19,58 @@ interface CompletedProject {
   userId: number;
 }
 
+interface ProjectSession {
+  id: number;
+  sessionName: string;
+  sessionDescription: string;
+  keyword: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function History() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const queryClient = useQueryClient();
 
   const { data: projects = [], isLoading } = useQuery<CompletedProject[]>({
     queryKey: ["/api/completed-projects"],
     enabled: !!user,
+  });
+
+  // Fetch all sessions to match with completed projects
+  const { data: sessions = [] } = useQuery<ProjectSession[]>({
+    queryKey: ["/api/sessions"],
+    enabled: !!user,
+  });
+
+  // Load session mutation
+  const loadSession = useMutation({
+    mutationFn: async (sessionId: number) => {
+      const response = await apiRequest("POST", `/api/sessions/${sessionId}/load`, {
+        createNew: true,
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "세션 불러오기 완료",
+        description: "해당 글의 작성 환경을 불러왔습니다. 챗봇으로 수정할 수 있습니다.",
+      });
+      
+      // Navigate to the loaded project
+      if (data.project?.id) {
+        navigate(`/project/${data.project.id}`);
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "불러오기 실패",
+        description: error.message || "세션을 불러오는데 실패했습니다.",
+        variant: "destructive",
+      });
+    },
   });
 
   const copyToClipboard = async (content: string) => {
@@ -50,6 +95,38 @@ export default function History() {
     } catch {
       return dateString;
     }
+  };
+
+  // Find matching session for a completed project
+  const findMatchingSession = (project: CompletedProject): ProjectSession | null => {
+    if (!sessions || sessions.length === 0) return null;
+    
+    // Find sessions with the same keyword
+    const matchingSessions = sessions.filter(
+      (session) => session.keyword === project.keyword
+    );
+    
+    if (matchingSessions.length === 0) return null;
+    
+    // Find the session closest in time to the project
+    const projectTime = new Date(project.createdAt).getTime();
+    let closestSession = matchingSessions[0];
+    let minTimeDiff = Math.abs(new Date(closestSession.createdAt).getTime() - projectTime);
+    
+    for (const session of matchingSessions) {
+      const timeDiff = Math.abs(new Date(session.createdAt).getTime() - projectTime);
+      if (timeDiff < minTimeDiff) {
+        minTimeDiff = timeDiff;
+        closestSession = session;
+      }
+    }
+    
+    // Only return if within 5 minutes (auto-saved sessions should be very close in time)
+    if (minTimeDiff < 5 * 60 * 1000) {
+      return closestSession;
+    }
+    
+    return null;
   };
 
   const extractReferences = (referenceData: any) => {
@@ -158,6 +235,7 @@ export default function History() {
           <div className="grid gap-6">
             {projects.map((project) => {
               const references = extractReferences(project.referenceData);
+              const matchingSession = findMatchingSession(project);
               
               return (
                 <Card key={project.id} className="hover:shadow-lg transition-shadow">
@@ -180,15 +258,33 @@ export default function History() {
                           </div>
                         </div>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => copyToClipboard(project.content)}
-                        className="flex items-center gap-2"
-                      >
-                        <Copy className="h-4 w-4" />
-                        복사
-                      </Button>
+                      <div className="flex gap-2">
+                        {matchingSession && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => loadSession.mutate(matchingSession.id)}
+                            disabled={loadSession.isPending}
+                            className="flex items-center gap-2"
+                          >
+                            {loadSession.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <FolderOpen className="h-4 w-4" />
+                            )}
+                            불러오기
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => copyToClipboard(project.content)}
+                          className="flex items-center gap-2"
+                        >
+                          <Copy className="h-4 w-4" />
+                          복사
+                        </Button>
+                      </div>
                     </div>
                   </CardHeader>
                   
