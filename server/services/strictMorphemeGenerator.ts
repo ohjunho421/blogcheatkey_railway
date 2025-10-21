@@ -19,7 +19,7 @@ export async function generateStrictMorphemeContent(
   searchIntent?: string,
   userConcerns?: string
 ): Promise<StrictGenerationResult> {
-  const maxAttempts = 3; // 최대 3회 시도 (1회 생성 + 2회 부분 수정)
+  const maxAttempts = 4; // 최대 4회 시도 (1회 생성 + 3회 부분 수정)
   let previousAnalysis: any = null; // 이전 시도 분석 결과 저장
   let generatedContent: string | null = null; // 1차 생성 결과 저장
   
@@ -47,41 +47,53 @@ export async function generateStrictMorphemeContent(
       if (previousAnalysis && attempt > 1) {
         console.log(`🔍 이전 시도 분석 기반 맞춤 수정 지침 생성 (attempt ${attempt})`);
         
+        // 🆕 통합 피드백: 모든 문제를 한번에 제시
+        const problems = [];
+        const solutions = [];
+        
         // 글자수 문제 해결
         if (previousAnalysis.characterCount < 1700) {
           const needed = 1700 - previousAnalysis.characterCount;
-          seoSuggestions.push(`📏 이전 시도 글자수 부족: ${previousAnalysis.characterCount}자 → ${needed}자 더 길게 작성해주세요!`);
-          seoSuggestions.push(`📏 각 단락을 더 상세히 설명하고, 구체적인 예시를 추가해주세요.`);
+          problems.push(`글자수 ${needed}자 부족 (현재 ${previousAnalysis.characterCount}자)`);
+          solutions.push(`본론 부분에 구체적인 예시, 사례, 설명을 ${needed}자 추가`);
         } else if (previousAnalysis.characterCount > 2000) {
           const excess = previousAnalysis.characterCount - 2000;
-          seoSuggestions.push(`📏 이전 시도 글자수 초과: ${previousAnalysis.characterCount}자 → ${excess}자 줄여주세요!`);
-          seoSuggestions.push(`📏 불필요한 부연설명을 줄이고 핵심만 간결하게 작성해주세요.`);
+          problems.push(`글자수 ${excess}자 초과 (현재 ${previousAnalysis.characterCount}자)`);
+          solutions.push(`불필요한 부연설명 제거하여 ${excess}자 축소`);
         }
         
         // 키워드 빈도 문제 해결  
         if (previousAnalysis.keywordMorphemeCount < 5) {
           const needed = 5 - previousAnalysis.keywordMorphemeCount;
-          seoSuggestions.push(`🎯 이전 시도 키워드 부족: ${previousAnalysis.keywordMorphemeCount}회 → "${keyword}"를 ${needed}회 더 사용해주세요!`);
-          seoSuggestions.push(`🎯 서론, 본론, 결론에 각각 "${keyword}"를 포함해주세요.`);
+          problems.push(`키워드 "${keyword}" ${needed}회 부족 (현재 ${previousAnalysis.keywordMorphemeCount}회)`);
+          solutions.push(`서론/본론/결론에 "${keyword}"를 자연스럽게 ${needed}회 추가`);
         } else if (previousAnalysis.keywordMorphemeCount > 15) {
           const excess = previousAnalysis.keywordMorphemeCount - 15;
-          seoSuggestions.push(`🎯 이전 시도 키워드 과다: ${previousAnalysis.keywordMorphemeCount}회 → "${keyword}"를 ${excess}회 줄여주세요!`);
+          problems.push(`키워드 "${keyword}" ${excess}회 과다 (현재 ${previousAnalysis.keywordMorphemeCount}회)`);
+          solutions.push(`어색한 위치의 "${keyword}"를 ${excess}회 제거하고 문장 자연스럽게 재작성`);
         }
         
         // 과다 사용 단어 문제 해결
         if (previousAnalysis.overusedWords && previousAnalysis.overusedWords.length > 0) {
           const overusedList = previousAnalysis.overusedWords.slice(0, 3).join(', ');
-          seoSuggestions.push(`⚠️ 과다 사용 단어 수정: "${overusedList}" 대신 동의어를 사용해주세요!`);
-          seoSuggestions.push(`⚠️ 단어 다양성을 위해 유사한 의미의 다른 표현들을 사용해주세요.`);
+          problems.push(`과다 사용 단어: ${overusedList}`);
+          solutions.push(`"${overusedList}" 각각을 5-7회씩 동의어로 치환 (예: 블로그→포스팅, 학원→교육기관)`);
+        }
+        
+        // 🆕 통합 수정 지침
+        if (problems.length > 0) {
+          seoSuggestions.push(`\n❌ 발견된 ${problems.length}개 문제:\n${problems.map((p, i) => `  ${i+1}. ${p}`).join('\n')}`);
+          seoSuggestions.push(`\n✅ 해결 방법 (모두 동시에 적용):\n${solutions.map((s, i) => `  ${i+1}. ${s}`).join('\n')}`);
+          seoSuggestions.push(`\n⚠️ 중요: 위 모든 문제를 동시에 해결하되, 글의 자연스러운 흐름은 반드시 유지하세요!`);
         }
         
         // 시도별 강조
         if (attempt === 2) {
-          seoSuggestions.push(`⚠️ 2차 시도: 위 문제점들을 반드시 해결해주세요!`);
+          seoSuggestions.push(`\n🔥 2차 수정: 위 ${problems.length}개 문제를 정확히 해결해주세요!`);
         } else if (attempt === 3) {
-          seoSuggestions.push(`🔥 3차 시도: 이번이 거의 마지막 기회! 조건을 정확히 맞춰주세요!`);
+          seoSuggestions.push(`\n🔥🔥 3차 수정: 매우 중요! 숫자 조건(글자수, 빈도)을 정확히 맞춰주세요!`);
         } else if (attempt === 4) {
-          seoSuggestions.push(`❗ 최종 4차 시도: 모든 SEO 조건을 완벽히 충족해주세요!`);
+          seoSuggestions.push(`\n🔥🔥🔥 최종 4차 수정: 마지막 기회! 모든 SEO 조건을 완벽히 충족해주세요!`);
         }
       }
       
