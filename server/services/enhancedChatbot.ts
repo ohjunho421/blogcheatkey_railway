@@ -46,17 +46,17 @@ ${currentContent.substring(0, 500)}...
 1. **intent** (수정 의도):
    - "add": 새로운 내용 추가
    - "remove": 불필요한 내용 삭제
-   - "modify": 기존 내용 변경
+   - "modify": 기존 내용 변경 (사용자가 "바꿔줘", "수정해줘" 등을 사용)
    - "restructure": 구조 재편성
-   - "tone_change": 어조/톤 변경
-   - "enhance_persuasion": 설득력 강화
+   - "tone_change": 어조/톤 변경 (사용자가 "매력적으로", "더 친근하게", "전문적으로" 등을 사용)
+   - "enhance_persuasion": 설득력 강화 (사용자가 "설득력있게", "강력하게" 등을 사용)
 
 2. **target** (수정 대상):
-   - "intro": 서론
-   - "body": 본론
-   - "conclusion": 결론
-   - "specific_paragraph": 특정 단락 (사용자가 명시한 경우)
-   - "entire": 전체
+   - "intro": 서론 (사용자가 "서론", "도입부", "시작 부분", "첫 단락" 등을 언급하면 이것 선택)
+   - "body": 본론 (사용자가 "본론", "중간 부분", "내용" 등을 언급하면 이것 선택)
+   - "conclusion": 결론 (사용자가 "결론", "마무리", "끝 부분" 등을 언급하면 이것 선택)
+   - "specific_paragraph": 특정 단락 (사용자가 특정 위치나 내용을 명시한 경우)
+   - "entire": 전체 (수정 대상이 명확하지 않거나 전체를 언급한 경우)
 
 3. **scope** (수정 범위):
    - "minor": 작은 수정 (단어/문장 수정)
@@ -76,6 +76,16 @@ ${currentContent.substring(0, 500)}...
 
 7. **persuasionStrategy**: 적용할 설득 전략
    - 예: "감정적 어필", "논리적 근거 제시", "사회적 증거", "권위 활용"
+
+=== 분석 예시 ===
+예1) 사용자 요청: "서론을 좀더 매력적으로 바꿔줘"
+→ intent: "tone_change", target: "intro", scope: "moderate", emotionalTone: "friendly"
+
+예2) 사용자 요청: "도입부를 더 흥미롭게 만들어줘"
+→ intent: "tone_change", target: "intro", scope: "moderate", emotionalTone: "friendly"
+
+예3) 사용자 요청: "결론 부분을 설득력있게 수정해줘"
+→ intent: "enhance_persuasion", target: "conclusion", scope: "moderate"
 
 JSON 형식으로 응답:`;
 
