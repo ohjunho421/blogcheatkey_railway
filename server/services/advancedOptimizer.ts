@@ -22,7 +22,7 @@ export async function optimizeContentAdvanced(
   
   const maxAttempts = 3;
   let currentContent = content;
-  let currentAnalysis = analyzeMorphemes(content, keyword);
+  let currentAnalysis = await analyzeMorphemes(content, keyword);
   let attempts = 0;
   
   console.log('Advanced optimization started');

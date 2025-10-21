@@ -82,7 +82,95 @@ function processKoreanWord(word: string): string[] {
   return result;
 }
 
-// 지능적 복합어 분해 함수 (한국어 + 영어 + 숫자 혼합 지원)
+// 🆕 분해 결과 캐시 (동일 키워드 반복 방지)
+const decompositionCache = new Map<string, string[]>();
+
+// 🆕 AI 기반 키워드 분해 (사전 불필요, 캐싱 적용)
+async function aiBasedKeywordDecomposer(keyword: string): Promise<string[]> {
+  // 캐시 확인
+  if (decompositionCache.has(keyword)) {
+    console.log(`Using cached decomposition for "${keyword}"`);
+    return decompositionCache.get(keyword)!;
+  }
+
+  try {
+    const { GoogleGenAI } = await import('@google/genai');
+    const ai = new GoogleGenAI({ 
+      apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || '' 
+    });
+
+    const prompt = `다음 키워드를 의미있는 단어 단위로 분해하세요.
+
+키워드: "${keyword}"
+
+규칙:
+1. 최소 의미 단위로 분해 (예: "미션오일교체주기" → ["미션", "오일", "교체", "주기"])
+2. 각 단어는 독립적인 의미를 가져야 함
+3. 너무 작게 쪼개지 말 것 (2글자 이상 권장)
+4. 영어/숫자는 그대로 유지 (예: "BMW" → ["BMW"])
+
+JSON 배열로만 응답 (예: ["단어1", "단어2", "단어3"])`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.0-flash-exp',
+      config: {
+        responseMimeType: "application/json"
+      },
+      contents: [{
+        role: 'user',
+        parts: [{ text: prompt }]
+      }]
+    });
+
+    const result = JSON.parse(response.text || '[]').filter((word: string) => word.length >= 1);
+    console.log(`✨ AI decomposition: "${keyword}" → [${result.join(', ')}]`);
+    
+    // 캐시 저장
+    decompositionCache.set(keyword, result);
+    return result;
+  } catch (error) {
+    console.error('AI decomposition failed, using fallback:', error);
+    const fallback = fallbackPatternDecomposer(keyword);
+    decompositionCache.set(keyword, fallback);
+    return fallback;
+  }
+}
+
+// 폴백: 패턴 기반 분해 (AI 실패 시)
+function fallbackPatternDecomposer(text: string): string[] {
+  console.log(`Using fallback pattern decomposition for: "${text}"`);
+  
+  // 한글 2-3글자씩 분할하는 간단한 패턴
+  const result: string[] = [];
+  let pos = 0;
+  
+  while (pos < text.length) {
+    const remaining = text.substring(pos);
+    
+    // 영어+숫자 추출
+    const engMatch = remaining.match(/^[a-zA-Z0-9]+/);
+    if (engMatch) {
+      result.push(engMatch[0]);
+      pos += engMatch[0].length;
+      continue;
+    }
+    
+    // 한글 2-3글자씩 추출
+    const korMatch = remaining.match(/^[가-힣]+/);
+    if (korMatch) {
+      const segmentLength = Math.min(2, korMatch[0].length);
+      result.push(korMatch[0].substring(0, segmentLength));
+      pos += segmentLength;
+      continue;
+    }
+    
+    pos++;
+  }
+  
+  return result.filter(word => word.length >= 1);
+}
+
+// 지능적 복합어 분해 함수 (한국어 + 영어 + 숫자 혼합 지원) - 사전 기반 (폐기 예정)
 function intelligentKoreanDecomposer(text: string): string[] {
   console.log(`=== Intelligent decomposing: "${text}" ===`);
   
@@ -259,11 +347,36 @@ function intelligentKoreanDecomposer(text: string): string[] {
   return decomposed;
 }
 
-// Extract individual keyword components for SEO optimization
-export function extractKeywordComponents(keyword: string): string[] {
+// 🆕 더블 체크: 패턴 기반 + AI 기반 비교
+async function doubleCheckDecomposition(keyword: string): Promise<string[]> {
+  console.log(`🔍 Double-check decomposition for: "${keyword}"`);
+  
+  // 방법 1: 빠른 패턴 기반
+  const patternBased = fallbackPatternDecomposer(keyword);
+  console.log(`  패턴 기반: [${patternBased.join(', ')}]`);
+  
+  // 방법 2: 정확한 AI 기반
+  const aiBased = await aiBasedKeywordDecomposer(keyword);
+  console.log(`  AI 기반: [${aiBased.join(', ')}]`);
+  
+  // 결과 비교 및 최종 결정
+  if (patternBased.length === aiBased.length && 
+      patternBased.every((word, i) => word === aiBased[i])) {
+    console.log(`  ✅ 일치! 결과 사용: [${aiBased.join(', ')}]`);
+    return aiBased;
+  }
+  
+  // 불일치 시 AI 우선 (더 정확함)
+  console.log(`  ⚠️ 불일치 감지. AI 결과 우선 사용: [${aiBased.join(', ')}]`);
+  console.log(`  참고용 패턴 결과: [${patternBased.join(', ')}]`);
+  return aiBased;
+}
+
+// Extract individual keyword components for SEO optimization (🆕 더블 체크 기반)
+export async function extractKeywordComponents(keyword: string): Promise<string[]> {
   const components: string[] = [];
   
-  console.log(`=== Starting keyword decomposition for: "${keyword}" ===`);
+  console.log(`=== Starting double-check keyword decomposition for: "${keyword}" ===`);
   
   // Handle compound keywords with comma separator
   if (keyword.includes(',')) {
@@ -276,8 +389,8 @@ export function extractKeywordComponents(keyword: string): string[] {
       if (part.length > 0) {
         components.push(part);
         
-        // Also decompose each part into sub-components for finer control
-        const subComponents = intelligentKoreanDecomposer(part);
+        // 🆕 더블 체크 분해
+        const subComponents = await doubleCheckDecomposition(part);
         for (const subComp of subComponents) {
           if (subComp.length >= 2 && !components.includes(subComp)) {
             components.push(subComp);
@@ -286,9 +399,9 @@ export function extractKeywordComponents(keyword: string): string[] {
       }
     }
   } else {
-    // Single keyword decomposition
-    const decomposed = intelligentKoreanDecomposer(keyword);
-    console.log(`Intelligent decomposition result: [${decomposed.join(', ')}]`);
+    // 🆕 Single keyword double-check decomposition
+    const decomposed = await doubleCheckDecomposition(keyword);
+    console.log(`Double-check decomposition result: [${decomposed.join(', ')}]`);
     
     for (const comp of decomposed) {
       if (!components.includes(comp) && comp.length >= 1) {
@@ -376,8 +489,8 @@ export function findCompleteKeywordMatches(morphemes: string[], keyword: string)
 }
 
 // Find individual keyword component matches (for 15-17 occurrences each)
-export function findKeywordComponentMatches(morphemes: string[], keyword: string): Map<string, string[]> {
-  const keywordComponents = extractKeywordComponents(keyword);
+export async function findKeywordComponentMatches(morphemes: string[], keyword: string): Promise<Map<string, string[]>> {
+  const keywordComponents = await extractKeywordComponents(keyword);
   const componentMatches = new Map<string, string[]>();
   
   console.log(`Target keyword components:`, keywordComponents);
@@ -522,11 +635,11 @@ function checkCustomMorphemes(content: string, customMorphemes?: string): { used
 }
 
 // 전체 형태소 빈도 검사 함수 (20회 초과 방지)
-function checkAllMorphemeFrequencies(content: string, keyword: string): { overused: Array<{morpheme: string, count: number}>, allCounts: Map<string, number> } {
+async function checkAllMorphemeFrequencies(content: string, keyword: string): Promise<{ overused: Array<{morpheme: string, count: number}>, allCounts: Map<string, number> }> {
   console.log('🔍 전체 형태소 빈도 검사 시작...');
   
   const allMorphemes = extractKoreanMorphemes(content);
-  const keywordComponents = extractKeywordComponents(keyword);
+  const keywordComponents = await extractKeywordComponents(keyword);
   const keywordComponentsLower = keywordComponents.map(comp => comp.toLowerCase());
   
   // 모든 형태소 빈도 계산
@@ -552,12 +665,12 @@ function checkAllMorphemeFrequencies(content: string, keyword: string): { overus
   return { overused, allCounts: morphemeFrequency };
 }
 
-export function analyzeMorphemes(content: string, keyword: string, customMorphemes?: string): MorphemeAnalysis {
+export async function analyzeMorphemes(content: string, keyword: string, customMorphemes?: string): Promise<MorphemeAnalysis> {
   console.log(`=== Morpheme Analysis for keyword: "${keyword}" ===`);
   
   try {
     // 전체 형태소 빈도 먼저 검사
-    const frequencyCheck = checkAllMorphemeFrequencies(content, keyword);
+    const frequencyCheck = await checkAllMorphemeFrequencies(content, keyword);
     
     // Extract all morphemes from content
     const allMorphemes = extractKoreanMorphemes(content);
@@ -571,8 +684,8 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
   const completeKeywordCount = completeKeywordMatches.length;
   
   // Find individual component matches (15-17 권장, 최대 20회까지 허용)
-  const componentMatches = findKeywordComponentMatches(allMorphemes, keyword);
-  const keywordComponents = extractKeywordComponents(keyword);
+  const componentMatches = await findKeywordComponentMatches(allMorphemes, keyword);
+  const keywordComponents = await extractKeywordComponents(keyword);
   
   // Check complete keyword condition (5-7 times)
   const isCompleteKeywordOptimized = completeKeywordCount >= 5 && completeKeywordCount <= 7;
@@ -688,8 +801,8 @@ export function analyzeMorphemes(content: string, keyword: string, customMorphem
 }
 
 // Enhanced SEO analysis combining morpheme analysis with basic metrics
-export function enhancedSEOAnalysis(content: string, keyword: string) {
-  const morphemeAnalysis = analyzeMorphemes(content, keyword);
+export async function enhancedSEOAnalysis(content: string, keyword: string) {
+  const morphemeAnalysis = await analyzeMorphemes(content, keyword);
   
   return {
     keywordFrequency: morphemeAnalysis.keywordMorphemeCount,

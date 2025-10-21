@@ -78,14 +78,14 @@ export async function optimizeMorphemeUsage(
   let optimizedContent = content;
 
   // 현재 형태소 분석
-  const initialAnalysis = analyzeMorphemes(content, keyword);
+  const initialAnalysis = await analyzeMorphemes(content, keyword);
   
   // Extract components from keyword for analysis
-  const keywordComponents = extractKeywordComponents(keyword);
+  const keywordComponents = await extractKeywordComponents(keyword);
   
   for (const morpheme of keywordComponents) {
     // Re-analyze to get component counts for this specific morpheme
-    const componentMatches = findKeywordComponentMatches(extractKoreanMorphemes(content), keyword);
+    const componentMatches = await findKeywordComponentMatches(extractKoreanMorphemes(content), keyword);
     const matches = componentMatches.get(morpheme) || [];
     const currentCount = matches.length;
     const targetCount = targetCounts[morpheme] || 17; // 기본 최대값 17 (SEO 최적화 기준)
@@ -137,7 +137,7 @@ export async function optimizeMorphemeUsage(
   }
 
   // 최종 분석
-  const finalAnalysis = analyzeMorphemes(optimizedContent, keyword);
+  const finalAnalysis = await analyzeMorphemes(optimizedContent, keyword);
 
   return {
     optimizedContent,

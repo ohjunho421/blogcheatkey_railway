@@ -28,7 +28,7 @@ export async function optimizeIncrementally(
   console.log('📊 부분 최적화 시작: 조건 미달 부분만 정밀 수정');
   
   // 1단계: 현재 상태 분석
-  const analysis = analyzeMorphemes(content, keyword, customMorphemes);
+  const analysis = await analyzeMorphemes(content, keyword, customMorphemes);
   const issues: OptimizationIssue[] = [];
   const fixed: string[] = [];
   
@@ -167,7 +167,7 @@ export async function optimizeIncrementally(
   }
   
   // 5단계: 최종 검증 (과다사용 문제까지 확인)
-  const finalAnalysis = analyzeMorphemes(optimizedContent, keyword, customMorphemes);
+  const finalAnalysis = await analyzeMorphemes(optimizedContent, keyword, customMorphemes);
   
   const hasNoOveruse = !finalAnalysis.issues.some(issue => 
     issue.includes('초과') || issue.includes('과다')

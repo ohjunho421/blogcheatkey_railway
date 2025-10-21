@@ -148,7 +148,7 @@ export async function generateStrictMorphemeContent(
       console.log(`📊 형태소 분석 시작 (attempt ${attempt})...`);
       
       // 형태소 분석
-      const analysis = analyzeMorphemes(content, keyword, customMorphemes);
+      const analysis = await analyzeMorphemes(content, keyword, customMorphemes);
       
       console.log(`Morpheme analysis completed for attempt ${attempt}`);
       console.log(`Attempt ${attempt} analysis:`, {
