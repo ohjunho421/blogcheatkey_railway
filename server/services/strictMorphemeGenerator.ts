@@ -19,7 +19,7 @@ export async function generateStrictMorphemeContent(
   searchIntent?: string,
   userConcerns?: string
 ): Promise<StrictGenerationResult> {
-  const maxAttempts = 4; // 최대 4회 시도 (1회 생성 + 3회 부분 수정)
+  const maxAttempts = 3; // 최대 3회 시도 (1회 생성 + 2회 부분 수정) - 타임아웃 방지
   let previousAnalysis: any = null; // 이전 시도 분석 결과 저장
   let generatedContent: string | null = null; // 1차 생성 결과 저장
   
@@ -87,13 +87,14 @@ export async function generateStrictMorphemeContent(
           seoSuggestions.push(`\n⚠️ 중요: 위 모든 문제를 동시에 해결하되, 글의 자연스러운 흐름은 반드시 유지하세요!`);
         }
         
-        // 시도별 강조
+        // 시도별 강조 (3회 안에 완성)
         if (attempt === 2) {
-          seoSuggestions.push(`\n🔥 2차 수정: 위 ${problems.length}개 문제를 정확히 해결해주세요!`);
+          seoSuggestions.push(`\n🔥 2차 수정 [중요]: 위 ${problems.length}개 문제를 정확히 해결해주세요!`);
+          seoSuggestions.push(`⏰ 다음이 마지막 시도입니다. 이번에 최대한 정확하게 수정해주세요!`);
         } else if (attempt === 3) {
-          seoSuggestions.push(`\n🔥🔥 3차 수정: 매우 중요! 숫자 조건(글자수, 빈도)을 정확히 맞춰주세요!`);
-        } else if (attempt === 4) {
-          seoSuggestions.push(`\n🔥🔥🔥 최종 4차 수정: 마지막 기회! 모든 SEO 조건을 완벽히 충족해주세요!`);
+          seoSuggestions.push(`\n🔥🔥🔥 최종 3차 수정 [매우 중요]: 마지막 기회입니다!`);
+          seoSuggestions.push(`📊 숫자 조건을 정확히 맞춰주세요: 글자수 1700-2000자, 키워드 5-15회`);
+          seoSuggestions.push(`⚠️ 이번 시도가 실패하면 SEO 조건 미달로 완료됩니다. 반드시 모든 조건을 충족해주세요!`);
         }
       }
       
