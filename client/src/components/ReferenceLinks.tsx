@@ -47,10 +47,11 @@ export function ReferenceLinks({ links, citationsWithTitles }: ReferenceLinksPro
                 <div className="flex-1 min-w-0">
                   <Button 
                     variant="link" 
-                    className="text-primary hover:underline text-sm p-0 h-auto font-medium text-left"
+                    className="text-primary hover:underline text-sm p-0 h-auto font-medium text-left truncate max-w-full block"
                     onClick={() => window.open(url, '_blank')}
+                    title={title}
                   >
-                    {title}
+                    <span className="truncate block">{title}</span>
                   </Button>
                   <div className="text-xs text-muted-foreground mt-1 break-all">
                     {url}

@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Search, Brain, Lightbulb, GripVertical, Sparkles, Edit, Trash, Check, X, Plus, Save } from "lucide-react";
+import { Search, Brain, Lightbulb, GripVertical, Sparkles, Edit, Trash, Check, X, Plus, Save, RefreshCw } from "lucide-react";
 import { useLocation } from "wouter";
 
 interface KeywordAnalysisFormProps {
@@ -142,6 +142,27 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
     onError: (error) => {
       toast({
         title: "저장 실패",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const regenerateSubtitles = useMutation({
+    mutationFn: async (id: number) => {
+      const analyzeResponse = await apiRequest("POST", `/api/projects/${id}/analyze`, {});
+      return analyzeResponse.json();
+    },
+    onSuccess: () => {
+      onRefresh();
+      toast({
+        title: "소제목 재생성 완료",
+        description: "새로운 소제목이 생성되었습니다.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "재생성 실패",
         description: error.message,
         variant: "destructive",
       });
@@ -399,7 +420,28 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
 
             {/* Suggested Subtitles */}
             <div className="bg-green-50 dark:bg-green-950 rounded-lg p-4 border-l-4 border-accent">
-              <h3 className="font-semibold text-foreground mb-3">추천 소제목</h3>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-foreground">추천 소제목</h3>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => regenerateSubtitles.mutate(project.id)}
+                  disabled={regenerateSubtitles.isPending}
+                  className="h-8"
+                >
+                  {regenerateSubtitles.isPending ? (
+                    <>
+                      <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                      생성중...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      다시 추천
+                    </>
+                  )}
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground mb-3">
                 드래그앤드롭으로 순서를 변경할 수 있습니다
               </p>
