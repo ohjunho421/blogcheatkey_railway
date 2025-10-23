@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import type { KeywordAnalysis } from "@shared/schema";
+import { formatForMobileSmartBatch } from './smartMobileFormatter';
 
 // DON'T DELETE THIS COMMENT
 // Follow these instructions when using this blueprint:
@@ -307,6 +308,12 @@ export async function enhanceIntroductionAndConclusion(
 
   const prompt = `다음 블로그 콘텐츠의 서론과 결론을 객관적이고 정보 전달형으로 개선해주세요.
 
+🎯 모바일 가독성 최적화:
+- 서론은 짧고 임팩트 있는 문장으로 구성
+- 한 문장이 너무 길지 않게 (15-20자 내외)
+- 의미 단위로 자연스러운 줄바꿈
+- 호흡이 편안하게 읽히도록 구성
+
 🚨 절대 금지 사항:
 - 대화형 표현 ("안녕하세요", "여러분", "독자님들")
 - 질문 형태나 독자 지칭 ("궁금하신가요?", "생각해보세요")
@@ -364,7 +371,11 @@ ${content}
       throw new Error("Empty response from Gemini");
     }
 
-    return enhancedContent;
+    // AI 기반 모바일 포맷팅 적용
+    console.log('서론/결론에 AI 스마트 모바일 포맷팅 적용 중...');
+    const mobileFormattedContent = await formatForMobileSmartBatch(enhancedContent);
+    
+    return mobileFormattedContent;
   } catch (error) {
     console.error("Introduction and conclusion enhancement error:", error);
     throw new Error(`서론/결론 강화에 실패했습니다: ${error}`);
