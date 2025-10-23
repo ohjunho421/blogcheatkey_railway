@@ -690,7 +690,7 @@ export async function analyzeMorphemes(content: string, keyword: string, customM
   // Check complete keyword condition (5-7 times)
   const isCompleteKeywordOptimized = completeKeywordCount >= 5 && completeKeywordCount <= 7;
   
-  // Check individual component conditions (15-17 times each)
+  // Check individual component conditions (15-20 times each) - 현실적이면서도 효과적인 범위
   let areComponentsOptimized = true;
   const componentIssues: string[] = [];
   
@@ -700,12 +700,12 @@ export async function analyzeMorphemes(content: string, keyword: string, customM
     const matches = componentMatches.get(component) || [];
     const count = matches.length;
     
-    if (count < 15 || count > 17) {
+    if (count < 15 || count > 20) {
       areComponentsOptimized = false;
       if (count < 15) {
-        componentIssues.push(`${component}: ${count}회 (부족, 15-17회 필요)`);
-      } else if (count > 17) {
-        componentIssues.push(`${component}: ${count}회 (과다, 15-17회 필요)`);
+        componentIssues.push(`${component}: ${count}회 (부족, 15-20회 권장)`);
+      } else if (count > 20) {
+        componentIssues.push(`${component}: ${count}회 (과다, 15-20회 권장)`);
       }
     }
   }

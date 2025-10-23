@@ -177,7 +177,7 @@ export async function optimizeIncrementally(
     finalAnalysis.characterCount >= 1700 && 
     finalAnalysis.characterCount <= 2000 &&
     finalAnalysis.keywordMorphemeCount >= 5 &&
-    finalAnalysis.keywordMorphemeCount <= 15 &&
+    finalAnalysis.keywordMorphemeCount <= 7 &&
     hasNoOveruse; // 과다사용 문제도 확인
   
   console.log(`${isSuccess ? '✅' : '⚠️'} 부분 최적화 완료: ${fixed.length}개 수정`);
