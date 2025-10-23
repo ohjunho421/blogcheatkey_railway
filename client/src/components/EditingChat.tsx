@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -111,7 +111,8 @@ export function EditingChat({ project, onRefresh }: EditingChatProps) {
     sendMessage.mutate({ message: message.trim() });
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Enter만 누르면 전송, Shift+Enter는 줄바꿈
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -178,17 +179,20 @@ export function EditingChat({ project, onRefresh }: EditingChatProps) {
             )}
           </ScrollArea>
 
-          <div className="flex space-x-2">
-            <Input
+          <div className="flex space-x-2 items-end">
+            <Textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="예: 두 번째 단락을 더 자세히 설명해주세요 또는 제목 만들어줘"
+              onKeyDown={handleKeyDown}
+              placeholder="예: 두 번째 단락을 더 자세히 설명해주세요 또는 제목 만들어줘&#10;(Shift+Enter: 줄바꿈, Enter: 전송)"
               disabled={sendMessage.isPending}
+              className="min-h-[80px] max-h-[200px] resize-y"
+              rows={3}
             />
             <Button 
               onClick={handleSend}
               disabled={sendMessage.isPending || !message.trim()}
+              className="h-10 px-4"
             >
               {sendMessage.isPending ? (
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-transparent border-t-current" />
@@ -197,6 +201,9 @@ export function EditingChat({ project, onRefresh }: EditingChatProps) {
               )}
             </Button>
           </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            💡 팁: <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Shift</kbd> + <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Enter</kbd>로 줄바꿈, <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Enter</kbd>로 전송
+          </p>
         </div>
       </CardContent>
     </Card>

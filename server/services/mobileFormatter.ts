@@ -67,127 +67,90 @@ export function formatForMobile(text: string, maxWidth: number = 27): string {
 }
 
 /**
- * 단일 줄을 한국어 기준으로 포맷팅 (의미단위 중심)
+ * 단일 줄을 한국어 기준으로 포맷팅 (단어 단위 보존 - 절대 단어 중간 끊김 없음)
  */
 function formatLineSimple(text: string, maxWidth: number): string {
   if (getKoreanLength(text) <= maxWidth) {
     return text;
   }
 
+  // 텍스트를 의미 단위로 분리 (공백, 구두점 기준)
+  const tokens = tokenizeText(text);
+  
   const result: string[] = [];
-  let pos = 0;
+  let currentLine = '';
 
-  while (pos < text.length) {
-    // 현재 위치에서 시작해서 maxWidth 이내의 가장 긴 부분 찾기
-    let end = pos + 1;
-    let bestEnd = pos + 1;
-    
-    // 의미단위 줄바꿈 위치 찾기 (우선순위별)
-    let spaceBreak = -1;        // 1순위: 공백 (어절 단위)
-    let sentenceBreak = -1;     // 2순위: 문장 끝 구두점 (.!?)
-    let clauseBreak = -1;       // 3순위: 절 구분 구두점 (,;:)
-    let koreanSyllable = -1;    // 4순위: 한글 음절 경계
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    const testLine = currentLine + token;
+    const testLength = getKoreanLength(testLine);
 
-    // maxWidth 내에서 가능한 한 긴 부분 찾기
-    while (end <= text.length) {
-      const segment = text.slice(pos, end);
-      const length = getKoreanLength(segment);
-
-      if (length > maxWidth) {
-        break;
+    // 현재 줄에 추가해도 maxWidth를 넘지 않으면 추가
+    if (testLength <= maxWidth) {
+      currentLine = testLine;
+    } else {
+      // maxWidth를 초과하는 경우
+      if (currentLine.length > 0) {
+        // 현재 줄 저장하고 새 줄 시작
+        result.push(currentLine.trim());
+        currentLine = token.trim();
+      } else {
+        // 현재 줄이 비어있는데 토큰 하나가 maxWidth를 초과하는 경우
+        // 토큰이 너무 길면 강제로 포함 (단어는 절대 안 자름)
+        currentLine = token;
       }
-
-      bestEnd = end;
-
-      // 의미단위 줄바꿈 위치 체크 (한국어 자연스러운 끊기)
-      if (end < text.length) {
-        const nextChar = text[end];
-        const prevChar = text[end - 1];
-        
-        // 1순위: 공백 뒤 (어절 단위 - 가장 자연스러움)
-        if (prevChar === ' ') {
-          spaceBreak = end;
-        }
-        
-        // 2순위: 문장 끝 구두점 뒤 (.!?。！？)
-        if (/[.!?。！？]/.test(prevChar)) {
-          sentenceBreak = end;
-          // 공백이 뒤따르면 더 이상적
-          if (nextChar === ' ') {
-            sentenceBreak = end + 1;
-          }
-        }
-        
-        // 3순위: 절 구분 구두점 뒤 (,;:，；：)
-        if (/[,;:，；：]/.test(prevChar)) {
-          clauseBreak = end;
-          // 공백이 뒤따르면 더 이상적
-          if (nextChar === ' ') {
-            clauseBreak = end + 1;
-          }
-        }
-        
-        // 4순위: 한글 음절 경계 (자음+모음 분리 방지)
-        if (/[가-힣]/.test(prevChar)) {
-          koreanSyllable = end;
-        }
-      }
-      
-      end++;
     }
+  }
 
-    // 우선순위에 따라 줄바꿈 위치 결정
-    let cutPos = bestEnd;
-    
-    if (spaceBreak > pos) {
-      // 1순위: 공백 (어절 단위)
-      cutPos = spaceBreak;
-    } else if (sentenceBreak > pos) {
-      // 2순위: 문장 끝
-      cutPos = sentenceBreak;
-    } else if (clauseBreak > pos) {
-      // 3순위: 절 구분
-      cutPos = clauseBreak;
-    } else if (koreanSyllable > pos) {
-      // 4순위: 한글 음절 경계
-      cutPos = koreanSyllable;
-    }
-    
-    let line = text.slice(pos, cutPos);
-
-    // 줄 끝 공백 제거
-    line = line.trimEnd();
-    
-    // 다음 위치로 이동
-    pos = cutPos;
-    
-    // 공백만 건너뛰기 (문자는 절대 건너뛰지 않음)
-    while (pos < text.length && text[pos] === ' ') {
-      pos++;
-    }
-
-    // 줄 추가 (비어있지 않으면)
-    if (line.length > 0) {
-      result.push(line);
-    }
-
-    // 무한 루프 방지
-    if (pos === cutPos && pos < text.length) {
-      // 진전이 없으면 최소 1글자는 포함
-      const forcedLine = text[pos];
-      if (forcedLine) {
-        if (result.length > 0) {
-          result[result.length - 1] += forcedLine;
-        } else {
-          result.push(forcedLine);
-        }
-      }
-      pos++;
-    }
+  // 마지막 줄 추가
+  if (currentLine.trim().length > 0) {
+    result.push(currentLine.trim());
   }
 
   // 구두점 규칙 적용
   return applyPunctuationRulesSimple(result).join('\n');
+}
+
+/**
+ * 텍스트를 의미 단위 토큰으로 분리
+ * 공백과 구두점을 기준으로 하되, 단어는 절대 분리하지 않음
+ */
+function tokenizeText(text: string): string[] {
+  const tokens: string[] = [];
+  let currentToken = '';
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    
+    // 공백인 경우
+    if (char === ' ') {
+      if (currentToken) {
+        tokens.push(currentToken);
+        currentToken = '';
+      }
+      tokens.push(' '); // 공백도 토큰으로 추가
+    }
+    // 구두점인 경우 (문장 끝, 절 구분)
+    else if (/[.!?,;:。！？，；：]/.test(char)) {
+      if (currentToken) {
+        tokens.push(currentToken + char); // 구두점은 앞 단어에 붙임
+        currentToken = '';
+      } else {
+        tokens.push(char);
+      }
+    }
+    // 일반 문자
+    else {
+      currentToken += char;
+    }
+  }
+
+  // 마지막 토큰 추가
+  if (currentToken) {
+    tokens.push(currentToken);
+  }
+
+  return tokens;
 }
 
 /**
