@@ -146,11 +146,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Session lookup error:", error);
         }
         
-        // 세션에서 못 찾으면 토큰이 유효한 세션 ID인지 확인
-        if (!userId && token === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
-          console.log("Using direct token authentication for known session");
-          userId = 1; // 슈퍼유저 ID 사용
-        }
       }
       
       console.log("Final userId:", userId);
@@ -200,8 +195,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 비밀번호 해시화
       const hashedPassword = await bcrypt.hash(password, 10);
       
-      // 슈퍼유저 계정 확인 (wnsghcoswp@gmail.com)
-      const isSuper = email === "wnsghcoswp@gmail.com";
+      // 슈퍼유저 계정 확인 (환경변수에서 설정)
+      const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || "";
+      const isSuper = superAdminEmail && email === superAdminEmail;
       
       // 사용자 생성
       const user = await storage.createUser({
@@ -317,13 +313,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userId = (req.session as any)?.userId;
       
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
-      if (!userId && req.headers.authorization) {
-        const storedUser = req.headers.authorization.includes('Bearer') ? 
-          req.headers.authorization.replace('Bearer ', '') : null;
-        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
-          userId = 1; // 슈퍼 유저
-        }
-      }
 
       if (!userId) {
         return res.status(401).json({ error: "인증이 필요합니다" });
@@ -356,13 +345,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userId = (req.session as any)?.userId;
       
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
-      if (!userId && req.headers.authorization) {
-        const storedUser = req.headers.authorization.includes('Bearer') ? 
-          req.headers.authorization.replace('Bearer ', '') : null;
-        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
-          userId = 1; // 슈퍼 유저
-        }
-      }
 
       if (!userId) {
         return res.status(401).json({ error: "인증이 필요합니다" });
@@ -1180,13 +1162,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userId = (req.session as any)?.userId;
       
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
-      if (!userId && req.headers.authorization) {
-        const storedUser = req.headers.authorization.includes('Bearer') ? 
-          req.headers.authorization.replace('Bearer ', '') : null;
-        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
-          userId = 1; // 슈퍼 유저
-        }
-      }
 
       if (!userId) {
         return res.status(401).json({ error: "인증이 필요합니다" });
@@ -1207,13 +1182,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userId = (req.session as any)?.userId;
       
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
-      if (!userId && req.headers.authorization) {
-        const storedUser = req.headers.authorization.includes('Bearer') ? 
-          req.headers.authorization.replace('Bearer ', '') : null;
-        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
-          userId = 1; // 슈퍼 유저
-        }
-      }
 
       if (!userId) {
         return res.status(401).json({ error: "인증이 필요합니다" });
@@ -1234,13 +1202,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userId = (req.session as any)?.userId;
       
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
-      if (!userId && req.headers.authorization) {
-        const storedUser = req.headers.authorization.includes('Bearer') ? 
-          req.headers.authorization.replace('Bearer ', '') : null;
-        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
-          userId = 1; // 슈퍼 유저
-        }
-      }
 
       if (!userId) {
         return res.status(401).json({ error: "인증이 필요합니다" });
@@ -1269,13 +1230,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userId = (req.session as any)?.userId;
       
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
-      if (!userId && req.headers.authorization) {
-        const storedUser = req.headers.authorization.includes('Bearer') ? 
-          req.headers.authorization.replace('Bearer ', '') : null;
-        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
-          userId = 1; // 슈퍼 유저
-        }
-      }
 
       if (!userId) {
         return res.status(401).json({ error: "인증이 필요합니다" });
@@ -1305,13 +1259,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userId = (req.session as any)?.userId;
       
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
-      if (!userId && req.headers.authorization) {
-        const storedUser = req.headers.authorization.includes('Bearer') ? 
-          req.headers.authorization.replace('Bearer ', '') : null;
-        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
-          userId = 1; // 슈퍼 유저
-        }
-      }
 
       if (!userId) {
         return res.status(401).json({ error: "인증이 필요합니다" });
@@ -1333,16 +1280,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // ===== ADMIN ROUTES =====
   
-  // 슈퍼 관리자 권한 확인 (wnsghcoswp@gmail.com만 접근 가능)
-  const requireSuperAdmin = (req: any, res: any, next: any) => {
-    // 임시로 슈퍼 관리자 접근 허용 (Google OAuth 연결 후 실제 이메일 확인)
-    const superAdminEmail = "wnsghcoswp@gmail.com";
-    // TODO: Google OAuth 완료 후 req.user.email로 변경
-    const currentUserEmail = "wnsghcoswp@gmail.com"; 
+  // 슈퍼 관리자 권한 확인
+  const requireSuperAdmin = async (req: any, res: any, next: any) => {
+    const userId = await getAuthenticatedUserId(req);
     
-    if (currentUserEmail !== superAdminEmail) {
+    if (!userId) {
+      return res.status(401).json({ error: "인증이 필요합니다" });
+    }
+    
+    const user = await storage.getUserById(userId);
+    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || "";
+    
+    if (!user || !superAdminEmail || user.email !== superAdminEmail) {
       return res.status(403).json({ 
-        error: "슈퍼 관리자만 접근할 수 있습니다 (wnsghcoswp@gmail.com)" 
+        error: "슈퍼 관리자만 접근할 수 있습니다" 
       });
     }
     next();
@@ -1421,13 +1372,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let userId = (req.session as any)?.userId;
       
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
-      if (!userId && req.headers.authorization) {
-        const storedUser = req.headers.authorization.includes('Bearer') ? 
-          req.headers.authorization.replace('Bearer ', '') : null;
-        if (storedUser === "07QbDf6eyyVVTMC3GlvuLh-8h1BoxBNH") {
-          userId = 1; // 슈퍼 유저
-        }
-      }
 
       if (!userId) {
         return res.status(401).json({ error: "인증이 필요합니다" });
