@@ -649,11 +649,11 @@ async function checkAllMorphemeFrequencies(content: string, keyword: string): Pr
     morphemeFrequency.set(cleanMorpheme, (morphemeFrequency.get(cleanMorpheme) || 0) + 1);
   });
   
-  // 20회 초과 형태소 찾기
+  // 과다 사용 형태소 찾기 (키워드 우위성 확보)
   const overused: Array<{morpheme: string, count: number}> = [];
   for (const [morpheme, count] of Array.from(morphemeFrequency.entries())) {
     const isKeywordComponent = keywordComponentsLower.includes(morpheme);
-    const maxAllowed = isKeywordComponent ? 17 : 13;
+    const maxAllowed = isKeywordComponent ? 20 : 14; // 키워드: 15-20회, 다른 단어: 14회 이하
     
     if (count > maxAllowed) {
       overused.push({ morpheme, count });
