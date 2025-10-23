@@ -1,5 +1,9 @@
 // 간단한 관리자 기능 migration
+import { config } from 'dotenv';
 import { Pool } from 'pg';
+
+// .env 파일 로드
+config();
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
@@ -49,7 +53,9 @@ const indexes = [
 
 (async () => {
   try {
-    console.log('🔧 관리자 기능 Migration 시작...\n');
+    console.log('🔧 관리자 기능 Migration 시작...');
+    console.log('DATABASE_URL:', process.env.DATABASE_URL ? '설정됨 ✓' : '설정 안됨 ✗');
+    console.log();
     
     for (const sql of migrations) {
       const name = sql.match(/TABLE (\w+)|COLUMN (\w+)/)?.[1] || sql.match(/COLUMN (\w+)/)?.[1] || 'SQL';
@@ -75,6 +81,7 @@ const indexes = [
     process.exit(0);
   } catch (error) {
     console.error('\n❌ Migration 실패:', error.message);
+    console.error('에러 상세:', error);
     await pool.end();
     process.exit(1);
   }
