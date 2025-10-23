@@ -85,6 +85,17 @@ function formatLineSimple(text: string, maxWidth: number): string {
     const testLine = currentLine + token;
     const testLength = getKoreanLength(testLine);
 
+    // 문장 종결 부호 뒤 공백은 강제 줄바꿈 위치로 우선 고려
+    const endsWithSentence = /[.!?。！？]\s*$/.test(currentLine.trim());
+    const nextTokenStartsNew = token.trim().length > 0 && token !== ' ';
+    
+    // 현재 줄이 문장 종결로 끝나고, 다음 토큰이 새 내용이면 줄바꿈 우선
+    if (endsWithSentence && nextTokenStartsNew && currentLine.trim().length > 0) {
+      result.push(currentLine.trim());
+      currentLine = token.trim();
+      continue;
+    }
+
     // 현재 줄에 추가해도 maxWidth를 넘지 않으면 추가
     if (testLength <= maxWidth) {
       currentLine = testLine;

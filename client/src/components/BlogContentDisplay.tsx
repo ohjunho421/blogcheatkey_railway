@@ -22,7 +22,11 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
 
   const copyContent = useMutation({
     mutationFn: async (format: 'normal' | 'mobile') => {
-      const response = await apiRequest("POST", `/api/projects/${project.id}/copy`, { format });
+      // mobile 포맷은 자동으로 AI 스마트 포맷팅 사용
+      const url = format === 'mobile'
+        ? `/api/projects/${project.id}/copy?smart=true` 
+        : `/api/projects/${project.id}/copy`;
+      const response = await apiRequest("POST", url, { format });
       return response.json();
     },
     onSuccess: async (data) => {
@@ -32,7 +36,7 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
           await navigator.clipboard.writeText(data.content);
           toast({
             title: "복사 완료",
-            description: `${copyFormat === 'mobile' ? '모바일' : '일반'} 형식으로 복사되었습니다.`,
+            description: `${copyFormat === 'mobile' ? '모바일 (AI 최적화)' : '일반'} 형식으로 복사되었습니다.`,
           });
         } else {
           // Fallback: Create a temporary textarea element
@@ -48,7 +52,7 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
             document.execCommand('copy');
             toast({
               title: "복사 완료",
-              description: `${copyFormat === 'mobile' ? '모바일' : '일반'} 형식으로 복사되었습니다.`,
+              description: `${copyFormat === 'mobile' ? '모바일 (AI 최적화)' : '일반'} 형식으로 복사되었습니다.`,
             });
           } catch (fallbackError) {
             console.error('Fallback copy failed:', fallbackError);
@@ -271,11 +275,11 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
                   className="flex-1 sm:flex-none"
                 >
                   {copyContent.isPending && copyFormat === 'mobile' ? (
-                    "복사 중..."
+                    "AI 최적화 중..."
                   ) : (
                     <>
                       <Smartphone className="h-4 w-4 mr-2" />
-                      모바일 복사 (짧은 줄바꿈)
+                      모바일 복사 (AI 최적화)
                     </>
                   )}
                 </Button>

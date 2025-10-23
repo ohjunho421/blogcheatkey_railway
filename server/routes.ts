@@ -12,6 +12,7 @@ import { analyzeSEOOptimization } from "./services/seoOptimizer";
 import { enhancedSEOAnalysis } from "./services/morphemeAnalyzer";
 import { TitleGenerator } from "./services/titleGenerator";
 import { formatForMobile } from "./services/mobileFormatter";
+import { formatForMobileSmartBatch } from "./services/smartMobileFormatter";
 import { setupAdminRoutes } from "./admin-routes";
 import bcrypt from "bcryptjs";
 
@@ -764,8 +765,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let content = project.generatedContent;
       
       if (format === 'mobile') {
-        // 모바일용 포맷팅: 한국어 기준 자연스러운 줄바꿈 (27자 기준)
-        content = formatForMobile(project.generatedContent);
+        const useSmart = req.query.smart === 'true';
+        
+        if (useSmart) {
+          // AI 기반 스마트 포맷팅: 문맥과 의미를 이해한 자연스러운 줄바꿈
+          content = await formatForMobileSmartBatch(project.generatedContent);
+        } else {
+          // 규칙 기반 포맷팅: 한국어 기준 자연스러운 줄바꿈 (27자 기준)
+          content = formatForMobile(project.generatedContent);
+        }
       }
 
       res.json({ content });
