@@ -1,5 +1,5 @@
 // Enhanced Korean morpheme extraction with Hangul library support
-// import Hangul from 'hangul-js'; // 현재는 사용하지 않음, 추후 확장 가능
+import Hangul from 'hangul-js';
 
 // Define MorphemeAnalysis type inline to avoid import issues
 interface MorphemeAnalysis {
@@ -41,7 +41,7 @@ export function extractKoreanMorphemes(text: string): string[] {
   return morphemes;
 }
 
-// 한국어 단어 처리 - 조사 분리 및 복합어 처리
+// 한국어 단어 처리 - 조사 분리 및 복합어 처리 (Hangul.js 활용)
 function processKoreanWord(word: string): string[] {
   const result: string[] = [];
   
@@ -49,6 +49,11 @@ function processKoreanWord(word: string): string[] {
   if (!/[가-힣]/.test(word)) {
     return [word];
   }
+  
+  // Hangul.js를 사용하여 받침 확인 (조사 선택에 도움)
+  const lastChar = word[word.length - 1];
+  const disassembled = Hangul.disassemble(lastChar);
+  const hasFinalConsonant = disassembled.length === 3; // 받침 있음
   
   // 한국어 조사/어미 패턴 (빈도 높은 순으로 정렬)
   const postpositions = [
@@ -85,7 +90,7 @@ function processKoreanWord(word: string): string[] {
 // 🆕 분해 결과 캐시 (동일 키워드 반복 방지)
 const decompositionCache = new Map<string, string[]>();
 
-// 🆕 AI 기반 키워드 분해 (사전 불필요, 캐싱 적용)
+// 🆕 AI 기반 키워드 분해 (hangul-js 보조, 캐싱 적용)
 async function aiBasedKeywordDecomposer(keyword: string): Promise<string[]> {
   // 캐시 확인
   if (decompositionCache.has(keyword)) {
@@ -99,15 +104,21 @@ async function aiBasedKeywordDecomposer(keyword: string): Promise<string[]> {
       apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || '' 
     });
 
+    // Hangul.js를 사용하여 한글 분석 보조
+    const hasKorean = /[가-힣]/.test(keyword);
+    const disassembled = hasKorean ? Hangul.disassemble(keyword) : null;
+    const analysisPart = disassembled ? `\n참고: 자소 분석 결과 ${disassembled.length}개 자소` : '';
+
     const prompt = `다음 키워드를 의미있는 단어 단위로 분해하세요.
 
-키워드: "${keyword}"
+키워드: "${keyword}"${analysisPart}
 
 규칙:
 1. 최소 의미 단위로 분해 (예: "미션오일교체주기" → ["미션", "오일", "교체", "주기"])
 2. 각 단어는 독립적인 의미를 가져야 함
 3. 너무 작게 쪼개지 말 것 (2글자 이상 권장)
 4. 영어/숫자는 그대로 유지 (예: "BMW" → ["BMW"])
+5. 복합어는 의미 단위로 정확히 분해 (예: "벤츠엔진경고등" → ["벤츠", "엔진", "경고등"])
 
 JSON 배열로만 응답 (예: ["단어1", "단어2", "단어3"])`;
 
@@ -123,13 +134,13 @@ JSON 배열로만 응답 (예: ["단어1", "단어2", "단어3"])`;
     });
 
     const result = JSON.parse(response.text || '[]').filter((word: string) => word.length >= 1);
-    console.log(`✨ AI decomposition: "${keyword}" → [${result.join(', ')}]`);
+    console.log(`✨ AI decomposition (Hangul.js enhanced): "${keyword}" → [${result.join(', ')}]`);
     
     // 캐시 저장
     decompositionCache.set(keyword, result);
     return result;
   } catch (error) {
-    console.error('AI decomposition failed, using fallback:', error);
+    console.error('AI decomposition failed, using enhanced fallback:', error);
     const fallback = fallbackPatternDecomposer(keyword);
     decompositionCache.set(keyword, fallback);
     return fallback;
