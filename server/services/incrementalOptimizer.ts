@@ -140,10 +140,43 @@ export async function optimizeIncrementally(
       console.error(`수정 실패 (${issue.description}):`, error);
     }
   } else if (issues.length > 1) {
-    // 문제가 2개 이상이면 통합 수정
+    // 문제가 2개 이상이면 통합 수정 (최대 2회 미세조정)
+    let attemptCount = 0;
+    const maxMicroAdjustments = 2; // 미세조정 최대 2회
+    
     try {
+      // 1차 통합 수정
       optimizedContent = await fixAllIssuesAtOnce(optimizedContent, issues, keyword);
       fixed.push(...issues.map(i => i.description));
+      
+      // 미세조정: 키워드 빈도만 재확인하고 1-2회 조정
+      while (attemptCount < maxMicroAdjustments) {
+        const quickCheck = await analyzeMorphemes(optimizedContent, keyword, customMorphemes);
+        const currentKeywordCount = quickCheck.keywordMorphemeCount;
+        
+        if (currentKeywordCount >= 5 && currentKeywordCount <= 7) {
+          console.log(`✓ 미세조정 불필요: 키워드 ${currentKeywordCount}회 (적정)`);
+          break;
+        }
+        
+        // 1-2회만 차이나면 미세조정
+        const diff = currentKeywordCount < 5 ? (5 - currentKeywordCount) : (currentKeywordCount - 7);
+        if (diff <= 2) {
+          console.log(`🔧 미세조정 시도 ${attemptCount + 1}: 키워드 ${diff}회 조정 필요`);
+          const microIssue: OptimizationIssue = {
+            type: 'keyword_count',
+            description: `키워드 미세조정 ${diff}회`,
+            target: 6,
+            current: currentKeywordCount
+          };
+          optimizedContent = await fixKeywordCount(optimizedContent, microIssue, keyword);
+          attemptCount++;
+        } else {
+          console.log(`⚠️ 차이가 커서 미세조정 스킵 (${diff}회 차이)`);
+          break;
+        }
+      }
+      
     } catch (error) {
       console.error(`통합 수정 실패, 순차 수정으로 전환:`, error);
       // 통합 실패 시 순차 처리로 폴백
