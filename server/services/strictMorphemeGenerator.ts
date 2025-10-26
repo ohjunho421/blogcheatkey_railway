@@ -33,7 +33,7 @@ export async function generateStrictMorphemeContent(
       const baseInstructions = [
         `🔥 공백 제외 정확히 1700-2000자 범위 안에서 글을 작성해주세요. (1700자 미만이나 2000자 초과 절대 금지)`,
         `🎯 키워드 "${keyword}"의 완전한 형태를 정확히 5-7회 사용해주세요. (4회 이하나 8회 이상 절대 금지)`,
-        `🎯 중요: 키워드 "${keyword}"를 이루는 각각의 단어들을 15-20회 범위로 사용해주세요. 예를 들어 "영어학원 블로그"라는 키워드라면 "영어학원"이라는 단어와 "블로그"라는 단어를 각각 15-20회 범위로 사용하세요.`,
+        `🎯 중요: 키워드 "${keyword}"를 이루는 각각의 단어들을 16회를 목표로 사용해주세요 (15-18회 허용). 예를 들어 "영어학원 블로그"라는 키워드라면 "영어학원"이라는 단어와 "블로그"라는 단어를 각각 약 16회씩 사용하세요.`,
         `🚨 키워드를 구성하는 단어가 아닌 다른 모든 단어는 14회 이하로 제한해주세요. (키워드 우위성 확보 필수)`,
         `📖 서론 600-700자 (전체의 35-40%), 본론 900-1100자, 결론 200-300자로 분량을 정확히 배치해주세요.`,
         `✅ 서론은 독자 공감형(전략 A) 또는 경고형(전략 B) 중 하나를 선택하여 스토리텔링 중심으로 작성`,
@@ -168,29 +168,26 @@ export async function generateStrictMorphemeContent(
           .slice(0, 5)
       };
       
-      // 강력한 검증: 글자수, 키워드, 형태소 빈도 모든 조건 확인
+      // SEO 최적화 조건 검증 (단순화)
+      // analysis.isOptimized는 이미 글자수, 키워드 빈도, 구성요소 빈도, 과다사용을 모두 체크함
       const isCharacterCountValid = analysis.characterCount >= 1700 && analysis.characterCount <= 2000;
       const isKeywordCountValid = analysis.keywordMorphemeCount >= 5 && analysis.keywordMorphemeCount <= 7;
-      
-      // 과다 사용 형태소 검사 (20회 초과 방지)
       const hasOverusedMorphemes = analysis.issues.some(issue => 
         issue.includes('형태소 과다 사용') || issue.includes('초과 사용')
       );
       
-      console.log(`강력한 검증 결과 (attempt ${attempt}):`, {
-        characterCount: analysis.characterCount,
-        isCharacterCountValid,
-        keywordCount: analysis.keywordMorphemeCount,
-        isKeywordCountValid,
-        hasOverusedMorphemes,
-        isOptimized: analysis.isOptimized,
-        issuesCount: analysis.issues.length
+      console.log(`📊 검증 결과 (시도 ${attempt}/${maxAttempts}):`, {
+        '글자수': `${analysis.characterCount}자 ${isCharacterCountValid ? '✓' : '✗'}`,
+        '완전키워드': `${analysis.keywordMorphemeCount}회 ${isKeywordCountValid ? '✓' : '✗'}`,
+        '과다사용': hasOverusedMorphemes ? '있음 ✗' : '없음 ✓',
+        '전체최적화': analysis.isOptimized ? '완료 ✓' : '미완료 ✗',
+        '문제수': analysis.issues.length
       });
       
-      // 모든 조건을 충족해야만 성공으로 처리 (더 엄격한 검증)
-      const allConditionsMet = isCharacterCountValid && isKeywordCountValid && !hasOverusedMorphemes && analysis.isOptimized;
+      // analysis.isOptimized를 주 기준으로 사용 (이미 모든 조건 포함)
+      const allConditionsMet = analysis.isOptimized;
       
-      console.log(`Content generation attempt ${attempt}/${maxAttempts} - All conditions met: ${allConditionsMet}`);
+      console.log(`✨ 최종 판정: ${allConditionsMet ? '성공 ✅' : '미달 ⚠️'}`);
       
       // 모든 조건 충족 시 성공 반환
       if (allConditionsMet) {

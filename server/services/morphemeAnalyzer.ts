@@ -136,18 +136,56 @@ JSON 배열로만 응답 (예: ["단어1", "단어2", "단어3"])`;
   }
 }
 
-// 폴백: 패턴 기반 분해 (AI 실패 시)
+// 폴백: 개선된 패턴 기반 분해 (AI 실패 시)
 function fallbackPatternDecomposer(text: string): string[] {
-  console.log(`Using fallback pattern decomposition for: "${text}"`);
+  console.log(`Using enhanced fallback pattern decomposition for: "${text}"`);
   
-  // 한글 2-3글자씩 분할하는 간단한 패턴
+  // 일반적인 한국어 복합어 패턴 사전
+  const commonPatterns = [
+    // 자동차 관련
+    { pattern: /엔진경고등/, parts: ['엔진', '경고등'] },
+    { pattern: /벤츠엔진/, parts: ['벤츠', '엔진'] },
+    { pattern: /오일교체/, parts: ['오일', '교체'] },
+    { pattern: /타이어교체/, parts: ['타이어', '교체'] },
+    { pattern: /브레이크패드/, parts: ['브레이크', '패드'] },
+    { pattern: /에어컨필터/, parts: ['에어컨', '필터'] },
+    { pattern: /냉각수/, parts: ['냉각수'] },
+    { pattern: /첨가제/, parts: ['첨가제'] },
+    
+    // 교육 관련
+    { pattern: /영어학원/, parts: ['영어', '학원'] },
+    { pattern: /수학학원/, parts: ['수학', '학원'] },
+    { pattern: /코딩교육/, parts: ['코딩', '교육'] },
+    { pattern: /온라인강의/, parts: ['온라인', '강의'] },
+    
+    // 기술 관련
+    { pattern: /인공지능/, parts: ['인공지능'] },
+    { pattern: /머신러닝/, parts: ['머신', '러닝'] },
+    { pattern: /딥러닝/, parts: ['딥', '러닝'] },
+    { pattern: /빅데이터/, parts: ['빅', '데이터'] },
+  ];
+  
   const result: string[] = [];
   let pos = 0;
   
   while (pos < text.length) {
     const remaining = text.substring(pos);
+    let matched = false;
     
-    // 영어+숫자 추출
+    // 1. 패턴 매칭 시도
+    for (const { pattern, parts } of commonPatterns) {
+      const match = remaining.match(pattern);
+      if (match && match.index === 0) {
+        result.push(...parts);
+        pos += match[0].length;
+        matched = true;
+        break;
+      }
+    }
+    
+    if (matched) continue;
+    
+    // 2. 영어+숫자 추출
     const engMatch = remaining.match(/^[a-zA-Z0-9]+/);
     if (engMatch) {
       result.push(engMatch[0]);
@@ -155,12 +193,29 @@ function fallbackPatternDecomposer(text: string): string[] {
       continue;
     }
     
-    // 한글 2-3글자씩 추출
+    // 3. 한글 2-3글자 단위 분할 (개선)
     const korMatch = remaining.match(/^[가-힣]+/);
     if (korMatch) {
-      const segmentLength = Math.min(2, korMatch[0].length);
-      result.push(korMatch[0].substring(0, segmentLength));
-      pos += segmentLength;
+      const korText = korMatch[0];
+      
+      // 3-1. 길이에 따른 스마트 분할
+      if (korText.length <= 2) {
+        result.push(korText);
+        pos += korText.length;
+      } else if (korText.length === 3) {
+        // 3글자: 그대로 또는 2+1 분할
+        result.push(korText.substring(0, 2));
+        pos += 2;
+      } else if (korText.length === 4) {
+        // 4글자: 2+2 분할
+        result.push(korText.substring(0, 2));
+        pos += 2;
+      } else {
+        // 5글자 이상: 2-3글자씩
+        const segmentLength = Math.min(3, korText.length);
+        result.push(korText.substring(0, segmentLength));
+        pos += segmentLength;
+      }
       continue;
     }
     
@@ -653,7 +708,7 @@ async function checkAllMorphemeFrequencies(content: string, keyword: string): Pr
   const overused: Array<{morpheme: string, count: number}> = [];
   for (const [morpheme, count] of Array.from(morphemeFrequency.entries())) {
     const isKeywordComponent = keywordComponentsLower.includes(morpheme);
-    const maxAllowed = isKeywordComponent ? 20 : 14; // 키워드: 15-20회, 다른 단어: 14회 이하
+    const maxAllowed = isKeywordComponent ? 18 : 14; // 키워드: 15-18회, 다른 단어: 14회 이하
     
     if (count > maxAllowed) {
       overused.push({ morpheme, count });
@@ -683,14 +738,14 @@ export async function analyzeMorphemes(content: string, keyword: string, customM
   const completeKeywordMatches = findCompleteKeywordMatches(allMorphemes, keyword);
   const completeKeywordCount = completeKeywordMatches.length;
   
-  // Find individual component matches (15-17 권장, 최대 20회까지 허용)
+  // Find individual component matches (15-18회 허용)
   const componentMatches = await findKeywordComponentMatches(allMorphemes, keyword);
   const keywordComponents = await extractKeywordComponents(keyword);
   
   // Check complete keyword condition (5-7 times)
   const isCompleteKeywordOptimized = completeKeywordCount >= 5 && completeKeywordCount <= 7;
   
-  // Check individual component conditions (15-20 times each) - 현실적이면서도 효과적인 범위
+  // Check individual component conditions (15-18 times each) - 실용적인 SEO 기준
   let areComponentsOptimized = true;
   const componentIssues: string[] = [];
   
@@ -700,12 +755,12 @@ export async function analyzeMorphemes(content: string, keyword: string, customM
     const matches = componentMatches.get(component) || [];
     const count = matches.length;
     
-    if (count < 15 || count > 20) {
+    if (count < 15 || count > 18) {
       areComponentsOptimized = false;
       if (count < 15) {
-        componentIssues.push(`${component}: ${count}회 (부족, 15-20회 권장)`);
-      } else if (count > 20) {
-        componentIssues.push(`${component}: ${count}회 (과다, 15-20회 권장)`);
+        componentIssues.push(`${component}: ${count}회 (부족, 15-18회 권장)`);
+      } else if (count > 18) {
+        componentIssues.push(`${component}: ${count}회 (과다, 15-18회 권장)`);
       }
     }
   }
@@ -743,7 +798,7 @@ export async function analyzeMorphemes(content: string, keyword: string, customM
     for (const issue of componentIssues) {
       issues.push(`형태소 출현 횟수 불균형: ${issue}`);
     }
-    suggestions.push(`키워드 구성 요소들(${keywordComponents.join(', ')})을 각각 정확히 15-17회씩 사용해주세요`);
+    suggestions.push(`키워드 구성 요소들(${keywordComponents.join(', ')})을 각각 16회를 목표로 사용해주세요 (15-18회 허용)`);
   }
   
   if (!isLengthOptimized) {
