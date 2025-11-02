@@ -72,7 +72,8 @@ export default function PaymentModal({ children }: PaymentModalProps) {
         }),
       });
 
-      const { merchant_uid, amount } = await response.json();
+      const result = await response.json();
+      const { merchant_uid, amount } = result.data;
 
       // 포트원 SDK 로드 확인 및 초기화
       if (!(window as any).IMP) {
