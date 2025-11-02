@@ -160,9 +160,14 @@ passport.serializeUser((user: any, done) => {
 passport.deserializeUser(async (id: number, done) => {
   try {
     const user = await storage.getUser(id);
+    if (!user) {
+      console.log(`User not found for session ID: ${id}`);
+      return done(null, false); // 사용자 없으면 false 반환 (오류 아님)
+    }
     done(null, user);
   } catch (error) {
-    done(error, null);
+    console.error('Deserialize user error:', error);
+    done(null, false); // 오류 발생 시 false 반환 (세션 무효화)
   }
 });
 
@@ -216,7 +221,16 @@ export function setupAuth(app: Express) {
             return res.redirect('/?error=session');
           }
           console.log('Google session saved, redirecting...');
-          res.redirect('/');
+          
+          // localStorage 정리 후 리다이렉트
+          res.send(`
+            <html>
+              <script>
+                localStorage.removeItem('auth_logged_out');
+                window.location.href = '/';
+              </script>
+            </html>
+          `);
         });
       } else {
         res.redirect('/');
@@ -245,7 +259,16 @@ export function setupAuth(app: Express) {
               return res.redirect('/?error=session');
             }
             console.log('Kakao session saved, redirecting...');
-            res.redirect('/');
+            
+            // localStorage 정리 후 리다이렉트
+            res.send(`
+              <html>
+                <script>
+                  localStorage.removeItem('auth_logged_out');
+                  window.location.href = '/';
+                </script>
+              </html>
+            `);
           });
         } else {
           res.redirect('/');
@@ -275,7 +298,16 @@ export function setupAuth(app: Express) {
               return res.redirect('/?error=session');
             }
             console.log('Naver session saved, redirecting...');
-            res.redirect('/');
+            
+            // localStorage 정리 후 리다이렉트
+            res.send(`
+              <html>
+                <script>
+                  localStorage.removeItem('auth_logged_out');
+                  window.location.href = '/';
+                </script>
+              </html>
+            `);
           });
         } else {
           res.redirect('/');
