@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FaGoogle } from "react-icons/fa";
+import { SocialLogin } from "@/components/SocialLogin";
 
 const loginSchema = z.object({
   email: z.string().email("올바른 이메일을 입력해주세요"),
@@ -178,51 +179,8 @@ export default function Login() {
             </form>
           </Form>
 
-          {/* 소셜 로그인 버튼 주석 처리
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                또는
-              </span>
-            </div>
-          </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={handleGoogleLogin}
-          >
-            <FaGoogle className="mr-2 h-4 w-4" />
-            Google로 계속하기
-          </Button>
-          */}
-
-          {/* 이메일 가입 유도 버튼으로 교체 */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                계정이 없으시다면
-              </span>
-            </div>
-          </div>
-
-          <Link href="/signup">
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-            >
-              <Mail className="mr-2 h-4 w-4" />
-              이메일로 회원가입하기
-            </Button>
-          </Link>
+          {/* 소셜 로그인 */}
+          <SocialLogin onLoginSuccess={() => navigate("/")} />
 
           <div className="text-center space-y-2">
             <p className="text-sm text-gray-600">

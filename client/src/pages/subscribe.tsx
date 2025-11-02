@@ -5,14 +5,18 @@ import { Badge } from "@/components/ui/badge";
 import { Check, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "wouter";
+import { PortOnePaymentWidget } from "@/components/PortOnePaymentWidget";
+import { useState } from "react";
 
 export default function Subscribe() {
   const { user, isAuthenticated } = useAuth();
+  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
   const plans = [
     {
       name: "베이직",
       price: "50,000원",
+      amount: 50000,
       period: "월",
       description: "기본적인 블로그 콘텐츠 생성",
       features: [
@@ -27,6 +31,7 @@ export default function Subscribe() {
     {
       name: "프리미엄",
       price: "100,000원",
+      amount: 100000,
       period: "월",
       description: "모든 기능을 포함한 완전한 서비스",
       features: [
@@ -127,10 +132,13 @@ export default function Subscribe() {
                       : "bg-gray-800 hover:bg-gray-900"
                   }`}
                   onClick={() => {
-                    // 스크롤을 계좌 정보로 이동
-                    document.getElementById('payment-info')?.scrollIntoView({ 
-                      behavior: 'smooth' 
-                    });
+                    setSelectedPlan(plan.name);
+                    // 스크롤을 결제 섹션으로 이동
+                    setTimeout(() => {
+                      document.getElementById('payment-section')?.scrollIntoView({ 
+                        behavior: 'smooth' 
+                      });
+                    }, 100);
                   }}
                 >
                   {plan.name} 플랜 선택
@@ -203,17 +211,37 @@ export default function Subscribe() {
           </Card>
         </div>
 
-        {/* 자동 결제 시스템 준비 중 안내 */}
-        <div className="mt-8 max-w-2xl mx-auto">
-          <Card className="border-gray-200">
-            <CardContent className="p-6 text-center">
-              <p className="text-gray-600">
-                자동 결제 시스템은 현재 준비 중입니다. 
-                완료되면 더욱 편리하게 구독하실 수 있습니다.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* PortOne 자동 결제 시스템 */}
+        {selectedPlan && (
+          <div id="payment-section" className="mt-8 max-w-2xl mx-auto">
+            <Card className="border-green-200">
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl text-green-900">
+                  {selectedPlan} 플랜 결제
+                </CardTitle>
+                <CardDescription className="text-green-700">
+                  안전한 PortOne 결제 시스템을 통해 간편하게 결제하세요
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PortOnePaymentWidget
+                  amount={plans.find(p => p.name === selectedPlan)?.amount || 0}
+                  orderName={`블로그치트키 ${selectedPlan} 플랜`}
+                  buyerName={user?.name}
+                  buyerEmail={user?.email}
+                  planType={selectedPlan}
+                  onSuccess={(response) => {
+                    alert('결제가 완료되었습니다!');
+                    window.location.href = '/';
+                  }}
+                  onFail={(error) => {
+                    alert(`결제 실패: ${error.message}`);
+                  }}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
