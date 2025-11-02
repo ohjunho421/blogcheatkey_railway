@@ -16,14 +16,27 @@ passport.use(new GoogleStrategy({
   callbackURL: "/api/auth/google/callback"
 }, async (accessToken, refreshToken, profile, done) => {
   try {
-    // Check if user exists
+    const email = profile.emails?.[0]?.value || '';
+    
+    // 1. googleId로 사용자 찾기
     let user = await storage.getUserByGoogleId(profile.id);
     
+    if (!user && email) {
+      // 2. 이메일로 기존 사용자 찾기
+      user = await storage.getUserByEmail(email);
+      
+      if (user) {
+        // 기존 이메일 계정에 googleId 연결
+        await storage.updateUser(user.id, { googleId: profile.id });
+        console.log(`Google ID linked to existing user: ${email}`);
+      }
+    }
+    
     if (!user) {
-      // Create new user with Google OAuth
+      // 3. 새 사용자 생성
       user = await storage.createUser({
         googleId: profile.id,
-        email: profile.emails?.[0]?.value || '',
+        email,
         name: profile.displayName || '',
         profileImage: profile.photos?.[0]?.value || '',
         isEmailVerified: true,
@@ -32,6 +45,7 @@ passport.use(new GoogleStrategy({
         canGenerateImages: false,
         canUseChatbot: false,
       });
+      console.log(`New Google user created: ${email}`);
     }
     
     return done(null, user);
@@ -48,14 +62,27 @@ if (process.env.KAKAO_CLIENT_ID && process.env.KAKAO_CLIENT_SECRET) {
     callbackURL: "/api/auth/kakao/callback"
   }, async (accessToken: string, refreshToken: string, profile: any, done: any) => {
     try {
-      // Check if user exists
+      const email = profile._json?.kakao_account?.email || '';
+      
+      // 1. kakaoId로 사용자 찾기
       let user = await storage.getUserByKakaoId(profile.id);
       
+      if (!user && email) {
+        // 2. 이메일로 기존 사용자 찾기
+        user = await storage.getUserByEmail(email);
+        
+        if (user) {
+          // 기존 이메일 계정에 kakaoId 연결
+          await storage.updateUser(user.id, { kakaoId: profile.id });
+          console.log(`Kakao ID linked to existing user: ${email}`);
+        }
+      }
+      
       if (!user) {
-        // Create new user with Kakao OAuth
+        // 3. 새 사용자 생성
         user = await storage.createUser({
           kakaoId: profile.id,
-          email: profile._json?.kakao_account?.email || '',
+          email,
           name: profile.displayName || profile.username || '',
           profileImage: profile._json?.properties?.profile_image || '',
           isEmailVerified: profile._json?.kakao_account?.is_email_verified || false,
@@ -84,14 +111,27 @@ if (process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET) {
     callbackURL: "/api/auth/naver/callback"
   }, async (accessToken: string, refreshToken: string, profile: any, done: any) => {
     try {
-      // Check if user exists
+      const email = profile.email || '';
+      
+      // 1. naverId로 사용자 찾기
       let user = await storage.getUserByNaverId(profile.id);
       
+      if (!user && email) {
+        // 2. 이메일로 기존 사용자 찾기
+        user = await storage.getUserByEmail(email);
+        
+        if (user) {
+          // 기존 이메일 계정에 naverId 연결
+          await storage.updateUser(user.id, { naverId: profile.id });
+          console.log(`Naver ID linked to existing user: ${email}`);
+        }
+      }
+      
       if (!user) {
-        // Create new user with Naver OAuth
+        // 3. 새 사용자 생성
         user = await storage.createUser({
           naverId: profile.id,
-          email: profile.email || '',
+          email,
           name: profile.name || profile.nickname || '',
           profileImage: profile.profile_image || '',
           isEmailVerified: true,
@@ -100,6 +140,7 @@ if (process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET) {
           canGenerateImages: false,
           canUseChatbot: false,
         });
+        console.log(`New Naver user created: ${email}`);
       }
       
       return done(null, user);
