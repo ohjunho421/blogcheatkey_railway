@@ -32,7 +32,7 @@ export function useAuth() {
   const isLoggedOut = getLoggedOut();
   const hasStoredSession = localStorage.getItem('sessionId') !== null;
   
-  // 서버 인증 잠시 비활성화, localStorage로 임시 동작
+  // 서버에서 세션 확인 (소셜 로그인 지원)
   const { data: user, isLoading, error, isError } = useQuery({
     queryKey: ["/api/auth/user"],
     retry: false,
@@ -40,11 +40,11 @@ export function useAuth() {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchInterval: false,
-    enabled: false, // 임시 비활성화
+    enabled: !isLoggedOut, // 로그아웃 상태가 아닐 때만 체크
   });
 
-  // 로그아웃 상태이거나 저장된 세션이 없으면 인증되지 않은 것으로 처리
-  if (isLoggedOut || !hasStoredSession) {
+  // 명시적으로 로그아웃한 경우만 인증 안 됨으로 처리
+  if (isLoggedOut) {
     return {
       user: undefined,
       isLoading: false,
