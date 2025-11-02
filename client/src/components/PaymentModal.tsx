@@ -207,16 +207,39 @@ export default function PaymentModal({ children }: PaymentModalProps) {
                     </p>
                   </div>
                   
+                  {/* 온라인 결제 버튼 */}
                   <Button
-                    onClick={() => window.open('https://open.kakao.com/o/saPv2yUg', '_blank')}
+                    onClick={() => handleSubscription(plan)}
+                    disabled={isProcessing && selectedPlan?.name === plan.name}
                     className={`w-full py-3 text-lg font-semibold ${
                       plan.popular 
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                        : 'bg-gray-100 hover:bg-gray-200 text-gray-900 border border-gray-300'
+                        ? 'bg-green-600 hover:bg-green-700 text-white' 
+                        : 'bg-blue-600 hover:bg-blue-700 text-white'
                     }`}
-                    variant={plan.popular ? 'default' : 'outline'}
                   >
-                    카카오톡 채팅방 입장하기
+                    {isProcessing && selectedPlan?.name === plan.name ? (
+                      <>처리 중...</>
+                    ) : (
+                      <>💳 온라인 결제하기</>
+                    )}
+                  </Button>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t border-gray-300" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-white px-2 text-gray-500">또는</span>
+                    </div>
+                  </div>
+                  
+                  {/* 카카오톡 채팅방 버튼 */}
+                  <Button
+                    onClick={() => window.open('https://open.kakao.com/o/saPv2yUg', '_blank')}
+                    className="w-full py-3 text-lg font-semibold bg-gray-100 hover:bg-gray-200 text-gray-900 border border-gray-300"
+                    variant="outline"
+                  >
+                    💬 카카오톡 채팅방 입장하기
                   </Button>
                 </div>
               </CardContent>
