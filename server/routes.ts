@@ -14,6 +14,7 @@ import { TitleGenerator } from "./services/titleGenerator";
 import { formatForMobile } from "./services/mobileFormatter";
 import { formatForMobileSmartBatch } from "./services/smartMobileFormatter";
 import { setupAdminRoutes } from "./admin-routes";
+import paymentRoutes from "./payment-routes";
 import bcrypt from "bcryptjs";
 
 // Helper function to get authenticated user ID
@@ -55,6 +56,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Setup admin routes
   setupAdminRoutes(app, storage);
+
+  // Setup payment routes
+  app.use('/api/payments', paymentRoutes);
 
   // Google Search Console verification route
   app.get('/google*.html', (req, res) => {
