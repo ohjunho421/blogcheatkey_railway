@@ -141,6 +141,27 @@ router.get('/portone/history', requireAuth, async (req, res) => {
  */
 router.post('/portone/webhook', async (req, res) => {
   try {
+    // 웹훅 시크릿 검증
+    const webhookSecret = process.env.PORTONE_WEBHOOK_SECRET;
+    const signature = req.headers['x-iamport-signature'] as string;
+    
+    if (webhookSecret && signature) {
+      // PortOne V2 웹훅 검증
+      const crypto = require('crypto');
+      const expectedSignature = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(JSON.stringify(req.body))
+        .digest('hex');
+      
+      if (signature !== expectedSignature) {
+        console.error('Webhook signature mismatch');
+        return res.status(401).json({ 
+          success: false, 
+          error: '웹훅 서명 검증 실패' 
+        });
+      }
+    }
+    
     const { imp_uid, merchant_uid, status } = req.body;
     
     console.log('PortOne webhook received:', { imp_uid, merchant_uid, status });
@@ -149,10 +170,17 @@ router.post('/portone/webhook', async (req, res) => {
     if (imp_uid && merchant_uid) {
       const verification = await verifyPayment({ imp_uid, merchant_uid });
       
-      if (verification.success) {
-        // TODO: 결제 상태 업데이트
-        // await storage.updatePaymentStatus(...)
+      if (verification.success && verification.payment) {
         console.log('Webhook verification successful:', verification.payment);
+        
+        // 결제 성공 시 처리
+        if (status === 'paid') {
+          // TODO: DB에 결제 기록 저장 및 사용자 권한 업데이트
+          // const userId = ...; // merchant_uid에서 사용자 ID 추출
+          // await storage.createPaymentRecord({ ... });
+          // await storage.updateUserPermissions(userId, { ... });
+          console.log('Payment completed via webhook:', merchant_uid);
+        }
       } else {
         console.error('Webhook verification failed:', verification.error);
       }
