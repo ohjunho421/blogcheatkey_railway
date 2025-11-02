@@ -22,7 +22,7 @@ interface SubscriptionPlan {
 const subscriptionPlans: SubscriptionPlan[] = [
   {
     name: '베이직',
-    price: 50000,
+    price: 20000,
     description: '기본적인 블로그 콘텐츠 생성',
     features: [
       '블로그 콘텐츠 생성',
@@ -34,7 +34,7 @@ const subscriptionPlans: SubscriptionPlan[] = [
   },
   {
     name: '프리미엄',
-    price: 100000,
+    price: 50000,
     description: '모든 기능을 포함한 완전한 서비스',
     features: [
       '블로그 콘텐츠 생성',
