@@ -190,20 +190,45 @@ export default function Subscribe() {
               </div>
 
               <div className="text-center space-y-4">
+                {/* 온라인 결제 버튼 */}
                 <Button 
-                  onClick={() => window.open('https://open.kakao.com/o/saPv2yUg', '_blank')}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-8 text-lg"
+                  onClick={() => {
+                    // 자동 결제 섹션으로 스크롤
+                    document.getElementById('payment-section')?.scrollIntoView({ 
+                      behavior: 'smooth' 
+                    });
+                  }}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-8 text-lg"
                   size="lg"
                 >
-                  카카오톡 채팅방 입장하기
+                  💳 온라인 결제하기 (카드/계좌이체)
+                </Button>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-blue-300" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-blue-50 px-2 text-blue-600">또는</span>
+                  </div>
+                </div>
+
+                {/* 카카오톡 채팅방 버튼 */}
+                <Button 
+                  onClick={() => window.open('https://open.kakao.com/o/saPv2yUg', '_blank')}
+                  className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-8 text-lg"
+                  size="lg"
+                  variant="outline"
+                >
+                  💬 카카오톡 채팅방 입장하기
                 </Button>
                 
                 <div>
                   <p className="text-gray-600 mb-2">
-                    현재 계정: <span className="font-semibold">{user?.email}</span>
+                    현재 계정: <span className="font-semibold">{user?.email || user?.name}</span>
                   </p>
                   <p className="text-sm text-gray-500">
-                    입금 후 채팅방에서 입금자명과 이 이메일을 알려주세요.
+                    입금 후 채팅방에서 입금자명과 이 계정 정보를 알려주세요.
                   </p>
                 </div>
               </div>

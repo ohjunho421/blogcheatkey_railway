@@ -139,8 +139,8 @@ export default function AdminPage() {
                         </div>
                         <div className="flex gap-2">
                           <Badge className={getSubscriptionBadgeColor(user.subscriptionTier || "basic")}>
-                            {user.subscriptionTier === "basic" ? "베이직 (5만원)" : 
-                             user.subscriptionTier === "premium" ? "프리미엄 (10만원)" : "미설정"}
+                            {user.subscriptionTier === "basic" ? "베이직 (2만원)" : 
+                             user.subscriptionTier === "premium" ? "프리미엄 (5만원)" : "미설정"}
                           </Badge>
                           {!user.isActive && (
                             <Badge variant="destructive">비활성</Badge>
@@ -148,8 +148,13 @@ export default function AdminPage() {
                         </div>
                       </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {user.email}
+                        {user.email || '이메일 없음'}
                       </p>
+                      <div className="flex gap-2 items-center">
+                        {user.googleId && <Badge variant="outline" className="text-xs">Google</Badge>}
+                        {user.kakaoId && <Badge variant="outline" className="text-xs">Kakao</Badge>}
+                        {user.naverId && <Badge variant="outline" className="text-xs">Naver</Badge>}
+                      </div>
                       <p className="text-xs text-gray-500 dark:text-gray-500">
                         가입일: {new Date(user.createdAt).toLocaleDateString('ko-KR')}
                       </p>
@@ -171,8 +176,8 @@ export default function AdminPage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="basic">베이직 (5만원) - 콘텐츠 생성</SelectItem>
-                            <SelectItem value="premium">프리미엄 (10만원) - 콘텐츠 + 챗봇</SelectItem>
+                            <SelectItem value="basic">베이직 (2만원) - 콘텐츠 생성</SelectItem>
+                            <SelectItem value="premium">프리미엄 (5만원) - 콘텐츠 + 챗봇</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
