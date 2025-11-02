@@ -15,8 +15,8 @@ export default function Subscribe() {
   const plans = [
     {
       name: "베이직",
-      price: "50,000원",
-      amount: 50000,
+      price: "20,000원",
+      amount: 20000,
       period: "월",
       description: "기본적인 블로그 콘텐츠 생성",
       features: [
@@ -30,8 +30,8 @@ export default function Subscribe() {
     },
     {
       name: "프리미엄",
-      price: "100,000원",
-      amount: 100000,
+      price: "50,000원",
+      amount: 50000,
       period: "월",
       description: "모든 기능을 포함한 완전한 서비스",
       features: [
