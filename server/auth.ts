@@ -167,8 +167,19 @@ export function setupAuth(app: Express) {
       if (req.user) {
         (req.session as any).userId = (req.user as any).id;
         console.log('Google login successful, user ID:', (req.user as any).id);
+        
+        // 세션 저장 완료 후 리다이렉트
+        req.session.save((err) => {
+          if (err) {
+            console.error('Google session save error:', err);
+            return res.redirect('/?error=session');
+          }
+          console.log('Google session saved, redirecting...');
+          res.redirect('/');
+        });
+      } else {
+        res.redirect('/');
       }
-      res.redirect('/');
     }
   );
 
@@ -185,8 +196,19 @@ export function setupAuth(app: Express) {
         if (req.user) {
           (req.session as any).userId = (req.user as any).id;
           console.log('Kakao login successful, user ID:', (req.user as any).id);
+          
+          // 세션 저장 완료 후 리다이렉트
+          req.session.save((err) => {
+            if (err) {
+              console.error('Kakao session save error:', err);
+              return res.redirect('/?error=session');
+            }
+            console.log('Kakao session saved, redirecting...');
+            res.redirect('/');
+          });
+        } else {
+          res.redirect('/');
         }
-        res.redirect('/');
       }
     );
   }
@@ -204,8 +226,19 @@ export function setupAuth(app: Express) {
         if (req.user) {
           (req.session as any).userId = (req.user as any).id;
           console.log('Naver login successful, user ID:', (req.user as any).id);
+          
+          // 세션 저장 완료 후 리다이렉트
+          req.session.save((err) => {
+            if (err) {
+              console.error('Naver session save error:', err);
+              return res.redirect('/?error=session');
+            }
+            console.log('Naver session saved, redirecting...');
+            res.redirect('/');
+          });
+        } else {
+          res.redirect('/');
         }
-        res.redirect('/');
       }
     );
   }
