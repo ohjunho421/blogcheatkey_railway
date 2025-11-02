@@ -60,7 +60,7 @@ export default function PaymentModal({ children }: PaymentModalProps) {
 
     try {
       // 포트원 결제 요청
-      const response = await fetch('/api/payment/prepare', {
+      const response = await fetch('/api/payments/portone/prepare', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -74,21 +74,33 @@ export default function PaymentModal({ children }: PaymentModalProps) {
 
       const { merchant_uid, amount } = await response.json();
 
-      // 포트원 결제 창 호출 (IMP 방식)
-      const IMP = (window as any).IMP;
-      if (!IMP) {
-        // 포트원 스크립트 동적 로드
+      // 포트원 SDK 로드 확인 및 초기화
+      if (!(window as any).IMP) {
+        console.log('Loading PortOne SDK...');
         const script = document.createElement('script');
         script.src = 'https://cdn.iamport.kr/v1/iamport.js';
         document.head.appendChild(script);
         
-        await new Promise((resolve) => {
+        await new Promise((resolve, reject) => {
           script.onload = resolve;
+          script.onerror = () => reject(new Error('PortOne SDK 로드 실패'));
         });
       }
       
-      // 포트원 초기화
-      (window as any).IMP.init(import.meta.env.VITE_PORTONE_STORE_ID || 'imp12345');
+      const IMP = (window as any).IMP;
+      if (!IMP) {
+        throw new Error('PortOne SDK를 불러올 수 없습니다');
+      }
+      
+      // 포트원 초기화 (Store ID 확인)
+      const storeId = import.meta.env.VITE_PORTONE_STORE_ID;
+      console.log('PortOne Store ID:', storeId);
+      
+      if (!storeId) {
+        throw new Error('PortOne Store ID가 설정되지 않았습니다');
+      }
+      
+      IMP.init(storeId);
       
       // 결제 요청
       const paymentResponse = await new Promise((resolve) => {
@@ -113,7 +125,7 @@ export default function PaymentModal({ children }: PaymentModalProps) {
         });
       } else {
         // 결제 성공 - 서버에서 검증
-        const verifyResponse = await fetch('/api/payment/verify', {
+        const verifyResponse = await fetch('/api/payments/portone/verify', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
