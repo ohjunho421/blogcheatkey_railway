@@ -1,38 +1,32 @@
 import { Router } from 'express';
 import {
-  prepareTossPayment,
-  confirmTossPayment,
-  getTossPayment,
-  getTossPaymentByOrderId,
-  cancelTossPayment,
-  createVirtualAccount,
-  issueBillingKey,
-  chargeWithBillingKey,
-  verifyWebhookSignature,
-  type TossPaymentData,
-  type TossPaymentConfirm,
-  type TossPaymentCancel,
-} from './services/toss-payment';
+  preparePayment,
+  verifyPayment,
+  cancelPayment,
+  getPaymentHistory,
+  type PaymentData,
+  type PaymentVerification,
+} from './services/portone';
 import { requireAuth } from './auth';
 
 const router = Router();
 
 /**
  * 결제 준비 - 주문번호 생성
- * POST /api/payments/toss/prepare
+ * POST /api/payments/portone/prepare
  */
-router.post('/toss/prepare', requireAuth, async (req, res) => {
+router.post('/portone/prepare', requireAuth, async (req, res) => {
   try {
-    const paymentData: TossPaymentData = req.body;
+    const paymentData: PaymentData = req.body;
     
-    if (!paymentData.orderName || !paymentData.amount) {
+    if (!paymentData.name || !paymentData.amount) {
       return res.status(400).json({
         success: false,
-        error: '주문명과 금액은 필수입니다.',
+        error: '상품명과 금액은 필수입니다.',
       });
     }
 
-    const preparedPayment = prepareTossPayment(paymentData);
+    const preparedPayment = preparePayment(paymentData);
     
     res.json({
       success: true,
@@ -48,21 +42,21 @@ router.post('/toss/prepare', requireAuth, async (req, res) => {
 });
 
 /**
- * 결제 승인
- * POST /api/payments/toss/confirm
+ * 결제 검증
+ * POST /api/payments/portone/verify
  */
-router.post('/toss/confirm', requireAuth, async (req, res) => {
+router.post('/portone/verify', requireAuth, async (req, res) => {
   try {
-    const confirmData: TossPaymentConfirm = req.body;
+    const verificationData: PaymentVerification = req.body;
     
-    if (!confirmData.paymentKey || !confirmData.orderId || !confirmData.amount) {
+    if (!verificationData.imp_uid || !verificationData.merchant_uid) {
       return res.status(400).json({
         success: false,
-        error: '결제키, 주문번호, 금액은 필수입니다.',
+        error: '결제 고유번호와 주문번호는 필수입니다.',
       });
     }
 
-    const result = await confirmTossPayment(confirmData);
+    const result = await verifyPayment(verificationData);
     
     if (!result.success) {
       return res.status(400).json(result);
@@ -74,76 +68,30 @@ router.post('/toss/confirm', requireAuth, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Payment confirmation error:', error);
+    console.error('Payment verification error:', error);
     res.status(500).json({
       success: false,
-      error: '결제 승인 중 오류가 발생했습니다.',
-    });
-  }
-});
-
-/**
- * 결제 조회 (paymentKey로 조회)
- * GET /api/payments/toss/:paymentKey
- */
-router.get('/toss/:paymentKey', requireAuth, async (req, res) => {
-  try {
-    const { paymentKey } = req.params;
-    const result = await getTossPayment(paymentKey);
-    
-    if (!result.success) {
-      return res.status(404).json(result);
-    }
-
-    res.json(result);
-  } catch (error) {
-    console.error('Payment retrieval error:', error);
-    res.status(500).json({
-      success: false,
-      error: '결제 정보 조회 중 오류가 발생했습니다.',
-    });
-  }
-});
-
-/**
- * 결제 조회 (orderId로 조회)
- * GET /api/payments/toss/order/:orderId
- */
-router.get('/toss/order/:orderId', requireAuth, async (req, res) => {
-  try {
-    const { orderId } = req.params;
-    const result = await getTossPaymentByOrderId(orderId);
-    
-    if (!result.success) {
-      return res.status(404).json(result);
-    }
-
-    res.json(result);
-  } catch (error) {
-    console.error('Payment retrieval error:', error);
-    res.status(500).json({
-      success: false,
-      error: '결제 정보 조회 중 오류가 발생했습니다.',
+      error: '결제 검증 중 오류가 발생했습니다.',
     });
   }
 });
 
 /**
  * 결제 취소
- * POST /api/payments/toss/cancel
+ * POST /api/payments/portone/cancel
  */
-router.post('/toss/cancel', requireAuth, async (req, res) => {
+router.post('/portone/cancel', requireAuth, async (req, res) => {
   try {
-    const cancelData: TossPaymentCancel = req.body;
+    const { imp_uid, reason } = req.body;
     
-    if (!cancelData.paymentKey || !cancelData.cancelReason) {
+    if (!imp_uid) {
       return res.status(400).json({
         success: false,
-        error: '결제키와 취소 사유는 필수입니다.',
+        error: '결제 고유번호는 필수입니다.',
       });
     }
 
-    const result = await cancelTossPayment(cancelData);
+    const result = await cancelPayment(imp_uid, reason || '사용자 요청');
     
     if (!result.success) {
       return res.status(400).json(result);
@@ -164,31 +112,14 @@ router.post('/toss/cancel', requireAuth, async (req, res) => {
 });
 
 /**
- * 가상계좌 발급
- * POST /api/payments/toss/virtual-account
+ * 결제 내역 조회
+ * GET /api/payments/portone/history
  */
-router.post('/toss/virtual-account', requireAuth, async (req, res) => {
+router.get('/portone/history', requireAuth, async (req, res) => {
   try {
-    const { orderName, amount, customerEmail, customerName, validHours, bank } = req.body;
+    const { merchantUidPrefix } = req.query;
     
-    if (!orderName || !amount || !validHours) {
-      return res.status(400).json({
-        success: false,
-        error: '주문명, 금액, 유효시간은 필수입니다.',
-      });
-    }
-
-    const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    const result = await createVirtualAccount({
-      orderId,
-      orderName,
-      amount,
-      customerEmail,
-      customerName,
-      validHours,
-      bank,
-    });
+    const result = await getPaymentHistory(merchantUidPrefix as string);
     
     if (!result.success) {
       return res.status(400).json(result);
@@ -196,133 +127,35 @@ router.post('/toss/virtual-account', requireAuth, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Virtual account creation error:', error);
+    console.error('Payment history error:', error);
     res.status(500).json({
       success: false,
-      error: '가상계좌 발급 중 오류가 발생했습니다.',
+      error: '결제 내역 조회 중 오류가 발생했습니다.',
     });
   }
 });
 
 /**
- * 빌링키 발급 (정기결제용 카드 등록)
- * POST /api/payments/toss/billing/issue
+ * 웹훅 엔드포인트 (PortOne에서 결제 상태 변경 시 호출)
+ * POST /api/payments/portone/webhook
  */
-router.post('/toss/billing/issue', requireAuth, async (req, res) => {
+router.post('/portone/webhook', async (req, res) => {
   try {
-    const { customerKey, authKey, customerName, customerEmail } = req.body;
+    const { imp_uid, merchant_uid, status } = req.body;
     
-    if (!customerKey || !authKey) {
-      return res.status(400).json({
-        success: false,
-        error: '고객키와 인증키는 필수입니다.',
-      });
-    }
-
-    const result = await issueBillingKey({
-      customerKey,
-      authKey,
-      customerName,
-      customerEmail,
-    });
+    console.log('PortOne webhook received:', { imp_uid, merchant_uid, status });
     
-    if (!result.success) {
-      return res.status(400).json(result);
-    }
-
-    // TODO: 빌링키를 데이터베이스에 저장
-    // await storage.saveBillingKey(...)
-
-    res.json(result);
-  } catch (error) {
-    console.error('Billing key issuance error:', error);
-    res.status(500).json({
-      success: false,
-      error: '빌링키 발급 중 오류가 발생했습니다.',
-    });
-  }
-});
-
-/**
- * 빌링키로 결제 (정기결제 실행)
- * POST /api/payments/toss/billing/charge
- */
-router.post('/toss/billing/charge', requireAuth, async (req, res) => {
-  try {
-    const { billingKey, customerKey, orderName, amount, customerEmail, customerName } = req.body;
-    
-    if (!billingKey || !customerKey || !orderName || !amount) {
-      return res.status(400).json({
-        success: false,
-        error: '빌링키, 고객키, 주문명, 금액은 필수입니다.',
-      });
-    }
-
-    const orderId = `billing_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    const result = await chargeWithBillingKey({
-      billingKey,
-      customerKey,
-      orderId,
-      orderName,
-      amount,
-      customerEmail,
-      customerName,
-    });
-    
-    if (!result.success) {
-      return res.status(400).json(result);
-    }
-
-    // TODO: 결제 기록 저장 및 권한 업데이트
-    // await storage.createPaymentRecord(...)
-    // await storage.updateUserPermissions(...)
-
-    res.json(result);
-  } catch (error) {
-    console.error('Billing charge error:', error);
-    res.status(500).json({
-      success: false,
-      error: '정기결제 실행 중 오류가 발생했습니다.',
-    });
-  }
-});
-
-/**
- * 웹훅 엔드포인트 (Toss Payments에서 결제 상태 변경 시 호출)
- * POST /api/payments/toss/webhook
- */
-router.post('/toss/webhook', async (req, res) => {
-  try {
-    const signature = req.headers['x-toss-signature'] as string;
-    const data = JSON.stringify(req.body);
-    
-    // 서명 검증
-    if (!verifyWebhookSignature(signature, data)) {
-      return res.status(401).json({
-        success: false,
-        error: '유효하지 않은 웹훅 서명입니다.',
-      });
-    }
-
-    const { type, data: webhookData } = req.body;
-    
-    // 결제 상태에 따른 처리
-    switch (type) {
-      case 'PAYMENT_STATUS_CHANGED':
-        // TODO: 결제 상태 변경 처리
-        console.log('Payment status changed:', webhookData);
+    // 웹훅 데이터로 결제 상태 재검증
+    if (imp_uid && merchant_uid) {
+      const verification = await verifyPayment({ imp_uid, merchant_uid });
+      
+      if (verification.success) {
+        // TODO: 결제 상태 업데이트
         // await storage.updatePaymentStatus(...)
-        break;
-        
-      case 'VIRTUAL_ACCOUNT_DEPOSIT':
-        // TODO: 가상계좌 입금 처리
-        console.log('Virtual account deposit:', webhookData);
-        // await storage.confirmVirtualAccountPayment(...)
-        break;
-        
-      default:
-        console.log('Unknown webhook type:', type);
+        console.log('Webhook verification successful:', verification.payment);
+      } else {
+        console.error('Webhook verification failed:', verification.error);
+      }
     }
 
     res.json({ success: true });

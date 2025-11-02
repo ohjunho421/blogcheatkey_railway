@@ -40,67 +40,77 @@ passport.use(new GoogleStrategy({
   }
 }));
 
-// Kakao OAuth Strategy
-passport.use(new KakaoStrategy({
-  clientID: process.env.KAKAO_CLIENT_ID!,
-  clientSecret: process.env.KAKAO_CLIENT_SECRET!,
-  callbackURL: "/api/auth/kakao/callback"
-}, async (accessToken: string, refreshToken: string, profile: any, done: any) => {
-  try {
-    // Check if user exists
-    let user = await storage.getUserByKakaoId(profile.id);
-    
-    if (!user) {
-      // Create new user with Kakao OAuth
-      user = await storage.createUser({
-        kakaoId: profile.id,
-        email: profile._json?.kakao_account?.email || '',
-        name: profile.displayName || profile.username || '',
-        profileImage: profile._json?.properties?.profile_image || '',
-        isEmailVerified: profile._json?.kakao_account?.is_email_verified || false,
-        subscriptionTier: 'basic',
-        canGenerateContent: true,
-        canGenerateImages: false,
-        canUseChatbot: false,
-      });
+// Kakao OAuth Strategy (환경 변수가 있을 때만 활성화)
+if (process.env.KAKAO_CLIENT_ID && process.env.KAKAO_CLIENT_SECRET) {
+  passport.use(new KakaoStrategy({
+    clientID: process.env.KAKAO_CLIENT_ID,
+    clientSecret: process.env.KAKAO_CLIENT_SECRET,
+    callbackURL: "/api/auth/kakao/callback"
+  }, async (accessToken: string, refreshToken: string, profile: any, done: any) => {
+    try {
+      // Check if user exists
+      let user = await storage.getUserByKakaoId(profile.id);
+      
+      if (!user) {
+        // Create new user with Kakao OAuth
+        user = await storage.createUser({
+          kakaoId: profile.id,
+          email: profile._json?.kakao_account?.email || '',
+          name: profile.displayName || profile.username || '',
+          profileImage: profile._json?.properties?.profile_image || '',
+          isEmailVerified: profile._json?.kakao_account?.is_email_verified || false,
+          subscriptionTier: 'basic',
+          canGenerateContent: true,
+          canGenerateImages: false,
+          canUseChatbot: false,
+        });
+      }
+      
+      return done(null, user);
+    } catch (error) {
+      return done(error, undefined);
     }
-    
-    return done(null, user);
-  } catch (error) {
-    return done(error, undefined);
-  }
-}));
+  }));
+  console.log('✅ Kakao OAuth enabled');
+} else {
+  console.log('⚠️ Kakao OAuth disabled - missing credentials');
+}
 
-// Naver OAuth Strategy
-passport.use(new NaverStrategy({
-  clientID: process.env.NAVER_CLIENT_ID!,
-  clientSecret: process.env.NAVER_CLIENT_SECRET!,
-  callbackURL: "/api/auth/naver/callback"
-}, async (accessToken: string, refreshToken: string, profile: any, done: any) => {
-  try {
-    // Check if user exists
-    let user = await storage.getUserByNaverId(profile.id);
-    
-    if (!user) {
-      // Create new user with Naver OAuth
-      user = await storage.createUser({
-        naverId: profile.id,
-        email: profile.email || '',
-        name: profile.name || profile.nickname || '',
-        profileImage: profile.profile_image || '',
-        isEmailVerified: true,
-        subscriptionTier: 'basic',
-        canGenerateContent: true,
-        canGenerateImages: false,
-        canUseChatbot: false,
-      });
+// Naver OAuth Strategy (환경 변수가 있을 때만 활성화)
+if (process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET) {
+  passport.use(new NaverStrategy({
+    clientID: process.env.NAVER_CLIENT_ID,
+    clientSecret: process.env.NAVER_CLIENT_SECRET,
+    callbackURL: "/api/auth/naver/callback"
+  }, async (accessToken: string, refreshToken: string, profile: any, done: any) => {
+    try {
+      // Check if user exists
+      let user = await storage.getUserByNaverId(profile.id);
+      
+      if (!user) {
+        // Create new user with Naver OAuth
+        user = await storage.createUser({
+          naverId: profile.id,
+          email: profile.email || '',
+          name: profile.name || profile.nickname || '',
+          profileImage: profile.profile_image || '',
+          isEmailVerified: true,
+          subscriptionTier: 'basic',
+          canGenerateContent: true,
+          canGenerateImages: false,
+          canUseChatbot: false,
+        });
+      }
+      
+      return done(null, user);
+    } catch (error) {
+      return done(error, undefined);
     }
-    
-    return done(null, user);
-  } catch (error) {
-    return done(error, undefined);
-  }
-}));
+  }));
+  console.log('✅ Naver OAuth enabled');
+} else {
+  console.log('⚠️ Naver OAuth disabled - missing credentials');
+}
 
 passport.serializeUser((user: any, done) => {
   done(null, user.id);
@@ -162,39 +172,43 @@ export function setupAuth(app: Express) {
     }
   );
 
-  // Kakao OAuth routes
-  app.get('/api/auth/kakao', 
-    passport.authenticate('kakao')
-  );
+  // Kakao OAuth routes (환경 변수가 있을 때만 활성화)
+  if (process.env.KAKAO_CLIENT_ID && process.env.KAKAO_CLIENT_SECRET) {
+    app.get('/api/auth/kakao', 
+      passport.authenticate('kakao')
+    );
 
-  app.get('/api/auth/kakao/callback',
-    passport.authenticate('kakao', { failureRedirect: '/' }),
-    (req, res) => {
-      // 성공시 세션에 사용자 ID 저장
-      if (req.user) {
-        (req.session as any).userId = (req.user as any).id;
-        console.log('Kakao login successful, user ID:', (req.user as any).id);
+    app.get('/api/auth/kakao/callback',
+      passport.authenticate('kakao', { failureRedirect: '/' }),
+      (req, res) => {
+        // 성공시 세션에 사용자 ID 저장
+        if (req.user) {
+          (req.session as any).userId = (req.user as any).id;
+          console.log('Kakao login successful, user ID:', (req.user as any).id);
+        }
+        res.redirect('/');
       }
-      res.redirect('/');
-    }
-  );
+    );
+  }
 
-  // Naver OAuth routes
-  app.get('/api/auth/naver', 
-    passport.authenticate('naver')
-  );
+  // Naver OAuth routes (환경 변수가 있을 때만 활성화)
+  if (process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET) {
+    app.get('/api/auth/naver', 
+      passport.authenticate('naver')
+    );
 
-  app.get('/api/auth/naver/callback',
-    passport.authenticate('naver', { failureRedirect: '/' }),
-    (req, res) => {
-      // 성공시 세션에 사용자 ID 저장
-      if (req.user) {
-        (req.session as any).userId = (req.user as any).id;
-        console.log('Naver login successful, user ID:', (req.user as any).id);
+    app.get('/api/auth/naver/callback',
+      passport.authenticate('naver', { failureRedirect: '/' }),
+      (req, res) => {
+        // 성공시 세션에 사용자 ID 저장
+        if (req.user) {
+          (req.session as any).userId = (req.user as any).id;
+          console.log('Naver login successful, user ID:', (req.user as any).id);
+        }
+        res.redirect('/');
       }
-      res.redirect('/');
-    }
-  );
+    );
+  }
 
   app.post('/api/auth/logout', (req, res) => {
     req.logout(() => {
