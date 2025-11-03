@@ -30,6 +30,7 @@ export async function formatForMobileSmart(text: string, maxWidth: number = 27):
 6. 구두점(마침표, 느낌표, 물음표) 뒤에도 문맥이 이어지면 계속 한 줄에 작성하세요
 7. 단락 구분(빈 줄 2개)은 유지하세요
 8. 제목/소제목은 한 줄로 유지하세요
+9. **절대로 한 줄이 ${maxWidth}자를 넘지 않도록 하세요**
 
 **예시:**
 입력: "차량 연비가 예전 같지 않다고 느끼시는 분들이 많습니다. 특히 출퇴근길에 주유소를 자주 들르게 되면서 '왜 이렇게 기름이 빨리 닳지?' 하는 생각이 드시죠."
@@ -61,12 +62,129 @@ ${text}`;
       ? response.content[0].text.trim() 
       : text;
 
-    return formattedText;
+    // 🔥 POST-PROCESSING: Validate and fix lines that exceed max width
+    const validated = validateAndFixLineWidths(formattedText, maxWidth);
+    return validated;
   } catch (error) {
     console.error('AI 포맷팅 실패, 기본 포맷터 사용:', error);
     // AI 실패 시 원본 반환
     return text;
   }
+}
+
+/**
+ * Validate line widths and fix any lines exceeding max width
+ */
+function validateAndFixLineWidths(text: string, maxWidth: number): string {
+  const lines = text.split('\n');
+  const fixedLines: string[] = [];
+  
+  for (const line of lines) {
+    // Empty lines pass through
+    if (line.trim() === '') {
+      fixedLines.push(line);
+      continue;
+    }
+    
+    // Calculate line length (Korean chars count as 1, others as 0.5)
+    const lineLength = calculateKoreanLength(line);
+    
+    if (lineLength <= maxWidth) {
+      // Line is within acceptable range
+      fixedLines.push(line);
+    } else {
+      // Line is too long - emergency break it
+      console.warn(`⚠️ Line too long (${lineLength} chars), breaking: "${line.substring(0, 30)}..."`);
+      const brokenLines = emergencyLineBreak(line, maxWidth);
+      fixedLines.push(...brokenLines);
+    }
+  }
+  
+  return fixedLines.join('\n');
+}
+
+/**
+ * Calculate Korean-aware line length
+ */
+function calculateKoreanLength(line: string): number {
+  let length = 0;
+  for (const char of line) {
+    // Korean, Chinese, Japanese, and fullwidth chars count as 1
+    if (/[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf\uac00-\ud7a3]/.test(char)) {
+      length += 1;
+    } else {
+      // ASCII and other chars count as 0.5
+      length += 0.5;
+    }
+  }
+  return Math.ceil(length);
+}
+
+/**
+ * Emergency line breaking for lines that are too long
+ */
+function emergencyLineBreak(line: string, maxWidth: number): string[] {
+  const words = line.split(' ');
+  const result: string[] = [];
+  let currentLine = '';
+  
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    const testLength = calculateKoreanLength(testLine);
+    
+    if (testLength <= maxWidth) {
+      currentLine = testLine;
+    } else {
+      // Current line is full, start new line
+      if (currentLine) {
+        result.push(currentLine);
+      }
+      
+      // Check if single word is too long
+      if (calculateKoreanLength(word) > maxWidth) {
+        // Break the word at natural boundaries
+        const brokenWord = breakLongWord(word, maxWidth);
+        result.push(...brokenWord.slice(0, -1));
+        currentLine = brokenWord[brokenWord.length - 1];
+      } else {
+        currentLine = word;
+      }
+    }
+  }
+  
+  if (currentLine) {
+    result.push(currentLine);
+  }
+  
+  return result.length > 0 ? result : [line];
+}
+
+/**
+ * Break a long word at natural boundaries (punctuation, Korean syllables)
+ */
+function breakLongWord(word: string, maxWidth: number): string[] {
+  const result: string[] = [];
+  let current = '';
+  
+  for (let i = 0; i < word.length; i++) {
+    const char = word[i];
+    const testStr = current + char;
+    
+    if (calculateKoreanLength(testStr) > maxWidth) {
+      if (current) {
+        result.push(current);
+      }
+      current = char;
+    } else {
+      current = testStr;
+    }
+  }
+  
+  if (current) {
+    result.push(current);
+  }
+  
+  return result.length > 0 ? result : [word];
 }
 
 /**

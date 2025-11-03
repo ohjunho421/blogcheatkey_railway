@@ -33,7 +33,7 @@ export async function analyzeUserRequest(
 ): Promise<RequestAnalysis> {
   const prompt = `당신은 사용자의 블로그 수정 요청을 깊이 있게 분석하는 전문가입니다.
 
-현재 콘텐츠:
+현재 콘텐츠 일부:
 ${currentContent.substring(0, 500)}...
 
 사용자 요청:
@@ -44,48 +44,80 @@ ${currentContent.substring(0, 500)}...
 다음 항목을 심층 분석하여 JSON으로 반환하세요:
 
 1. **intent** (수정 의도):
-   - "add": 새로운 내용 추가
-   - "remove": 불필요한 내용 삭제
-   - "modify": 기존 내용 변경 (사용자가 "바꿔줘", "수정해줘" 등을 사용)
-   - "restructure": 구조 재편성
-   - "tone_change": 어조/톤 변경 (사용자가 "매력적으로", "더 친근하게", "전문적으로" 등을 사용)
-   - "enhance_persuasion": 설득력 강화 (사용자가 "설득력있게", "강력하게" 등을 사용)
+   - "add": 새로운 내용 추가 (예: "~를 추가해줘", "~에 대한 내용도 넣어줘")
+   - "remove": 불필요한 내용 삭제 (예: "~를 빼줘", "~부분을 삭제해줘")
+   - "modify": 기존 내용 변경 (예: "바꿔줘", "수정해줘", "다시 써줘", "고쳐줘")
+   - "restructure": 구조 재편성 (예: "순서를 바꿔줘", "구조를 변경해줘")
+   - "tone_change": 어조/톤 변경 (예: "매력적으로", "친근하게", "전문적으로", "흥미롭게")
+   - "enhance_persuasion": 설득력 강화 (예: "설득력있게", "강력하게", "효과적으로")
+   - "improve_readability": 가독성 개선 (예: "읽기 쉽게", "이해하기 쉽게", "더 명확하게")
+   - "title_suggestion": 제목 추천 (예: "제목 추천해줘", "제목 지어줘", "어울리는 제목", "타이틀")
 
-2. **target** (수정 대상):
-   - "intro": 서론 (사용자가 "서론", "도입부", "시작 부분", "첫 단락" 등을 언급하면 이것 선택)
-   - "body": 본론 (사용자가 "본론", "중간 부분", "내용" 등을 언급하면 이것 선택)
-   - "conclusion": 결론 (사용자가 "결론", "마무리", "끝 부분" 등을 언급하면 이것 선택)
-   - "specific_paragraph": 특정 단락 (사용자가 특정 위치나 내용을 명시한 경우)
-   - "entire": 전체 (수정 대상이 명확하지 않거나 전체를 언급한 경우)
+2. **target** (수정 대상) - 한국어 표현을 정확히 인식:
+   - "intro": 서론 (키워드: "서론", "도입부", "시작", "첫 부분", "처음", "인트로", "앞부분")
+   - "body": 본론 (키워드: "본론", "중간", "내용", "몸통", "핵심 내용")
+   - "conclusion": 결론 (키워드: "결론", "마무리", "끝", "마지막", "클로징", "끝부분")
+   - "specific_paragraph": 특정 단락 (사용자가 특정 문장이나 내용을 직접 언급한 경우)
+   - "entire": 전체 (명확한 대상이 없거나 "전체", "전부", "글 전체" 등을 언급)
 
 3. **scope** (수정 범위):
-   - "minor": 작은 수정 (단어/문장 수정)
-   - "moderate": 중간 수정 (단락 수정)
-   - "major": 대규모 수정 (여러 단락 또는 구조 변경)
+   - "minor": 작은 수정 (단어 몇 개 또는 문장 1-2개)
+   - "moderate": 중간 수정 (한 단락 또는 여러 문장)
+   - "major": 대규모 수정 (여러 단락 또는 전체 구조)
 
-4. **specificRequirements**: 사용자의 구체적인 요구사항들을 배열로
+4. **specificRequirements**: 사용자의 구체적인 요구사항들을 배열로 추출
 
-5. **keyElements**: 반드시 포함해야 할 핵심 요소들
+5. **keyElements**: 반드시 포함하거나 강조해야 할 핵심 요소들
 
 6. **emotionalTone**: 목표하는 감정적 톤
-   - "professional": 전문적
-   - "friendly": 친근한
-   - "urgent": 긴급한
-   - "empathetic": 공감적
-   - "authoritative": 권위있는
+   - "professional": 전문적, 격식있는
+   - "friendly": 친근한, 따뜻한
+   - "urgent": 긴급한, 시급한
+   - "empathetic": 공감적, 이해하는
+   - "authoritative": 권위있는, 확신있는
+   - "casual": 편안한, 일상적인
+   - "enthusiastic": 열정적인, 흥미로운
 
 7. **persuasionStrategy**: 적용할 설득 전략
-   - 예: "감정적 어필", "논리적 근거 제시", "사회적 증거", "권위 활용"
+   - "감정적 어필": 독자의 감정에 호소
+   - "논리적 근거": 데이터와 사실로 설득
+   - "사회적 증거": 다른 사람들의 경험 활용
+   - "권위 활용": 전문가 의견 강조
+   - "문제-해결": 문제 제시 후 해결책 제공
+   - "스토리텔링": 이야기 형식으로 전달
 
 === 분석 예시 ===
-예1) 사용자 요청: "서론을 좀더 매력적으로 바꿔줘"
-→ intent: "tone_change", target: "intro", scope: "moderate", emotionalTone: "friendly"
+예1) "서론을 좀더 매력적으로 바꿨으면 좋겠어"
+→ {"intent": "tone_change", "target": "intro", "scope": "moderate", "emotionalTone": "enthusiastic", "persuasionStrategy": "감정적 어필"}
 
-예2) 사용자 요청: "도입부를 더 흥미롭게 만들어줘"
-→ intent: "tone_change", target: "intro", scope: "moderate", emotionalTone: "friendly"
+예2) "도입부를 더 흥미롭게 만들어줘"
+→ {"intent": "tone_change", "target": "intro", "scope": "moderate", "emotionalTone": "enthusiastic", "persuasionStrategy": "스토리텔링"}
 
-예3) 사용자 요청: "결론 부분을 설득력있게 수정해줘"
-→ intent: "enhance_persuasion", target: "conclusion", scope: "moderate"
+예3) "결론 부분을 설득력있게 수정해줘"
+→ {"intent": "enhance_persuasion", "target": "conclusion", "scope": "moderate", "persuasionStrategy": "문제-해결"}
+
+예4) "전체적으로 더 읽기 쉽게 바꿔줘"
+→ {"intent": "improve_readability", "target": "entire", "scope": "major", "emotionalTone": "friendly"}
+
+예5) "본론에 구체적인 예시를 추가해줘"
+→ {"intent": "add", "target": "body", "scope": "moderate", "specificRequirements": ["구체적인 예시 추가"]}
+
+예6) "첫 부분을 다시 써줘"
+→ {"intent": "modify", "target": "intro", "scope": "moderate"}
+
+예7) "글 전체를 좀더 전문적으로 고쳐줘"
+→ {"intent": "tone_change", "target": "entire", "scope": "major", "emotionalTone": "professional"}
+
+예8) "이 글에 어울리는 제목을 추천해줘"
+→ {"intent": "title_suggestion", "target": "entire", "scope": "minor"}
+
+예9) "제목을 좀더 흥미롭게 지어줘"
+→ {"intent": "title_suggestion", "target": "entire", "emotionalTone": "enthusiastic"}
+
+**중요**: 사용자의 자연스러운 한국어 표현을 정확히 이해하세요.
+- "~했으면 좋겠어", "~해줘", "~해주세요" 모두 동일한 요청입니다.
+- "서론", "도입부", "처음", "앞부분" 모두 "intro"를 의미합니다.
+- "바꿔줘", "수정해줘", "고쳐줘", "다시 써줘" 모두 "modify"를 의미합니다.
 
 JSON 형식으로 응답:`;
 
@@ -151,7 +183,7 @@ export async function generateMultipleVersions(
       );
 
       // SEO 최적화 검증
-      const morphemeAnalysis = analyzeMorphemes(editedContent, keyword, customMorphemes);
+      const morphemeAnalysis = await analyzeMorphemes(editedContent, keyword, customMorphemes);
       
       versions.push({
         content: editedContent,
@@ -178,6 +210,32 @@ async function generateVersion(
 ): Promise<string> {
   const customMorphemesArray = customMorphemes ? customMorphemes.split(' ').filter(m => m.trim().length > 0) : [];
 
+  // 📌 컨텐츠를 서론-본론-결론으로 분리 (단락 기준)
+  const paragraphs = originalContent.split('\n\n').filter(p => p.trim().length > 0);
+  const totalParagraphs = paragraphs.length;
+  
+  // 대략적인 섹션 구분 (첫 1-2단락: 서론, 마지막 1-2단락: 결론, 나머지: 본론)
+  let introEnd = Math.min(2, Math.floor(totalParagraphs * 0.2));
+  let conclusionStart = Math.max(totalParagraphs - 2, Math.floor(totalParagraphs * 0.8));
+  if (introEnd >= conclusionStart) {
+    introEnd = 1;
+    conclusionStart = totalParagraphs - 1;
+  }
+  
+  const introParagraphs = paragraphs.slice(0, introEnd);
+  const bodyParagraphs = paragraphs.slice(introEnd, conclusionStart);
+  const conclusionParagraphs = paragraphs.slice(conclusionStart);
+  
+  // 타겟 섹션 정보 생성
+  let targetSectionInfo = '';
+  if (analysis.target === 'intro') {
+    targetSectionInfo = `\n**🎯 집중 수정 영역: 서론 (첫 ${introEnd}개 단락)**\n- 현재 서론:\n${introParagraphs.join('\n\n')}\n\n→ 이 부분을 중점적으로 수정하세요.`;
+  } else if (analysis.target === 'body') {
+    targetSectionInfo = `\n**🎯 집중 수정 영역: 본론 (중간 ${bodyParagraphs.length}개 단락)**\n- 현재 본론 시작 부분:\n${bodyParagraphs.slice(0, 2).join('\n\n')}\n\n→ 본론 전체를 중점적으로 수정하세요.`;
+  } else if (analysis.target === 'conclusion') {
+    targetSectionInfo = `\n**🎯 집중 수정 영역: 결론 (마지막 ${conclusionParagraphs.length}개 단락)**\n- 현재 결론:\n${conclusionParagraphs.join('\n\n')}\n\n→ 이 부분을 중점적으로 수정하세요.`;
+  }
+
   const prompt = `당신은 SEO 최적화 블로그 수정 전문가입니다.
 
 === 전략: ${strategy.name} ===
@@ -185,10 +243,11 @@ ${strategy.description}
 
 === 원본 글 ===
 ${originalContent}
+${targetSectionInfo}
 
 === 분석된 사용자 요청 ===
 - 수정 의도: ${analysis.intent}
-- 수정 대상: ${analysis.target}
+- 수정 대상: ${analysis.target} ${analysis.target === 'intro' ? '(서론/도입부)' : analysis.target === 'body' ? '(본론)' : analysis.target === 'conclusion' ? '(결론/마무리)' : '(전체)'}
 - 수정 범위: ${analysis.scope}
 - 구체적 요구사항: ${analysis.specificRequirements.join(', ')}
 - 핵심 요소: ${analysis.keyElements.join(', ')}
@@ -214,6 +273,8 @@ ${strategy.name === 'conservative' ?
   strategy.name === 'balanced' ?
   '- 기존 글의 70-80% 유지\n- 요청사항을 충실히 반영하되 글 전체의 일관성 유지\n- 필요한 경우 주변 문장도 자연스럽게 조정' :
   '- 요청사항을 완전히 반영\n- 글 전체의 품질 향상을 위해 필요한 부분 적극 수정\n- 설득력과 가독성을 최대한 강화'}
+
+${analysis.target !== 'entire' ? `\n**⚠️ 중요**: ${analysis.target === 'intro' ? '서론' : analysis.target === 'body' ? '본론' : '결론'} 부분을 집중적으로 수정하되, 다른 부분도 자연스럽게 연결되도록 조정하세요.` : ''}
 
 완성된 수정본을 반환하세요 (설명 없이 본문만):`;
 
@@ -285,6 +346,37 @@ JSON으로 응답:
   });
 
   return JSON.parse(response.text || '{"score": 5.0, "strengths": [], "weaknesses": []}');
+}
+
+// 🎯 SSR 기반 제목 생성 함수
+export async function generateContentBasedTitle(
+  content: string,
+  keyword: string,
+  analysis: RequestAnalysis
+): Promise<Array<{ title: string; score: number }>> {
+  try {
+    const { generateTop5Titles } = await import('./ssrTitleGenerator.js');
+    
+    console.log('🎯 SSR 기반 제목 생성 시작...');
+    console.log(`  키워드: ${keyword}`);
+    console.log(`  감정 톤: ${analysis.emotionalTone || 'enthusiastic'}`);
+    
+    // SSR 평가를 통한 Top 5 제목 생성
+    const top5 = await generateTop5Titles(keyword, content);
+    
+    return top5;
+  } catch (error) {
+    console.error('SSR 제목 생성 오류:', error);
+    
+    // Fallback: 기본 제목 반환
+    return [
+      { title: `${keyword}에 대해 알아야 할 모든 것`, score: 3.5 },
+      { title: `${keyword} 완벽 가이드`, score: 3.5 },
+      { title: `${keyword}, 이것만 알면 됩니다`, score: 3.5 },
+      { title: `${keyword} 제대로 이해하기`, score: 3.5 },
+      { title: `${keyword} 핵심 정리`, score: 3.5 }
+    ];
+  }
 }
 
 // 🎯 통합 함수: 전체 프로세스 실행

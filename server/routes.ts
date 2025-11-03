@@ -812,66 +812,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         content: message,
       });
 
-      // Check if this is a title generation request
-      const isTitleRequest = /제목|타이틀|title/i.test(message);
+      // Check if this is an image request
       const isImageRequest = /이미지|그림|사진|인포그래픽|infographic/i.test(message);
 
-      if (isTitleRequest) {
-        // Generate titles using TitleGenerator
-        try {
-          const titleGenerator = new TitleGenerator();
-          const titles = await titleGenerator.generateTitles(project.keyword, project.generatedContent || "");
-          
-          // Format titles for display
-          let titleResponse = "📝 **10가지 유형별 제목 추천**\n\n";
-          
-          const typeNames = {
-            general: '🎯 일반 상식 반박형',
-            approval: '👑 인정욕구 자극형',
-            secret: '🔒 숨겨진 비밀형',
-            trend: '📈 트렌드 제시형',
-            failure: '❌ 실패담 공유형',
-            comparison: '⚖️ 비교형',
-            warning: '⚠️ 경고형',
-            blame: '🤝 남탓 공감형',
-            beginner: '🔰 초보자 가이드형',
-            benefit: '✨ 효과 제시형'
-          };
-
-          for (const [type, typeName] of Object.entries(typeNames)) {
-            titleResponse += `${typeName}\n`;
-            if (titles[type] && titles[type].length > 0) {
-              titles[type].forEach((title: string, index: number) => {
-                titleResponse += `${index + 1}. ${title}\n`;
-              });
-            }
-            titleResponse += "\n";
-          }
-
-          titleResponse += "💡 원하는 제목을 복사해서 사용하시거나,\n특정 스타일로 더 만들어달라고 요청해주세요!";
-
-          await storage.createChatMessage({
-            projectId: id,
-            role: "assistant",
-            content: titleResponse,
-          });
-
-          res.json({ 
-            success: true, 
-            type: 'title',
-            titles: titles,
-            message: titleResponse
-          });
-        } catch (titleError) {
-          console.error("Title generation error:", titleError);
-          await storage.createChatMessage({
-            projectId: id,
-            role: "assistant",
-            content: "죄송합니다. 제목 생성에 실패했습니다. 다시 시도해주세요.",
-          });
-          res.json({ success: true, type: 'error' });
-        }
-      } else if (isImageRequest) {
+      if (isImageRequest) {
         // 이미지 생성 기능 제거됨 - 외부 도구 안내
         await storage.createChatMessage({
           projectId: id,
@@ -891,7 +835,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         try {
           // Use enhanced chatbot with multi-version generation and evaluation
-          const { enhancedEditContent } = await import("./services/enhancedChatbot.js");
+          const { enhancedEditContent, analyzeUserRequest, generateContentBasedTitle } = await import("./services/enhancedChatbot.js");
+          
+          // First analyze user request to detect intent
+          const quickAnalysis = await analyzeUserRequest(message, project.generatedContent, project.keyword);
+          
+          // Check if this is a title request
+          if (quickAnalysis.intent === 'title_suggestion') {
+            // Generate SSR-based titles
+            const titlesWithScores = await generateContentBasedTitle(
+              project.generatedContent,
+              project.keyword,
+              quickAnalysis
+            );
+            
+            let titleResponse = `📝 **SSR 평가 기반 Top 5 제목 추천**\n\n`;
+            titleResponse += `✨ 25가지 스타일로 제목 생성 후 클릭 유도력 평가\n`;
+            titleResponse += `🏆 가장 효과적인 상위 5개 제목을 선정했습니다!\n\n`;
+            
+            titlesWithScores.forEach((item, index) => {
+              const stars = '⭐'.repeat(Math.round(item.score));
+              titleResponse += `${index + 1}. ${item.title}\n`;
+              titleResponse += `   ${stars} ${item.score.toFixed(1)}점\n\n`;
+            });
+            
+            const avgScore = titlesWithScores.reduce((sum, t) => sum + t.score, 0) / titlesWithScores.length;
+            titleResponse += `📊 평균 점수: ${avgScore.toFixed(1)}/5.0\n\n`;
+            titleResponse += `💡 마음에 드는 제목을 선택하시거나,\n"더 흥미롭게", "더 전문적으로" 등 스타일을 요청하시면\n다시 만들어드릴게요!`;
+            
+            await storage.createChatMessage({
+              projectId: id,
+              role: "assistant",
+              content: titleResponse,
+            });
+            
+            return res.json({ 
+              success: true, 
+              type: 'title',
+              titles: titlesWithScores,
+              message: titleResponse
+            });
+          }
+          
+          // Regular content editing
           const result = await enhancedEditContent(
             project.generatedContent,
             message,
@@ -903,7 +889,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Analyze morphemes to ensure SEO conditions are met
           const { analyzeMorphemes } = await import("./services/morphemeAnalyzer.js");
-          const morphemeAnalysis = analyzeMorphemes(editedContent, project.keyword, project.customMorphemes || undefined);
+          const morphemeAnalysis = await analyzeMorphemes(editedContent, project.keyword, project.customMorphemes || undefined);
           
           // Create detailed response with analysis
           let responseMessage = `✅ **콘텐츠 수정 완료**\n\n`;

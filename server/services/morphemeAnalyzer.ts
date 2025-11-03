@@ -554,6 +554,79 @@ export function findCompleteKeywordMatches(morphemes: string[], keyword: string)
   return matches;
 }
 
+/**
+ * Detect if a component is a foreign word (English, numbers, mixed)
+ */
+function isForeignWord(component: string): boolean {
+  // Contains Latin alphabet or numbers
+  return /[a-zA-Z0-9]/.test(component);
+}
+
+/**
+ * Intelligent matching for keyword components
+ * Handles both Korean and foreign words appropriately
+ */
+function isComponentMatch(morpheme: string, component: string): boolean {
+  const lowerMorpheme = morpheme.toLowerCase();
+  const lowerComponent = component.toLowerCase();
+  
+  // Exact match (case-insensitive)
+  if (lowerMorpheme === lowerComponent) {
+    return true;
+  }
+  
+  // Detect if component is foreign word
+  const isForeign = isForeignWord(component);
+  
+  if (isForeign) {
+    // For foreign words (English, numbers, mixed):
+    // Match if morpheme contains the component as a whole word or part
+    // Examples: "BMW" matches "bmw", "BMW", "Bmw"
+    //           "10w40" matches "10w40", "10W40"
+    
+    // Exact case-insensitive match
+    if (lowerMorpheme === lowerComponent) {
+      return true;
+    }
+    
+    // Contains match for foreign words in compound contexts
+    // Example: "엔진오일10w40" should match "10w40"
+    if (lowerMorpheme.includes(lowerComponent)) {
+      return true;
+    }
+    
+    // Also check if morpheme starts or ends with the component
+    // This helps with cases like "BMW코딩" matching "BMW"
+    if (lowerMorpheme.startsWith(lowerComponent) || lowerMorpheme.endsWith(lowerComponent)) {
+      return true;
+    }
+  } else {
+    // For Korean words:
+    // More flexible matching to catch compound words
+    // Examples: "벤츠" should match "벤츠엔진경고등"
+    //           "엔진" should match "벤츠엔진", "엔진오일"
+    
+    // Exact match
+    if (lowerMorpheme === lowerComponent) {
+      return true;
+    }
+    
+    // Contains match for Korean components (allows finding in compound words)
+    if (lowerMorpheme.includes(lowerComponent)) {
+      return true;
+    }
+    
+    // Check if component appears as a distinct part
+    // This handles cases where the component is a meaningful unit within a larger word
+    const componentLength = component.length;
+    if (componentLength >= 2 && lowerMorpheme.includes(lowerComponent)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
 // Find individual keyword component matches (for 15-17 occurrences each)
 export async function findKeywordComponentMatches(morphemes: string[], keyword: string): Promise<Map<string, string[]>> {
   const keywordComponents = await extractKeywordComponents(keyword);
@@ -564,111 +637,19 @@ export async function findKeywordComponentMatches(morphemes: string[], keyword: 
   
   for (const component of keywordComponents) {
     const matches: string[] = [];
-    const lowerComponent = component.toLowerCase();
+    const componentType = isForeignWord(component) ? '외래어' : '한글';
+    
+    console.log(`\n🔍 Analyzing component: "${component}" (${componentType})`);
     
     for (const morpheme of morphemes) {
-      const lowerMorpheme = morpheme.toLowerCase();
-      
-      // Component matching - includes occurrences within compound words
-      let isMatch = false;
-      
-      if (lowerComponent === 'bmw') {
-        // Exact BMW matches including variations
-        isMatch = lowerMorpheme === 'bmw' || lowerMorpheme === 'BMW' || lowerMorpheme === 'Bmw';
-      } else if (lowerComponent === '코딩') {
-        // Korean coding-related terms
-        isMatch = lowerMorpheme === '코딩' || lowerMorpheme === '튜닝' || lowerMorpheme === '프로그래밍' || lowerMorpheme === '설정';
-      } else if (lowerComponent === '벤츠') {
-        // 벤츠 matches including compound words like 벤츠엔진경고등
-        isMatch = lowerMorpheme.includes('벤츠');
-      } else if (lowerComponent === '엔진') {
-        // 엔진 matches including compound words like 벤츠엔진경고등
-        isMatch = lowerMorpheme.includes('엔진');
-      } else if (lowerComponent === '경고') {
-        // 경고 matches including compound words and variations
-        isMatch = lowerMorpheme.includes('경고');
-      } else if (lowerComponent === '10w40') {
-        // Oil grade matches including variations
-        isMatch = lowerMorpheme === '10w40' || lowerMorpheme.includes('10w40');
-      } else if (lowerComponent === '오일') {
-        // 오일 matches including compound words like 엔진오일
-        isMatch = lowerMorpheme.includes('오일');
-      } else if (lowerComponent === '영어') {
-        // 영어 matches including compound words like 영어학원블로그
-        isMatch = lowerMorpheme.includes('영어');
-      } else if (lowerComponent === '학원') {
-        // 학원 matches including compound words like 영어학원블로그
-        isMatch = lowerMorpheme.includes('학원');
-      } else if (lowerComponent === '블로그') {
-        // 블로그 matches including compound words like 영어학원블로그
-        isMatch = lowerMorpheme.includes('블로그');
-      } else if (lowerComponent === '전기') {
-        // 전기 matches including compound words like 전기오토바이
-        isMatch = lowerMorpheme.includes('전기');
-      } else if (lowerComponent === '오토바이') {
-        // 오토바이 matches including compound words like 전기오토바이
-        isMatch = lowerMorpheme.includes('오토바이');
-      } else if (lowerComponent === '냉각수') {
-        // 냉각수 matches including compound words like 냉각수첨가제
-        isMatch = lowerMorpheme.includes('냉각수');
-      } else if (lowerComponent === '첨가제') {
-        // 첨가제 matches including compound words like 냉각수첨가제
-        isMatch = lowerMorpheme.includes('첨가제');
-      } else if (lowerComponent === '자동차') {
-        // 자동차 matches including compound words like 자동차부품
-        isMatch = lowerMorpheme.includes('자동차');
-      } else if (lowerComponent === '부품') {
-        // 부품 matches including compound words like 자동차부품
-        isMatch = lowerMorpheme.includes('부품');
-      } else if (lowerComponent === '타이어') {
-        // 타이어 matches including compound words like 타이어교체시기
-        isMatch = lowerMorpheme.includes('타이어');
-      } else if (lowerComponent === '교체') {
-        // 교체 matches including compound words like 타이어교체시기, 엔진오일교체
-        isMatch = lowerMorpheme.includes('교체');
-      } else if (lowerComponent === '시기') {
-        // 시기 matches including compound words like 타이어교체시기
-        isMatch = lowerMorpheme.includes('시기');
-      } else if (lowerComponent === '브레이크') {
-        // 브레이크 matches including compound words like 브레이크패드교체
-        isMatch = lowerMorpheme.includes('브레이크');
-      } else if (lowerComponent === '패드') {
-        // 패드 matches including compound words like 브레이크패드교체
-        isMatch = lowerMorpheme.includes('패드');
-      } else if (lowerComponent === '에어컨') {
-        // 에어컨 matches including compound words like 에어컨필터교체
-        isMatch = lowerMorpheme.includes('에어컨');
-      } else if (lowerComponent === '필터') {
-        // 필터 matches including compound words like 에어컨필터교체
-        isMatch = lowerMorpheme.includes('필터');
-      } else if (lowerComponent === '배터리') {
-        // 배터리 matches including compound words like 배터리점검
-        isMatch = lowerMorpheme.includes('배터리');
-      } else if (lowerComponent === '점검') {
-        // 점검 matches including compound words like 배터리점검
-        isMatch = lowerMorpheme.includes('점검');
-      } else if (lowerComponent === '하이브리드') {
-        // 하이브리드 matches including compound words like 하이브리드차량
-        isMatch = lowerMorpheme.includes('하이브리드');
-      } else if (lowerComponent === '차량') {
-        // 차량 matches including compound words like 하이브리드차량
-        isMatch = lowerMorpheme.includes('차량');
-      } else if (lowerComponent === '친환경') {
-        // 친환경 matches including compound words like 친환경자동차
-        isMatch = lowerMorpheme.includes('친환경');
-      } else {
-        // Generic matching for other components
-        isMatch = lowerMorpheme === lowerComponent || lowerMorpheme.includes(lowerComponent);
-      }
-      
-      if (isMatch) {
+      if (isComponentMatch(morpheme, component)) {
         matches.push(morpheme);
-        console.log(`✓ Component match: "${morpheme}" contains "${component}"`);
+        console.log(`  ✓ Match found: "${morpheme}"`);
       }
     }
     
     componentMatches.set(component, matches);
-    console.log(`"${component}" appears ${matches.length} times`);
+    console.log(`📊 "${component}" appears ${matches.length} times in content`);
   }
   
   return componentMatches;
