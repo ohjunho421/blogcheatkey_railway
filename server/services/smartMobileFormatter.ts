@@ -21,26 +21,37 @@ export async function formatForMobileSmart(text: string, maxWidth: number = 27):
   try {
     const prompt = `당신은 모바일 가독성 전문가입니다. 주어진 한국어 텍스트를 모바일 화면에 최적화된 형태로 줄바꿈해주세요.
 
-**중요 규칙:**
-1. 한 줄은 한글 기준 20-${maxWidth}자 범위로 작성하되, 가능하면 ${maxWidth}자에 가깝게 최대한 채워주세요
-2. 너무 자주 줄바꿈하지 말고, 한 줄을 최대한 활용하세요
-3. 의미가 자연스럽게 이어지면 같은 줄에 계속 작성하세요
-4. 문장이 완결되거나 주제가 크게 전환될 때만 줄바꿈하세요
-5. 단어는 절대 중간에 끊지 마세요
-6. 구두점(마침표, 느낌표, 물음표) 뒤에도 문맥이 이어지면 계속 한 줄에 작성하세요
-7. 단락 구분(빈 줄 2개)은 유지하세요
-8. 제목/소제목은 한 줄로 유지하세요
-9. **절대로 한 줄이 ${maxWidth}자를 넘지 않도록 하세요**
+🚨 **절대적인 규칙 (반드시 지켜야 함):**
+- **한 줄은 절대 ${maxWidth}자(한글 기준)를 초과할 수 없습니다**
+- 이것은 가장 중요한 제약 조건입니다
+- 각 줄의 글자 수를 세면서 작업하세요
 
-**예시:**
-입력: "차량 연비가 예전 같지 않다고 느끼시는 분들이 많습니다. 특히 출퇴근길에 주유소를 자주 들르게 되면서 '왜 이렇게 기름이 빨리 닳지?' 하는 생각이 드시죠."
+📝 **줄바꿈 가이드:**
+1. 한 줄은 20-${maxWidth}자 사이로 작성 (${maxWidth}자에 가깝게)
+2. 의미 단위로 자연스럽게 끊기
+3. 문장이 완결되거나 주제가 전환될 때 줄바꿈
+4. 단어는 절대 중간에 끊지 않기
+5. 구두점(. ! ?) 뒤에도 문맥이 이어지면 같은 줄 유지 가능
+6. 단락 구분(빈 줄)은 유지
+7. 제목/소제목은 한 줄로
+
+❌ **절대 하지 말 것:**
+- ${maxWidth}자를 넘는 줄 작성
+- 단어 중간에 줄바꿈
+- 부자연스러운 위치에서 끊기
+
+✅ **예시:**
+입력: "차량 연비가 예전 같지 않다고 느끼시는 분들이 많습니다. 특히 출퇴근길에 주유소를 자주 들르게 되면서 왜 이렇게 기름이 빨리 닳지 하는 생각이 드시죠."
 
 출력:
-차량 연비가 예전 같지 않다고 느끼시는 분들이 많습니다.
-특히 출퇴근길에 주유소를 자주 들르게 되면서
-'왜 이렇게 기름이 빨리 닳지?' 하는 생각이 드시죠.
+차량 연비가 예전 같지 않다고
+느끼시는 분들이 많습니다.
+특히 출퇴근길에 주유소를
+자주 들르게 되면서
+왜 이렇게 기름이 빨리 닳지
+하는 생각이 드시죠.
 
-이제 아래 텍스트를 위 규칙에 따라 포맷팅해주세요. 포맷팅된 텍스트만 출력하고, 다른 설명은 추가하지 마세요.
+이제 아래 텍스트를 위 규칙에 따라 포맷팅해주세요. **각 줄이 ${maxWidth}자를 절대 넘지 않도록** 주의하세요.
 
 ---
 
@@ -62,9 +73,7 @@ ${text}`;
       ? response.content[0].text.trim() 
       : text;
 
-    // 🔥 POST-PROCESSING: Validate and fix lines that exceed max width
-    const validated = validateAndFixLineWidths(formattedText, maxWidth);
-    return validated;
+    return formattedText;
   } catch (error) {
     console.error('AI 포맷팅 실패, 기본 포맷터 사용:', error);
     // AI 실패 시 원본 반환
@@ -74,8 +83,9 @@ ${text}`;
 
 /**
  * Validate line widths and fix any lines exceeding max width
+ * Uses Claude to naturally break long lines
  */
-function validateAndFixLineWidths(text: string, maxWidth: number): string {
+async function validateAndFixLineWidths(text: string, maxWidth: number): Promise<string> {
   const lines = text.split('\n');
   const fixedLines: string[] = [];
   
@@ -93,14 +103,56 @@ function validateAndFixLineWidths(text: string, maxWidth: number): string {
       // Line is within acceptable range
       fixedLines.push(line);
     } else {
-      // Line is too long - emergency break it
-      console.warn(`⚠️ Line too long (${lineLength} chars), breaking: "${line.substring(0, 30)}..."`);
-      const brokenLines = emergencyLineBreak(line, maxWidth);
+      // Line is too long - ask Claude to break it naturally
+      console.warn(`⚠️ Line too long (${lineLength} chars), asking Claude to fix: "${line.substring(0, 30)}..."`);
+      const brokenLines = await fixLongLineWithClaude(line, maxWidth);
       fixedLines.push(...brokenLines);
     }
   }
   
   return fixedLines.join('\n');
+}
+
+/**
+ * Ask Claude to naturally break a long line
+ */
+async function fixLongLineWithClaude(line: string, maxWidth: number): Promise<string[]> {
+  try {
+    const prompt = `다음 문장이 한 줄에 ${maxWidth}자를 초과합니다. 
+이 문장을 의미가 자연스럽게 끊기도록 여러 줄로 나눠주세요.
+
+**중요 규칙:**
+- 각 줄은 최대 ${maxWidth}자 (한글 기준)
+- 의미 단위로 자연스럽게 끊기
+- 단어 중간에 끊지 않기
+- 문맥이 자연스럽게 이어지도록
+
+**원본 문장:**
+${line}
+
+**출력 형식:** 줄바꿈된 문장만 출력 (다른 설명 없이)`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-3-5-sonnet-20241022',
+      max_tokens: 500,
+      temperature: 0.3,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+    });
+
+    const result = response.content[0].type === 'text' 
+      ? response.content[0].text.trim() 
+      : line;
+    
+    return result.split('\n').filter(l => l.trim());
+  } catch (error) {
+    console.error('Claude line fix failed, using emergency break:', error);
+    return emergencyLineBreak(line, maxWidth);
+  }
 }
 
 /**
