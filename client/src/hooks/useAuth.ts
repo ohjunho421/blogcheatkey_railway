@@ -63,47 +63,24 @@ export function useAuth() {
     gcTime: 5 * 60 * 1000, // 캐시 유지 시간
   });
 
-  // 401 에러 발생 시 세션 정보 정리 (무한 반복 방지)
+  // 401 에러 발생 시 세션 정보 즉시 정리 (무한 반복 방지)
   useEffect(() => {
     if (isError && error && (error as any).status === 401) {
-      console.log("401 error detected, clearing session data");
+      console.log("401 error detected, clearing all session data");
       localStorage.removeItem('sessionId');
       localStorage.removeItem('user');
-      setAuthError(true); // 에러 상태 저장하여 다음 렌더링부터 요청 안 함
+      setAuthError(true);
     }
   }, [isError, error]);
 
-  // 명시적으로 로그아웃한 경우만 인증 안 됨으로 처리
-  if (isLoggedOut) {
+  // 401 에러 또는 로그아웃 상태면 인증 안 됨으로 처리
+  if (isLoggedOut || (isError && (error as any)?.status === 401)) {
     return {
       user: undefined,
       isLoading: false,
       isAuthenticated: false,
       error: null
     };
-  }
-
-  // localStorage에서 사용자 정보 백업 사용 (서버 인증 실패 시)
-  if (!user && !isLoading && localStorage.getItem('sessionId')) {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        console.log("Using stored user data:", parsedUser);
-        return {
-          user: parsedUser as User,
-          isLoading: false,
-          isAuthenticated: true,
-          error: null
-        };
-      } catch (e) {
-        console.error('Failed to parse stored user:', e);
-        // 잘못된 데이터 정리
-        localStorage.removeItem('user');
-        localStorage.removeItem('sessionId');
-        setAuthError(true);
-      }
-    }
   }
 
   const isAuthenticated = !!user && !isError;
