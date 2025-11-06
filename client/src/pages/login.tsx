@@ -4,7 +4,7 @@ import { Link, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useLogin, useAuth } from "@/hooks/useAuth";
+import { useLogin, setAuthError } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,7 +25,8 @@ type LoginForm = z.infer<typeof loginSchema>;
 export default function Login() {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
-  const { isAuthenticated } = useAuth();
+  // 로그인 페이지에서는 인증 체크 불필요 - localStorage만 확인
+  const isAuthenticated = localStorage.getItem('sessionId') !== null && localStorage.getItem('user') !== null;
   const loginMutation = useLogin();
 
   const form = useForm<LoginForm>({
@@ -48,8 +49,9 @@ export default function Login() {
 
   const onSubmit = async (data: LoginForm) => {
     try {
-      // 로그인 시도시 로그아웃 상태 해제
+      // 로그인 시도시 로그아웃 상태 및 에러 상태 해제
       setLoggedOut(false);
+      setAuthError(false);
       
       // 로그인 API 직접 호출
       const response = await fetch("/api/auth/login", {

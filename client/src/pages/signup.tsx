@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useSignup, useAuth } from "@/hooks/useAuth";
+import { useSignup } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,7 +26,8 @@ type SignupForm = z.infer<typeof signupSchema>;
 export default function Signup() {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
-  const { isAuthenticated } = useAuth();
+  // 회원가입 페이지에서는 인증 체크 불필요 - localStorage만 확인
+  const isAuthenticated = localStorage.getItem('sessionId') !== null && localStorage.getItem('user') !== null;
   const signupMutation = useSignup();
 
   const form = useForm<SignupForm>({
