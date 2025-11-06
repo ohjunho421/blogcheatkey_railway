@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { apiRequest } from "@/lib/queryClient";
 
 // 로그아웃 상태를 localStorage로 관리하여 페이지 새로고침 후에도 유지
@@ -40,8 +41,19 @@ export function useAuth() {
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchInterval: false,
-    enabled: !isLoggedOut, // 로그아웃 상태가 아닐 때만 체크
+    refetchOnMount: false, // 마운트 시 자동 재요청 방지
+    enabled: !isLoggedOut && hasStoredSession, // 로그아웃 상태가 아니고 세션이 있을 때만 체크
+    gcTime: 5 * 60 * 1000, // 캐시 유지 시간
   });
+
+  // 401 에러 발생 시 세션 정보 정리 (무한 반복 방지)
+  useEffect(() => {
+    if (isError && error && (error as any).status === 401) {
+      console.log("401 error detected, clearing session data");
+      localStorage.removeItem('sessionId');
+      localStorage.removeItem('user');
+    }
+  }, [isError, error]);
 
   // 명시적으로 로그아웃한 경우만 인증 안 됨으로 처리
   if (isLoggedOut) {
