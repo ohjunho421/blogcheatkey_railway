@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { apiRequest } from "@/lib/queryClient";
 
 // 로그아웃 상태를 localStorage로 관리하여 페이지 새로고침 후에도 유지
@@ -45,10 +45,10 @@ export interface User {
 export function useAuth() {
   const isLoggedOut = getLoggedOut();
   const hasAuthError = getAuthError();
-  const [shouldCheckAuth, setShouldCheckAuth] = useState(() => {
-    // 초기값: 로그아웃 상태도 아니고, 인증 에러도 없고, 세션이 있을 때만 true
-    return !isLoggedOut && !hasAuthError && localStorage.getItem('sessionId') !== null;
-  });
+  const hasSession = localStorage.getItem('sessionId') !== null;
+  
+  // 로그아웃 상태도 아니고, 인증 에러도 없고, 세션이 있을 때만 인증 체크
+  const shouldCheckAuth = !isLoggedOut && !hasAuthError && hasSession;
   
   // 서버에서 세션 확인 (소셜 로그인 지원)
   const { data: user, isLoading, error, isError } = useQuery({
@@ -59,18 +59,17 @@ export function useAuth() {
     refetchOnReconnect: false,
     refetchInterval: false,
     refetchOnMount: false, // 마운트 시 자동 재요청 방지
-    enabled: shouldCheckAuth, // 상태로 제어
+    enabled: shouldCheckAuth, // 조건을 만족할 때만 요청
     gcTime: 5 * 60 * 1000, // 캐시 유지 시간
   });
 
-  // 401 에러 발생 시 세션 정보 정리 및 쿼리 완전 중단 (무한 반복 방지)
+  // 401 에러 발생 시 세션 정보 정리 (무한 반복 방지)
   useEffect(() => {
     if (isError && error && (error as any).status === 401) {
-      console.log("401 error detected, stopping all auth checks");
+      console.log("401 error detected, clearing session data");
       localStorage.removeItem('sessionId');
       localStorage.removeItem('user');
-      setAuthError(true); // 에러 상태 저장
-      setShouldCheckAuth(false); // 쿼리 완전 중단
+      setAuthError(true); // 에러 상태 저장하여 다음 렌더링부터 요청 안 함
     }
   }, [isError, error]);
 
@@ -103,7 +102,6 @@ export function useAuth() {
         localStorage.removeItem('user');
         localStorage.removeItem('sessionId');
         setAuthError(true);
-        setShouldCheckAuth(false);
       }
     }
   }
