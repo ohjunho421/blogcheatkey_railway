@@ -58,7 +58,7 @@ export async function formatForMobileSmart(text: string, maxWidth: number = 27):
 ${text}`;
 
     const response = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 8000,
       temperature: 0.3,
       messages: [
@@ -133,7 +133,7 @@ ${line}
 **출력 형식:** 줄바꿈된 문장만 출력 (다른 설명 없이)`;
 
     const response = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 500,
       temperature: 0.3,
       messages: [
