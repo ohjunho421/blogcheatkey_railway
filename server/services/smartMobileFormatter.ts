@@ -12,46 +12,52 @@ const anthropic = new Anthropic({
 /**
  * AI를 활용한 스마트 모바일 줄바꿈 포맷팅
  * @param text 원본 텍스트
- * @param maxWidth 최대 줄 너비 (한글 기준, 기본값: 27)
+ * @param maxBytes 최대 줄 바이트 수 (한글 3바이트, 영문 1바이트, 기본값: 70바이트 = 한글 약 23자)
  * @returns 포맷팅된 텍스트
  */
-export async function formatForMobileSmart(text: string, maxWidth: number = 27): Promise<string> {
+export async function formatForMobileSmart(text: string, maxBytes: number = 70): Promise<string> {
   if (!text || text.trim() === '') return text;
+
+  // 바이트 기준 한글 글자 수 계산 (한글 3바이트 = 1자)
+  const maxKoreanChars = Math.floor(maxBytes / 3);
 
   try {
     const prompt = `당신은 모바일 가독성 전문가입니다. 주어진 한국어 텍스트를 모바일 화면에 최적화된 형태로 줄바꿈해주세요.
 
 🚨 **절대적인 규칙 (반드시 지켜야 함):**
-- **한 줄은 절대 ${maxWidth}자(한글 기준)를 초과할 수 없습니다**
+- **한 줄의 바이트 수가 ${maxBytes} 바이트를 초과할 수 없습니다**
+  * 한글 1자 = 3바이트
+  * 영문/숫자 1자 = 1바이트
+  * 대략 **한글 ${maxKoreanChars}자 이하**로 작성
 - 이것은 가장 중요한 제약 조건입니다
-- 각 줄의 글자 수를 세면서 작업하세요
+- 각 줄의 바이트를 계산하면서 작업하세요
 
 📝 **줄바꿈 가이드:**
-1. 한 줄은 20-${maxWidth}자 사이로 작성 (${maxWidth}자에 가깝게)
-2. 의미 단위로 자연스럽게 끊기
-3. 문장이 완결되거나 주제가 전환될 때 줄바꿈
-4. 단어는 절대 중간에 끊지 않기
-5. 구두점(. ! ?) 뒤에도 문맥이 이어지면 같은 줄 유지 가능
-6. 단락 구분(빈 줄)은 유지
-7. 제목/소제목은 한 줄로
+1. 한 줄은 **한글 기준 18-${maxKoreanChars}자** 사이로 작성
+2. 완전한 문장이나 의미 단위를 최대한 한 줄에 유지
+3. 짧은 문장(20자 이하)은 가능한 한 줄에 유지
+4. 긴 문장은 자연스러운 호흡 단위로 끊기
+5. 단어는 절대 중간에 끊지 않기
+6. 구두점(. ! ?) 뒤에서 줄바꿈하는 것을 우선
+7. 단락 구분(빈 줄)은 유지
+8. 제목/소제목은 한 줄로
 
 ❌ **절대 하지 말 것:**
-- ${maxWidth}자를 넘는 줄 작성
+- ${maxBytes}바이트(한글 ${maxKoreanChars}자)를 넘는 줄 작성
+- 불필요하게 자주 줄바꿈 (문장이 짧으면 한 줄 유지)
 - 단어 중간에 줄바꿈
-- 부자연스러운 위치에서 끊기
+- 조사나 어미를 다음 줄로 넘기기
 
 ✅ **예시:**
-입력: "차량 연비가 예전 같지 않다고 느끼시는 분들이 많습니다. 특히 출퇴근길에 주유소를 자주 들르게 되면서 왜 이렇게 기름이 빨리 닳지 하는 생각이 드시죠."
+입력: "다올모터스를 찾아오신 BMW 오너분이 계셨어요. 차량 연비가 예전 같지 않다고 느끼시는 분들이 많습니다. 특히 출퇴근길에 주유소를 자주 들르게 되면서 왜 이렇게 기름이 빨리 닳지 하는 생각이 드시죠."
 
 출력:
-차량 연비가 예전 같지 않다고
-느끼시는 분들이 많습니다.
-특히 출퇴근길에 주유소를
-자주 들르게 되면서
-왜 이렇게 기름이 빨리 닳지
-하는 생각이 드시죠.
+다올모터스를 찾아오신 BMW 오너분이 계셨어요.
+차량 연비가 예전 같지 않다고 느끼시는 분들이 많습니다.
+특히 출퇴근길에 주유소를 자주 들르게 되면서
+왜 이렇게 기름이 빨리 닳지 하는 생각이 드시죠.
 
-이제 아래 텍스트를 위 규칙에 따라 포맷팅해주세요. **각 줄이 ${maxWidth}자를 절대 넘지 않도록** 주의하세요.
+이제 아래 텍스트를 위 규칙에 따라 포맷팅해주세요. **짧은 문장은 한 줄에 유지하고, 긴 문장만 자연스럽게 나누세요.**
 
 ---
 
@@ -118,11 +124,13 @@ async function validateAndFixLineWidths(text: string, maxWidth: number): Promise
  */
 async function fixLongLineWithClaude(line: string, maxWidth: number): Promise<string[]> {
   try {
-    const prompt = `다음 문장이 한 줄에 ${maxWidth}자를 초과합니다. 
+    const maxKoreanChars = Math.floor(maxWidth / 3);
+    const prompt = `다음 문장이 한 줄에 ${maxWidth}바이트(한글 약 ${maxKoreanChars}자)를 초과합니다. 
 이 문장을 의미가 자연스럽게 끊기도록 여러 줄로 나눠주세요.
 
 **중요 규칙:**
-- 각 줄은 최대 ${maxWidth}자 (한글 기준)
+- 각 줄은 최대 ${maxWidth}바이트 (한글 ${maxKoreanChars}자 기준)
+- 한글 1자 = 3바이트, 영문/숫자 1자 = 1바이트
 - 의미 단위로 자연스럽게 끊기
 - 단어 중간에 끊지 않기
 - 문맥이 자연스럽게 이어지도록
@@ -156,20 +164,21 @@ ${line}
 }
 
 /**
- * Calculate Korean-aware line length
+ * Calculate byte length (Korean-aware)
+ * 한글 = 3바이트, 영문/숫자 = 1바이트
  */
 function calculateKoreanLength(line: string): number {
-  let length = 0;
+  let bytes = 0;
   for (const char of line) {
-    // Korean, Chinese, Japanese, and fullwidth chars count as 1
+    // Korean, Chinese, Japanese, and fullwidth chars = 3 bytes
     if (/[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf\uac00-\ud7a3]/.test(char)) {
-      length += 1;
+      bytes += 3;
     } else {
-      // ASCII and other chars count as 0.5
-      length += 0.5;
+      // ASCII and other chars = 1 byte
+      bytes += 1;
     }
   }
-  return Math.ceil(length);
+  return bytes;
 }
 
 /**
@@ -242,7 +251,7 @@ function breakLongWord(word: string, maxWidth: number): string[] {
 /**
  * 단락별로 AI 포맷팅 (대용량 텍스트 처리)
  */
-export async function formatForMobileSmartBatch(text: string, maxWidth: number = 27): Promise<string> {
+export async function formatForMobileSmartBatch(text: string, maxBytes: number = 70): Promise<string> {
   if (!text || text.trim() === '') return text;
 
   // 단락별로 분리 (빈 줄 2개 이상)
@@ -253,7 +262,7 @@ export async function formatForMobileSmartBatch(text: string, maxWidth: number =
       if (paragraph.trim() === '') return paragraph;
       
       // 각 단락을 AI로 포맷팅
-      return await formatForMobileSmart(paragraph.trim(), maxWidth);
+      return await formatForMobileSmart(paragraph.trim(), maxBytes);
     })
   );
 

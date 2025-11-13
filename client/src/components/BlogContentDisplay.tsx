@@ -332,7 +332,7 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
                   <div className="flex items-center mb-3">
                     <Smartphone className="h-4 w-4 mr-2 text-gray-600" />
                     <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      모바일 화면 미리보기 (22자 한글 기준)
+                      모바일 화면 미리보기 (한글 약 23자 기준)
                     </span>
                   </div>
                   <div className="bg-white dark:bg-gray-800 p-3 rounded border max-w-xs mx-auto">

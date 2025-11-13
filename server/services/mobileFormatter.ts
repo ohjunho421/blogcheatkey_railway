@@ -16,29 +16,29 @@ const KOREAN_PARTICLES = new Set([
 ]);
 
 /**
- * 한글 문자 길이 계산 (한글 1, 영어/숫자 0.6, 기타 0.5)
+ * 바이트 길이 계산 (한글 3바이트, 영어/숫자 1바이트)
  */
 function getKoreanLength(text: string): number {
-  let length = 0;
+  let bytes = 0;
   for (const char of text) {
     if (/[가-힣]/.test(char)) {
-      length += 1; // 한글
-    } else if (/[a-zA-Z0-9]/.test(char)) {
-      length += 0.6; // 영어, 숫자
+      bytes += 3; // 한글 = 3바이트
+    } else if (/[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/.test(char)) {
+      bytes += 3; // 한자, 일본어 등 = 3바이트
     } else {
-      length += 0.5; // 기타 문자
+      bytes += 1; // 영어, 숫자, 기타 = 1바이트
     }
   }
-  return length;
+  return bytes;
 }
 
 /**
  * 한국어 기준 자연스러운 모바일 줄바꿈 포맷팅
  * @param text 원본 텍스트
- * @param maxWidth 최대 줄 너비 (한글 기준, 기본값: 27)
+ * @param maxBytes 최대 줄 바이트 수 (기본값: 70바이트 = 한글 약 23자)
  * @returns 포맷팅된 텍스트
  */
-export function formatForMobile(text: string, maxWidth: number = 26): string {
+export function formatForMobile(text: string, maxBytes: number = 70): string {
   if (!text || text.trim() === '') return text;
 
   // 1. 텍스트 정규화
@@ -57,7 +57,7 @@ export function formatForMobile(text: string, maxWidth: number = 26): string {
     const formattedLines = lines.map(line => {
       const trimmed = line.trim();
       if (!trimmed) return '';
-      return formatLineSimple(trimmed, maxWidth);
+      return formatLineSimple(trimmed, maxBytes);
     }).filter(l => l);
     
     return formattedLines.join('\n');
@@ -69,8 +69,8 @@ export function formatForMobile(text: string, maxWidth: number = 26): string {
 /**
  * 단일 줄을 한국어 기준으로 포맷팅 (단어 단위 보존 - 절대 단어 중간 끊김 없음)
  */
-function formatLineSimple(text: string, maxWidth: number): string {
-  if (getKoreanLength(text) <= maxWidth) {
+function formatLineSimple(text: string, maxBytes: number): string {
+  if (getKoreanLength(text) <= maxBytes) {
     return text;
   }
 
@@ -96,17 +96,17 @@ function formatLineSimple(text: string, maxWidth: number): string {
       continue;
     }
 
-    // 현재 줄에 추가해도 maxWidth를 넘지 않으면 추가
-    if (testLength <= maxWidth) {
+    // 현재 줄에 추가해도 maxBytes를 넘지 않으면 추가
+    if (testLength <= maxBytes) {
       currentLine = testLine;
     } else {
-      // maxWidth를 초과하는 경우
+      // maxBytes를 초과하는 경우
       if (currentLine.length > 0) {
         // 현재 줄 저장하고 새 줄 시작
         result.push(currentLine.trim());
         currentLine = token.trim();
       } else {
-        // 현재 줄이 비어있는데 토큰 하나가 maxWidth를 초과하는 경우
+        // 현재 줄이 비어있는데 토큰 하나가 maxBytes를 초과하는 경우
         // 토큰이 너무 길면 강제로 포함 (단어는 절대 안 자름)
         currentLine = token;
       }
