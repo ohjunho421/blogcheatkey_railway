@@ -93,6 +93,10 @@ const decompositionCache = new Map<string, string[]>();
 // 🆕 키워드 컴포넌트 추출 캐시 (성능 최적화)
 const componentCache = new Map<string, string[]>();
 
+// 캐시 통계 로깅
+let cacheHits = 0;
+let cacheMisses = 0;
+
 // 🆕 AI 기반 키워드 분해 (hangul-js 보조, 캐싱 적용)
 async function aiBasedKeywordDecomposer(keyword: string): Promise<string[]> {
   // 캐시 확인
@@ -112,26 +116,40 @@ async function aiBasedKeywordDecomposer(keyword: string): Promise<string[]> {
     const disassembled = hasKorean ? Hangul.disassemble(keyword) : null;
     const analysisPart = disassembled ? `\n참고: 자소 분석 결과 ${disassembled.length}개 자소` : '';
 
-    const prompt = `다음 키워드를 의미있는 단어 단위로 분해하세요.
+    const prompt = `다음 키워드를 **형태소 단위**로 정확히 분해하세요.
 
 키워드: "${keyword}"${analysisPart}
 
-규칙:
-1. 최소 의미 단위로 분해 (각 단어가 독립적 의미를 가져야 함)
-2. 너무 작게 쪼개지 말 것 (2글자 이상 권장)
-3. 영어/숫자는 그대로 유지 (예: "BMW" → ["BMW"])
+🎯 **형태소 분석 규칙 (매우 중요!):**
+1. **복합명사는 구성 형태소로 분해**
+2. **각 형태소는 독립적인 의미를 가져야 함**
+3. **2글자 이상 형태소만 추출! (1글자 "수", "액", "등" 제외)**
+4. 영어/숫자는 그대로 유지
 
-정확한 분해 예시:
-✅ "벤츠엔진경고등" → ["벤츠", "엔진", "경고등"]
-✅ "미션오일교체주기" → ["미션", "오일", "교체", "주기"]
-✅ "냉각수부동액" → ["냉각수", "부동액"]  👈 중요: 냉각수와 부동액은 별개 단어
+📝 **정확한 형태소 분해 예시 (2글자 이상만!):**
+
+✅ "냉각수부동액" → ["냉각", "부동"]
+   설명: "냉각수" = "냉각" (2글자), "부동액" = "부동" (2글자)
+   ⚠️ "수", "액"은 1글자라서 제외!
+
+✅ "벤츠엔진경고등" → ["벤츠", "엔진", "경고"]
+   설명: "경고등" = "경고" (2글자)
+   ⚠️ "등"은 1글자라서 제외!
+
 ✅ "타이어교체비용" → ["타이어", "교체", "비용"]
+   설명: 모두 2글자 이상
+
 ✅ "영어학원추천" → ["영어", "학원", "추천"]
 
-❌ "냉각수부동액" → ["냉각", "수", "부동", "액"]  (너무 작게 쪼갬)
-❌ "냉각수부동액" → ["냉각수부동액"]  (분해 안 됨)
+✅ "미션오일교체주기" → ["미션", "오일", "교체", "주기"]
 
-JSON 배열로만 응답 (예: ["단어1", "단어2", "단어3"])`;
+❌ "냉각수부동액" → ["냉각", "수", "부동", "액"]  (1글자 포함됨!)
+❌ "냉각수부동액" → ["냉각수", "부동액"]  (형태소 분해 안 됨!)
+❌ "냉각수부동액" → ["냉", "각", "수", "부", "동", "액"]  (너무 작게 쪼갬!)
+
+**목표: SEO를 위해 각 형태소의 출현 빈도를 체크하려고 합니다. 정확한 형태소 단위로 분해해주세요.**
+
+JSON 배열로만 응답 (예: ["형태소1", "형태소2", "형태소3"])`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-2.0-flash-exp',
@@ -144,8 +162,10 @@ JSON 배열로만 응답 (예: ["단어1", "단어2", "단어3"])`;
       }]
     });
 
-    const result = JSON.parse(response.text || '[]').filter((word: string) => word.length >= 1);
+    const result = JSON.parse(response.text || '[]')
+      .filter((word: string) => word.length >= 2); // 2글자 이상만 포함 (1글자 형태소 제외)
     console.log(`✨ AI decomposition (Hangul.js enhanced): "${keyword}" → [${result.join(', ')}]`);
+    console.log(`   (1글자 형태소는 제외됨)`);
     
     // 캐시 저장
     decompositionCache.set(keyword, result);
@@ -162,22 +182,22 @@ JSON 배열로만 응답 (예: ["단어1", "단어2", "단어3"])`;
 function fallbackPatternDecomposer(text: string): string[] {
   console.log(`Using enhanced fallback pattern decomposition for: "${text}"`);
   
-  // 일반적인 한국어 복합어 패턴 사전
+  // 일반적인 한국어 복합어 패턴 사전 (2글자 이상 형태소만)
   const commonPatterns = [
-    // 자동차 관련 - 복합어 먼저 매칭
-    { pattern: /냉각수부동액/, parts: ['냉각수', '부동액'] },
+    // 자동차 관련 - 복합어를 2글자 이상 형태소로 분해
+    { pattern: /냉각수부동액/, parts: ['냉각', '부동'] }, // "수", "액" 제외
     { pattern: /엔진오일교체/, parts: ['엔진', '오일', '교체'] },
     { pattern: /미션오일교체/, parts: ['미션', '오일', '교체'] },
     { pattern: /타이어교체비용/, parts: ['타이어', '교체', '비용'] },
-    { pattern: /벤츠엔진경고등/, parts: ['벤츠', '엔진', '경고등'] },
-    { pattern: /엔진경고등/, parts: ['엔진', '경고등'] },
-    { pattern: /벤츠엔진/, parts: ['벤츠', '엔진'] },
-    { pattern: /오일교체/, parts: ['오일', '교체'] },
-    { pattern: /타이어교체/, parts: ['타이어', '교체'] },
+    { pattern: /벤츠엔진경고등/, parts: ['벤츠', '엔진', '경고'] }, // "등" 제외
+    { pattern: /엔진경고등/, parts: ['엔진', '경고'] }, // "등" 제외
+    { pattern: /냉각수/, parts: ['냉각'] }, // "수" 제외
+    { pattern: /부동액/, parts: ['부동'] }, // "액" 제외
+    { pattern: /경고등/, parts: ['경고'] }, // "등" 제외
     { pattern: /브레이크패드/, parts: ['브레이크', '패드'] },
     { pattern: /에어컨필터/, parts: ['에어컨', '필터'] },
-    { pattern: /냉각수/, parts: ['냉각수'] },
-    { pattern: /부동액/, parts: ['부동액'] },
+    { pattern: /오일교체/, parts: ['오일', '교체'] },
+    { pattern: /타이어교체/, parts: ['타이어', '교체'] },
     { pattern: /첨가제/, parts: ['첨가제'] },
     
     // 교육 관련
@@ -455,9 +475,14 @@ async function doubleCheckDecomposition(keyword: string): Promise<string[]> {
 export async function extractKeywordComponents(keyword: string): Promise<string[]> {
   // 캐시 확인 (성능 최적화)
   if (componentCache.has(keyword)) {
-    console.log(`✅ Using cached components for "${keyword}"`);
+    cacheHits++;
+    console.log(`✅ Cache HIT for "${keyword}" (${cacheHits} hits / ${cacheMisses} misses)`);
     return componentCache.get(keyword)!;
   }
+  
+  cacheMisses++;
+  console.log(`⏳ Cache MISS for "${keyword}" - analyzing... (${cacheHits} hits / ${cacheMisses} misses)`);
+
   
   const components: string[] = [];
   
@@ -721,13 +746,38 @@ async function checkAllMorphemeFrequencies(content: string, keyword: string): Pr
   
   // 과다 사용 형태소 찾기 (키워드 우위성 확보)
   const overused: Array<{morpheme: string, count: number}> = [];
+  
+  console.log(`✅ 키워드 형태소 목록:`, keywordComponents);
+  
   for (const [morpheme, count] of Array.from(morphemeFrequency.entries())) {
-    const isKeywordComponent = keywordComponentsLower.includes(morpheme);
-    const maxAllowed = isKeywordComponent ? 18 : 14; // 키워드: 15-18회, 다른 단어: 14회 이하
+    // 1. 정확한 매칭: 키워드 형태소 목록에 정확히 포함되어 있는지
+    const isKeywordMorpheme = keywordComponentsLower.includes(morpheme);
+    
+    // 2. 포함 매칭: 키워드 형태소를 포함하는 단어인지 체크
+    // 예: "냉각" 형태소 → "냉각수"도 키워드 관련으로 인정
+    let isKeywordRelated = isKeywordMorpheme;
+    if (!isKeywordRelated && morpheme.length >= 2) {
+      isKeywordRelated = keywordComponentsLower.some(comp => 
+        morpheme.includes(comp) || comp.includes(morpheme)
+      );
+    }
+    
+    if (isKeywordRelated) {
+      console.log(`✅ "${morpheme}"는 키워드 관련 (${count}회) ${isKeywordMorpheme ? '[형태소]' : '[파생어]'}`);
+    }
+    
+    // 절대 상한선: 20회 (어떤 단어든 초과 금지)
+    if (count >= 20) {
+      overused.push({ morpheme, count });
+      console.log(`🚨 "${morpheme}" 심각한 과다 사용: ${count}회 (절대 상한선 20회 초과!) ${isKeywordRelated ? '[키워드 관련]' : '[일반 형태소]'}`);
+      continue;
+    }
+    
+    const maxAllowed = isKeywordRelated ? 18 : 14; // 키워드 관련: 15-18회, 다른 단어: 14회 이하
     
     if (count > maxAllowed) {
       overused.push({ morpheme, count });
-      console.log(`❌ "${morpheme}" 초과 사용: ${count}회 (최대 ${maxAllowed}회) ${isKeywordComponent ? '[키워드 형태소]' : '[일반 형태소]'}`);
+      console.log(`❌ "${morpheme}" 초과 사용: ${count}회 (최대 ${maxAllowed}회) ${isKeywordRelated ? '[키워드 관련]' : '[일반 형태소]'}`);
     }
   }
   
