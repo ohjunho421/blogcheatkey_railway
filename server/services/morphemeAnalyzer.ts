@@ -90,6 +90,9 @@ function processKoreanWord(word: string): string[] {
 // 🆕 분해 결과 캐시 (동일 키워드 반복 방지)
 const decompositionCache = new Map<string, string[]>();
 
+// 🆕 키워드 컴포넌트 추출 캐시 (성능 최적화)
+const componentCache = new Map<string, string[]>();
+
 // 🆕 AI 기반 키워드 분해 (hangul-js 보조, 캐싱 적용)
 async function aiBasedKeywordDecomposer(keyword: string): Promise<string[]> {
   // 캐시 확인
@@ -427,36 +430,38 @@ function intelligentKoreanDecomposer(text: string): string[] {
   return decomposed;
 }
 
-// 🆕 더블 체크: 패턴 기반 + AI 기반 비교
+// 🆕 스마트 분해: 패턴 기반 우선, 필요 시에만 AI 사용
 async function doubleCheckDecomposition(keyword: string): Promise<string[]> {
-  console.log(`🔍 Double-check decomposition for: "${keyword}"`);
+  console.log(`🔍 Smart decomposition for: "${keyword}"`);
   
-  // 방법 1: 빠른 패턴 기반
+  // 방법 1: 빠른 패턴 기반 (우선 시도)
   const patternBased = fallbackPatternDecomposer(keyword);
   console.log(`  패턴 기반: [${patternBased.join(', ')}]`);
   
-  // 방법 2: 정확한 AI 기반
-  const aiBased = await aiBasedKeywordDecomposer(keyword);
-  console.log(`  AI 기반: [${aiBased.join(', ')}]`);
-  
-  // 결과 비교 및 최종 결정
-  if (patternBased.length === aiBased.length && 
-      patternBased.every((word, i) => word === aiBased[i])) {
-    console.log(`  ✅ 일치! 결과 사용: [${aiBased.join(', ')}]`);
-    return aiBased;
+  // 패턴이 명확하게 분해했으면 (2개 이상 단어) AI 호출 생략
+  if (patternBased.length >= 2 && patternBased.every(word => word.length >= 2)) {
+    console.log(`  ✅ 패턴 기반 성공! AI 호출 생략 (속도 최적화)`);
+    return patternBased;
   }
   
-  // 불일치 시 AI 우선 (더 정확함)
-  console.log(`  ⚠️ 불일치 감지. AI 결과 우선 사용: [${aiBased.join(', ')}]`);
-  console.log(`  참고용 패턴 결과: [${patternBased.join(', ')}]`);
+  // 패턴이 실패했을 때만 AI 사용 (정확도 향상)
+  console.log(`  ⚠️ 패턴 불충분. AI 기반 분해 시도...`);
+  const aiBased = await aiBasedKeywordDecomposer(keyword);
+  console.log(`  AI 기반: [${aiBased.join(', ')}]`);
   return aiBased;
 }
 
 // Extract individual keyword components for SEO optimization (🆕 더블 체크 기반)
 export async function extractKeywordComponents(keyword: string): Promise<string[]> {
+  // 캐시 확인 (성능 최적화)
+  if (componentCache.has(keyword)) {
+    console.log(`✅ Using cached components for "${keyword}"`);
+    return componentCache.get(keyword)!;
+  }
+  
   const components: string[] = [];
   
-  console.log(`=== Starting double-check keyword decomposition for: "${keyword}" ===`);
+  console.log(`=== Starting keyword decomposition for: "${keyword}" ===`);
   
   // Handle compound keywords with comma separator
   if (keyword.includes(',')) {
@@ -491,6 +496,10 @@ export async function extractKeywordComponents(keyword: string): Promise<string[
   }
   
   console.log(`Keyword components extracted from "${keyword}":`, components);
+  
+  // 캐시에 저장 (다음 호출 시 빠른 응답)
+  componentCache.set(keyword, components);
+  
   return components;
 }
 
