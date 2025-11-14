@@ -34,7 +34,8 @@ export async function generateStrictMorphemeContent(
         `🔥 공백 제외 정확히 1700-2000자 범위 안에서 글을 작성해주세요. (1700자 미만이나 2000자 초과 절대 금지)`,
         `🎯 키워드 "${keyword}"의 완전한 형태를 정확히 5-7회 사용해주세요. (4회 이하나 8회 이상 절대 금지)`,
         `🎯 중요: 키워드 "${keyword}"를 이루는 각각의 단어들을 16회를 목표로 사용해주세요 (15-18회 허용). 예를 들어 "영어학원 블로그"라는 키워드라면 "영어학원"이라는 단어와 "블로그"라는 단어를 각각 약 16회씩 사용하세요.`,
-        `🚨 키워드를 구성하는 단어가 아닌 다른 모든 단어는 14회 이하로 제한해주세요. (키워드 우위성 확보 필수)`,
+        `🚨 중요: 키워드를 구성하는 단어가 아닌 다른 모든 단어는 반드시 14회 이하로 제한해주세요. (키워드 우위성 확보 필수)`,
+        `⚠️ 특정 단어가 과다하게 반복되지 않도록 주의하세요. 같은 의미를 전달할 때는 동의어나 유의어를 적극 활용하세요.`,
         `📖 서론 600-700자 (전체의 35-40%), 본론 900-1100자, 결론 200-300자로 분량을 정확히 배치해주세요.`,
         `✅ 서론은 독자 공감형(전략 A) 또는 경고형(전략 B) 중 하나를 선택하여 스토리텔링 중심으로 작성`,
         `✅ 결론은 핵심 요약 + 한계 인정 + 부담없는 CTA 구조로 자연스럽게 작성`
@@ -74,9 +75,33 @@ export async function generateStrictMorphemeContent(
         
         // 과다 사용 단어 문제 해결
         if (previousAnalysis.overusedWords && previousAnalysis.overusedWords.length > 0) {
-          const overusedList = previousAnalysis.overusedWords.slice(0, 3).join(', ');
-          problems.push(`과다 사용 단어: ${overusedList}`);
-          solutions.push(`"${overusedList}" 각각을 5-7회씩 동의어로 치환 (예: 블로그→포스팅, 학원→교육기관)`);
+          const overusedDetails = previousAnalysis.overusedWords.slice(0, 5).map((word: any) => {
+            if (typeof word === 'object' && word.word && word.count) {
+              const excess = word.count - 14;
+              return `"${word.word}" ${word.count}회 (${excess}회 초과)`;
+            }
+            return `"${word}"`;
+          });
+          problems.push(`과다 사용 단어: ${overusedDetails.join(', ')}`);
+          
+          // 구체적인 치환 방법 제시
+          const replacementGuide = previousAnalysis.overusedWords.slice(0, 5).map((word: any) => {
+            const wordText = typeof word === 'object' ? word.word : word;
+            const count = typeof word === 'object' ? word.count : 0;
+            const excess = count - 14;
+            
+            // 단어별 동의어 제안
+            let synonyms = '동의어나 표현 변경';
+            if (wordText.includes('냉각')) synonyms = '"쿨링", "온도 조절", "열 관리"';
+            else if (wordText.includes('부동액')) synonyms = '"쿨런트", "냉각수"';
+            else if (wordText.includes('교체')) synonyms = '"변경", "새로 교환", "갈아주기"';
+            else if (wordText.includes('점검')) synonyms = '"확인", "체크", "살펴보기"';
+            
+            return `"${wordText}"를 ${excess > 0 ? excess : '일부'}회 ${synonyms}로 치환`;
+          }).join(', ');
+          
+          solutions.push(`과다 사용 단어 치환: ${replacementGuide}`);
+          solutions.push(`⚠️ 중요: 키워드가 아닌 단어는 반드시 14회 이하로 제한하세요!`);
         }
         
         // 🆕 통합 수정 지침
@@ -164,7 +189,16 @@ export async function generateStrictMorphemeContent(
         isOptimized: analysis.isOptimized,
         overusedWords: analysis.issues
           .filter(issue => issue.includes('초과 사용') || issue.includes('과다 사용'))
-          .map(issue => issue.split(' ')[0]) // 단어 추출
+          .map(issue => {
+            // "형태소 과다 사용: "냉각" 34회 (최대 14회)" 형식에서 추출
+            const match = issue.match(/"([^"]+)"\s+(\d+)회/);
+            if (match) {
+              return { word: match[1], count: parseInt(match[2]) };
+            }
+            // 폴백: 단어만 추출
+            const word = issue.split(' ')[0].replace(/"/g, '');
+            return { word, count: 0 };
+          })
           .slice(0, 5)
       };
       
@@ -218,7 +252,16 @@ export async function generateStrictMorphemeContent(
           isOptimized: analysis.isOptimized,
           overusedWords: analysis.issues
             .filter(issue => issue.includes('초과 사용') || issue.includes('과다 사용'))
-            .map(issue => issue.split(' ')[0])
+            .map(issue => {
+              // "형태소 과다 사용: "냉각" 34회 (최대 14회)" 형식에서 추출
+              const match = issue.match(/"([^"]+)"\s+(\d+)회/);
+              if (match) {
+                return { word: match[1], count: parseInt(match[2]) };
+              }
+              // 폴백: 단어만 추출
+              const word = issue.split(' ')[0].replace(/"/g, '');
+              return { word, count: 0 };
+            })
             .slice(0, 5)
         };
         

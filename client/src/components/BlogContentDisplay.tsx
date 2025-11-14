@@ -220,7 +220,49 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
         <CardContent>
           <div className="space-y-6">
             {/* SEO 분석 결과 */}
-
+            {project.seoMetrics && (
+              <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                <h3 className="font-semibold text-foreground mb-3 flex items-center">
+                  <CheckCircle2 className="h-4 w-4 mr-2 text-blue-600" />
+                  SEO 최적화 상태
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                  <div className="bg-white dark:bg-gray-800 p-3 rounded">
+                    <div className="text-muted-foreground text-xs mb-1">글자수</div>
+                    <div className={`font-bold ${project.seoMetrics.isLengthOptimized ? 'text-green-600' : 'text-orange-600'}`}>
+                      {project.seoMetrics.characterCount}자 {project.seoMetrics.isLengthOptimized ? '✓' : '✗'}
+                    </div>
+                    <div className="text-xs text-muted-foreground">목표: 1700-2000자</div>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 p-3 rounded">
+                    <div className="text-muted-foreground text-xs mb-1">키워드 출현</div>
+                    <div className={`font-bold ${project.seoMetrics.isKeywordOptimized ? 'text-green-600' : 'text-orange-600'}`}>
+                      {project.seoMetrics.keywordMorphemeCount}회 {project.seoMetrics.isKeywordOptimized ? '✓' : '✗'}
+                    </div>
+                    <div className="text-xs text-muted-foreground">목표: 5-7회</div>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 p-3 rounded">
+                    <div className="text-muted-foreground text-xs mb-1">전체 최적화</div>
+                    <div className={`font-bold ${project.seoMetrics.isOptimized ? 'text-green-600' : 'text-orange-600'}`}>
+                      {project.seoMetrics.isOptimized ? '완료 ✓' : '미완료 ✗'}
+                    </div>
+                  </div>
+                </div>
+                
+                {project.seoMetrics.issues && project.seoMetrics.issues.length > 0 && (
+                  <div className="mt-4 bg-orange-50 dark:bg-orange-950 p-3 rounded border border-orange-200 dark:border-orange-800">
+                    <div className="font-medium text-orange-800 dark:text-orange-200 text-sm mb-2">
+                      ⚠️ 개선 필요 사항
+                    </div>
+                    <ul className="text-xs space-y-1 text-orange-700 dark:text-orange-300">
+                      {project.seoMetrics.issues.slice(0, 5).map((issue: string, idx: number) => (
+                        <li key={idx}>• {issue}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* 생성된 콘텐츠 with Interactive Image Generation */}
             <div className="max-w-none">

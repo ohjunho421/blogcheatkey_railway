@@ -810,8 +810,10 @@ export async function analyzeMorphemes(content: string, keyword: string, customM
   
   // 형태소 초과 사용 검사 결과 추가
   if (hasOverusedMorphemes) {
+    const keywordComponentsLower = keywordComponents.map(comp => comp.toLowerCase());
     for (const overused of frequencyCheck.overused) {
-      const maxAllowed = keywordComponents.includes(overused.morpheme) ? 17 : 13;
+      const isKeywordComponent = keywordComponentsLower.includes(overused.morpheme.toLowerCase());
+      const maxAllowed = isKeywordComponent ? 18 : 14;
       issues.push(`형태소 과다 사용: "${overused.morpheme}" ${overused.count}회 (최대 ${maxAllowed}회)`);
     }
     suggestions.push(`과다 사용된 형태소들을 동의어나 유의어로 교체해주세요`);
