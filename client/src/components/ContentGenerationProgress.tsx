@@ -12,11 +12,11 @@ export function ContentGenerationProgress({ project }: ContentGenerationProgress
   const [currentStep, setCurrentStep] = useState(0);
 
   const steps = [
-    { label: "키워드 분석 검토", duration: 5 },
-    { label: "자료 수집 및 정리", duration: 10 },
-    { label: "SEO 최적화 구조 설계", duration: 15 },
-    { label: "블로그 콘텐츠 작성", duration: 60 },
-    { label: "형태소 빈도 검증", duration: 10 }
+    { label: "키워드 분석 검토", duration: 8 },
+    { label: "자료 수집 및 정리", duration: 12 },
+    { label: "AI 콘텐츠 생성 (1차)", duration: 40 },
+    { label: "SEO 조건 검증 및 수정 (2-3차)", duration: 60 },
+    { label: "최종 형태소 빈도 검증", duration: 10 }
   ];
 
   useEffect(() => {
@@ -50,7 +50,7 @@ export function ContentGenerationProgress({ project }: ContentGenerationProgress
         
         return newProgress;
       });
-    }, 1000); // 1초마다 1% 증가
+    }, 1300); // 1.3초마다 1% 증가 (총 약 130초 = 2분 10초)
 
     return () => clearInterval(interval);
   }, [project?.status]);
@@ -78,7 +78,10 @@ export function ContentGenerationProgress({ project }: ContentGenerationProgress
           <div className="space-y-3">
             <Progress value={progress} className="h-3" />
             <div className="text-sm text-muted-foreground">
-              {progress}% 완료 ({Math.floor(progress * 1.5)}초 경과)
+              {progress}% 완료 (약 {Math.floor(progress * 1.3)}초 경과)
+            </div>
+            <div className="text-xs text-muted-foreground">
+              💡 AI가 3회 시도하며 최적화 중... 최대 2-3분 소요됩니다
             </div>
           </div>
 

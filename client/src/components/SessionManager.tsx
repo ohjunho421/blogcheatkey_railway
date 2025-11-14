@@ -78,10 +78,11 @@ export function SessionManager({ currentProjectId, onSessionLoaded }: SessionMan
         description: "작성 내역이 저장되었습니다.",
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error("세션 저장 에러:", error);
       toast({
         title: "저장 실패",
-        description: error.message,
+        description: error.message || "세션 저장 중 오류가 발생했습니다.",
         variant: "destructive",
       });
     },

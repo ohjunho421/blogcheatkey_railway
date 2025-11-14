@@ -310,14 +310,25 @@ export class DatabaseStorage implements IStorage {
 
   // Project session methods
   async createProjectSession(session: InsertProjectSession): Promise<ProjectSession> {
-    const [created] = await db
-      .insert(projectSessions)
-      .values({
-        ...session,
-        updatedAt: new Date(),
-      })
-      .returning();
-    return created;
+    try {
+      console.log('[DB] 세션 저장 시작');
+      console.log('[DB] 세션 데이터 키:', Object.keys(session));
+      
+      const [created] = await db
+        .insert(projectSessions)
+        .values({
+          ...session,
+          updatedAt: new Date(),
+        })
+        .returning();
+      
+      console.log('[DB] 세션 저장 성공 - ID:', created.id);
+      return created;
+    } catch (error) {
+      console.error('[DB] 세션 저장 실패:', error);
+      console.error('[DB] 세션 데이터:', JSON.stringify(session, null, 2));
+      throw error;
+    }
   }
 
   async getProjectSession(id: number): Promise<ProjectSession | undefined> {

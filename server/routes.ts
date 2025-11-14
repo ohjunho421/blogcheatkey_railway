@@ -202,7 +202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // 슈퍼유저 계정 확인 (환경변수에서 설정)
       const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || "";
-      const isSuper = superAdminEmail && email === superAdminEmail;
+      const isSuper = Boolean(superAdminEmail && email === superAdminEmail);
       
       // 사용자 생성
       const user = await storage.createUser({
@@ -526,15 +526,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(updatedProject);
     } catch (error) {
-      console.error("Custom morphemes error:", error);
-      res.status(500).json({ error: "추가형태소 저장에 실패했습니다" });
+      console.error("Custom morphemes update error:", error);
+      res.status(500).json({ error: "추가 형태소 업데이트에 실패했습니다" });
     }
   });
 
-  // ===== CONTENT GENERATION =====
-  
+  // Generate blog content
   app.post("/api/projects/:id/generate", async (req, res) => {
     try {
+      // 타임아웃 연장: 콘텐츠 생성은 3회 시도로 최대 2-3분 소요 가능
+      req.setTimeout(180000); // 3분 (180초)
+      res.setTimeout(180000);
+      
       const id = parseInt(req.params.id);
       const project = await storage.getBlogProject(id);
       
@@ -658,6 +661,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Regenerate content
   app.post("/api/projects/:id/regenerate", async (req, res) => {
     try {
+      // 타임아웃 연장: 재생성도 3회 시도로 최대 2-3분 소요 가능
+      req.setTimeout(180000); // 3분
+      res.setTimeout(180000);
+      
       const id = parseInt(req.params.id);
       const project = await storage.getBlogProject(id);
       
@@ -990,44 +997,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const projectId = parseInt(req.params.id);
       const { sessionName, sessionDescription } = req.body;
       
+      console.log(`[세션 저장] 시작 - 프로젝트 ID: ${projectId}`);
+      
       const userId = await getAuthenticatedUserId(req);
       if (!userId) {
+        console.log("[세션 저장] 실패 - 인증 필요");
         return res.status(401).json({ error: "인증이 필요합니다" });
       }
+
+      console.log(`[세션 저장] 사용자 ID: ${userId}`);
 
       // Get current project state
       const project = await storage.getBlogProject(projectId);
       if (!project) {
+        console.log(`[세션 저장] 실패 - 프로젝트 없음: ${projectId}`);
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
       }
 
+      console.log(`[세션 저장] 프로젝트 조회 성공 - 키워드: ${project.keyword}`);
+
       // Get chat history
       const chatHistory = await storage.getChatMessages(projectId);
+      console.log(`[세션 저장] 채팅 히스토리 조회 완료 - 메시지 수: ${chatHistory.length}`);
 
-      // Create session snapshot
-      const session = await storage.createProjectSession({
+      // Create session snapshot with safe defaults
+      const sessionData = {
         userId,
         projectId,
-        sessionName: sessionName || `${project.keyword} - ${new Date().toLocaleDateString()}`,
-        sessionDescription,
+        sessionName: sessionName || `${project.keyword} - ${new Date().toLocaleDateString('ko-KR')}`,
+        sessionDescription: sessionDescription || null,
         keyword: project.keyword,
-        keywordAnalysis: project.keywordAnalysis as any,
-        subtitles: project.subtitles as any,
-        researchData: project.researchData as any,
-        businessInfo: project.businessInfo as any,
-        generatedContent: project.generatedContent,
-        seoMetrics: project.seoMetrics as any,
-        referenceLinks: project.referenceLinks as any,
-        generatedImages: project.generatedImages as any,
-        referenceBlogLinks: project.referenceBlogLinks as any,
-        customMorphemes: project.customMorphemes,
-        chatHistory: chatHistory as any, // Store as JSON
-      });
+        keywordAnalysis: project.keywordAnalysis || null,
+        subtitles: project.subtitles || null,
+        researchData: project.researchData || null,
+        businessInfo: project.businessInfo || null,
+        generatedContent: project.generatedContent || null,
+        seoMetrics: project.seoMetrics || null,
+        referenceLinks: project.referenceLinks || null,
+        generatedImages: project.generatedImages || null,
+        referenceBlogLinks: project.referenceBlogLinks || null,
+        customMorphemes: project.customMorphemes || null,
+        chatHistory: chatHistory || [], // Store as JSON array
+      };
+
+      console.log(`[세션 저장] 세션 데이터 준비 완료`);
+
+      const session = await storage.createProjectSession(sessionData as any);
+      
+      console.log(`[세션 저장] 성공 - 세션 ID: ${session.id}`);
 
       res.json({ success: true, session });
     } catch (error) {
-      console.error("Save session error:", error);
-      res.status(500).json({ error: "세션 저장에 실패했습니다" });
+      console.error("[세션 저장] 에러 상세:", error);
+      console.error("[세션 저장] 에러 스택:", (error as Error).stack);
+      res.status(500).json({ 
+        error: "세션 저장에 실패했습니다",
+        details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
+      });
     }
   });
 
