@@ -66,28 +66,20 @@ export async function optimizeIncrementally(
     console.log(`✅ 글자수 적정: ${analysis.characterCount}자`);
   }
   
-  // 키워드 빈도 체크
+  // 키워드 빈도 체크 (5회 이상이면 통과)
   if (analysis.keywordMorphemeCount < 5) {
     const deficit = 5 - analysis.keywordMorphemeCount;
     issues.push({
       type: 'keyword_count',
       description: `키워드 "${keyword}" ${deficit}회 부족`,
-      target: 6, // 중간값 (5-7의 중간)
+      target: 5, // 최소값
       current: analysis.keywordMorphemeCount
     });
     console.log(`❌ 키워드 부족: ${analysis.keywordMorphemeCount}회 (${deficit}회 부족)`);
-  } else if (analysis.keywordMorphemeCount > 7) {
-    const excess = analysis.keywordMorphemeCount - 7;
-    issues.push({
-      type: 'keyword_count',
-      description: `키워드 "${keyword}" ${excess}회 초과`,
-      target: 6, // 중간값 (5-7의 중간)
-      current: analysis.keywordMorphemeCount
-    });
-    console.log(`❌ 키워드 초과: ${analysis.keywordMorphemeCount}회 (${excess}회 초과)`);
   } else {
-    console.log(`✅ 키워드 빈도 적정: ${analysis.keywordMorphemeCount}회`);
+    console.log(`✅ 키워드 빈도 적정: ${analysis.keywordMorphemeCount}회 (5회 이상)`);
   }
+  // 5회 이상이면 과다 체크 안 함
   
   // 과다 사용 단어 체크
   const overusedWords = analysis.issues
@@ -149,30 +141,30 @@ export async function optimizeIncrementally(
       optimizedContent = await fixAllIssuesAtOnce(optimizedContent, issues, keyword);
       fixed.push(...issues.map(i => i.description));
       
-      // 미세조정: 키워드 빈도만 재확인하고 1-2회 조정
+      // 미세조정: 키워드 빈도만 재확인하고 1-2회 조정 (5회 미만일 때만)
       while (attemptCount < maxMicroAdjustments) {
         const quickCheck = await analyzeMorphemes(optimizedContent, keyword, customMorphemes);
         const currentKeywordCount = quickCheck.keywordMorphemeCount;
         
-        if (currentKeywordCount >= 5 && currentKeywordCount <= 7) {
-          console.log(`✓ 미세조정 불필요: 키워드 ${currentKeywordCount}회 (적정)`);
+        if (currentKeywordCount >= 5) {
+          console.log(`✓ 미세조정 불필요: 키워드 ${currentKeywordCount}회 (5회 이상)`);
           break;
         }
         
-        // 1-2회만 차이나면 미세조정
-        const diff = currentKeywordCount < 5 ? (5 - currentKeywordCount) : (currentKeywordCount - 7);
+        // 1-2회만 부족하면 미세조정
+        const diff = 5 - currentKeywordCount;
         if (diff <= 2) {
-          console.log(`🔧 미세조정 시도 ${attemptCount + 1}: 키워드 ${diff}회 조정 필요`);
+          console.log(`🔧 미세조정 시도 ${attemptCount + 1}: 키워드 ${diff}회 추가 필요`);
           const microIssue: OptimizationIssue = {
             type: 'keyword_count',
             description: `키워드 미세조정 ${diff}회`,
-            target: 6,
+            target: 5,
             current: currentKeywordCount
           };
           optimizedContent = await fixKeywordCount(optimizedContent, microIssue, keyword);
           attemptCount++;
         } else {
-          console.log(`⚠️ 차이가 커서 미세조정 스킵 (${diff}회 차이)`);
+          console.log(`⚠️ 차이가 커서 미세조정 스킵 (${diff}회 부족)`);
           break;
         }
       }
@@ -210,8 +202,8 @@ export async function optimizeIncrementally(
     finalAnalysis.characterCount >= 1700 && 
     finalAnalysis.characterCount <= 2000 &&
     finalAnalysis.keywordMorphemeCount >= 5 &&
-    finalAnalysis.keywordMorphemeCount <= 7 &&
     hasNoOveruse; // 과다사용 문제도 확인
+    // 키워드는 5회 이상이면 통과 (상한 제거)
   
   console.log(`${isSuccess ? '✅' : '⚠️'} 부분 최적화 완료: ${fixed.length}개 수정`);
   console.log(`  최종 검증: 글자수 ${finalAnalysis.characterCount}자, 키워드 ${finalAnalysis.keywordMorphemeCount}회, 과다사용 ${hasNoOveruse ? '없음' : '있음'}`);
@@ -252,14 +244,13 @@ async function fixAllIssuesAtOnce(
         solutions.push(`불필요한 부연설명 ${diff}자 제거`);
       }
     } else if (issue.type === 'keyword_count') {
-      const diff = Math.abs(issue.target - issue.current);
+      // 키워드는 5회 미만일 때만 문제로 처리
       if (issue.current < issue.target) {
+        const diff = issue.target - issue.current;
         problems.push(`키워드 "${keyword}" ${diff}회 부족 (현재 ${issue.current}회)`);
         solutions.push(`"${keyword}" ${diff}회 자연스럽게 추가`);
-      } else {
-        problems.push(`키워드 "${keyword}" ${diff}회 과다 (현재 ${issue.current}회)`);
-        solutions.push(`어색한 "${keyword}" ${diff}회 제거`);
       }
+      // 5회 이상이면 과다 처리 안 함
     } else if (issue.type === 'overused_word' && issue.word) {
       problems.push(`"${issue.word}" 과다 사용`);
       solutions.push(`"${issue.word}"를 5-7회 동의어로 치환`);
@@ -384,11 +375,10 @@ async function fixKeywordCount(
     apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || '' 
   });
   
-  const isDeficit = issue.current < issue.target;
-  const amount = Math.abs(issue.target - issue.current);
+  // 5회 이상이면 이 함수가 호출되지 않음 (추가만 수행)
+  const amount = issue.target - issue.current;
   
-  const prompt = isDeficit
-    ? `다음 블로그 글에 키워드 "${keyword}"를 ${amount}회 더 추가하는 작업을 수행하세요.
+  const prompt = `다음 블로그 글에 키워드 "${keyword}"를 ${amount}회 더 추가하는 작업을 수행하세요.
 
 [원본 글]
 ${content}
@@ -406,22 +396,6 @@ ${content}
 
 [검증]
 작업 완료 후 키워드 "${keyword}"가 정확히 ${amount}회 추가되었는지 확인하세요.
-
-[중요 출력 규칙]
-- 수정된 블로그 글의 본문만 출력하세요
-- 설명문, 메타 정보, 마크다운 형식 등 어떤 추가 텍스트도 포함하지 마세요
-- "수정된 글:", "다음과 같이", "요청하신" 등의 서술 표현 절대 금지
-- 순수한 블로그 본문 텍스트만 반환하세요`
-    : `다음 블로그 글에서 키워드 "${keyword}"를 ${amount}회 제거하는 작업을 수행하세요.
-
-[원본 글]
-${content}
-
-[작업 지침]
-1. 키워드 "${keyword}"를 정확히 ${amount}회 제거하세요
-2. 가장 어색한 위치의 키워드부터 제거하세요
-3. 문장을 자연스럽게 다시 작성하세요
-4. 전체 글의 의미와 흐름은 유지하세요
 
 [중요 출력 규칙]
 - 수정된 블로그 글의 본문만 출력하세요
