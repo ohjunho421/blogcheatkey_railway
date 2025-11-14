@@ -36,7 +36,7 @@ export async function generateStrictMorphemeContent(
         `   → 서론 650자 + 본론 1000자 + 결론 250자 = 약 1900자`,
         `   → 작성 중 실시간으로 글자수를 세면서 작성하세요!`,
         ``,
-        `🎯 키워드 "${keyword}"의 완전한 형태를 정확히 5-7회 사용 (6회 목표)`,
+        `🎯 키워드 "${keyword}"의 완전한 형태를 최소 5회 이상 사용 (5-7회 권장)`,
         `   → 작성하면서 키워드를 몇 번 사용했는지 세면서 작성하세요!`,
         ``,
         `🎯🎯🎯 가장 중요: 키워드 형태소를 15-18회씩 사용 (16회 목표)`,
@@ -100,16 +100,13 @@ export async function generateStrictMorphemeContent(
           solutions.push(`불필요한 부연설명 제거하여 ${excess}자 축소`);
         }
         
-        // 키워드 빈도 문제 해결  
+        // 키워드 빈도 문제 해결 (5회 이상이면 통과)
         if (previousAnalysis.keywordMorphemeCount < 5) {
           const needed = 5 - previousAnalysis.keywordMorphemeCount;
           problems.push(`키워드 "${keyword}" ${needed}회 부족 (현재 ${previousAnalysis.keywordMorphemeCount}회)`);
           solutions.push(`서론/본론/결론에 "${keyword}"를 자연스럽게 ${needed}회 추가`);
-        } else if (previousAnalysis.keywordMorphemeCount > 7) {
-          const excess = previousAnalysis.keywordMorphemeCount - 7;
-          problems.push(`키워드 "${keyword}" ${excess}회 과다 (현재 ${previousAnalysis.keywordMorphemeCount}회)`);
-          solutions.push(`어색한 위치의 "${keyword}"를 ${excess}회 제거하고 문장 자연스럽게 재작성`);
         }
+        // 5회 이상이면 과다 체크 안 함 (상한 제거)
         
         // 과다 사용 단어 문제 해결
         if (previousAnalysis.overusedWords && previousAnalysis.overusedWords.length > 0) {
@@ -172,7 +169,7 @@ export async function generateStrictMorphemeContent(
           seoSuggestions.push(`\n🔥🔥🔥 최종 3차 수정 [매우 긴급]: 마지막 기회입니다!`);
           seoSuggestions.push(`📊 모든 숫자 조건을 정확히 맞춰주세요:`);
           seoSuggestions.push(`   • 글자수: 1800-1900자 정확히! (1750-1950자 범위, 1700자 이하 ❌)`);
-          seoSuggestions.push(`   • 완전 키워드 "${keyword}": 6회 (5-7회 범위)`);
+          seoSuggestions.push(`   • 완전 키워드 "${keyword}": 최소 5회 이상 (5-7회 권장)`);
           seoSuggestions.push(`   • 키워드 형태소 + 파생어: 각각 별도로 16회 (15-18회 범위)`);
           seoSuggestions.push(`     예) "냉각수부동액" → "냉각" 16회, "냉각수" 16회, "부동" 16회, "부동액" 16회 (각각!)`);
           seoSuggestions.push(`   • 일반 단어: 14회 이하 (10-12회 권장)`);

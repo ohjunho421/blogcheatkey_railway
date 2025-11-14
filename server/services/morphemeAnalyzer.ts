@@ -37,7 +37,6 @@ export function extractKoreanMorphemes(text: string): string[] {
     }
   }
   
-  console.log(`Extracted morphemes:`, morphemes.slice(0, 20)); // First 20 for debugging
   return morphemes;
 }
 
@@ -164,14 +163,13 @@ JSON 배열로만 응답 (예: ["형태소1", "형태소2", "형태소3"])`;
 
     const result = JSON.parse(response.text || '[]')
       .filter((word: string) => word.length >= 2); // 2글자 이상만 포함 (1글자 형태소 제외)
-    console.log(`✨ AI decomposition (Hangul.js enhanced): "${keyword}" → [${result.join(', ')}]`);
-    console.log(`   (1글자 형태소는 제외됨)`);
+    console.log(`✨ AI 분해: "${keyword}" → [${result.join(', ')}]`);
     
     // 캐시 저장
     decompositionCache.set(keyword, result);
     return result;
   } catch (error) {
-    console.error('AI decomposition failed, using enhanced fallback:', error);
+    console.error('⚠️ AI 실패, fallback 사용');
     const fallback = fallbackPatternDecomposer(keyword);
     decompositionCache.set(keyword, fallback);
     return fallback;
@@ -180,7 +178,6 @@ JSON 배열로만 응답 (예: ["형태소1", "형태소2", "형태소3"])`;
 
 // 폴백: 개선된 패턴 기반 분해 (AI 실패 시)
 function fallbackPatternDecomposer(text: string): string[] {
-  console.log(`Using enhanced fallback pattern decomposition for: "${text}"`);
   
   // 일반적인 한국어 복합어 패턴 사전 (2글자 이상 형태소만)
   const commonPatterns = [
@@ -450,49 +447,43 @@ function intelligentKoreanDecomposer(text: string): string[] {
   return decomposed;
 }
 
-// 🆕 스마트 분해: 패턴 기반 우선, 필요 시에만 AI 사용
+// 스마트 분해: 패턴 기반 우선, 필요 시에만 AI 사용
 async function doubleCheckDecomposition(keyword: string): Promise<string[]> {
-  console.log(`🔍 Smart decomposition for: "${keyword}"`);
+  console.log(` Smart decomposition for: "${keyword}"`);
   
-  // 방법 1: 빠른 패턴 기반 (우선 시도)
+  // 방법  // 먼저 패턴 기반 시도 (속도 우선)
   const patternBased = fallbackPatternDecomposer(keyword);
-  console.log(`  패턴 기반: [${patternBased.join(', ')}]`);
   
   // 패턴이 명확하게 분해했으면 (2개 이상 단어) AI 호출 생략
   if (patternBased.length >= 2 && patternBased.every(word => word.length >= 2)) {
-    console.log(`  ✅ 패턴 기반 성공! AI 호출 생략 (속도 최적화)`);
     return patternBased;
   }
   
   // 패턴이 실패했을 때만 AI 사용 (정확도 향상)
-  console.log(`  ⚠️ 패턴 불충분. AI 기반 분해 시도...`);
   const aiBased = await aiBasedKeywordDecomposer(keyword);
-  console.log(`  AI 기반: [${aiBased.join(', ')}]`);
   return aiBased;
 }
 
-// Extract individual keyword components for SEO optimization (🆕 더블 체크 기반)
+// Extract individual keyword components for SEO optimization ( 더블 체크 기반)
 export async function extractKeywordComponents(keyword: string): Promise<string[]> {
   // 캐시 확인 (성능 최적화)
   if (componentCache.has(keyword)) {
     cacheHits++;
-    console.log(`✅ Cache HIT for "${keyword}" (${cacheHits} hits / ${cacheMisses} misses)`);
+    // 로그 최소화 - 첫 1회만 출력
+    if (cacheHits <= 1) {
+      console.log(`✅ Cache HIT for "${keyword}" (${cacheHits} hits)`);
+    }
     return componentCache.get(keyword)!;
   }
   
   cacheMisses++;
-  console.log(`⏳ Cache MISS for "${keyword}" - analyzing... (${cacheHits} hits / ${cacheMisses} misses)`);
-
+  console.log(`⏳ 키워드 분석: "${keyword}"`);
   
   const components: string[] = [];
   
-  console.log(`=== Starting keyword decomposition for: "${keyword}" ===`);
-  
   // Handle compound keywords with comma separator
   if (keyword.includes(',')) {
-    console.log('Comma-separated compound keyword detected');
     const parts = keyword.split(',').map(part => part.trim()).filter(Boolean);
-    console.log('Split parts:', parts);
     
     // For compound keywords, treat each complete part as the main component
     for (const part of parts) {
@@ -747,7 +738,8 @@ async function checkAllMorphemeFrequencies(content: string, keyword: string): Pr
   // 과다 사용 형태소 찾기 (키워드 우위성 확보)
   const overused: Array<{morpheme: string, count: number}> = [];
   
-  console.log(`✅ 키워드 형태소 목록:`, keywordComponents);
+  // 로그 최소화 - 키워드 형태소만 한 번만 출력
+  console.log(`✅ 키워드 형태소: [${keywordComponents.join(', ')}]`);
   
   for (const [morpheme, count] of Array.from(morphemeFrequency.entries())) {
     // 1. 정확한 매칭: 키워드 형태소 목록에 정확히 포함되어 있는지
@@ -762,14 +754,10 @@ async function checkAllMorphemeFrequencies(content: string, keyword: string): Pr
       );
     }
     
-    if (isKeywordRelated) {
-      console.log(`✅ "${morpheme}"는 키워드 관련 (${count}회) ${isKeywordMorpheme ? '[형태소]' : '[파생어]'}`);
-    }
-    
     // 절대 상한선: 20회 (어떤 단어든 초과 금지)
     if (count >= 20) {
       overused.push({ morpheme, count });
-      console.log(`🚨 "${morpheme}" 심각한 과다 사용: ${count}회 (절대 상한선 20회 초과!) ${isKeywordRelated ? '[키워드 관련]' : '[일반 형태소]'}`);
+      console.log(`🚨 "${morpheme}" ${count}회 (상한선 20회 초과)`);
       continue;
     }
     
@@ -777,16 +765,21 @@ async function checkAllMorphemeFrequencies(content: string, keyword: string): Pr
     
     if (count > maxAllowed) {
       overused.push({ morpheme, count });
-      console.log(`❌ "${morpheme}" 초과 사용: ${count}회 (최대 ${maxAllowed}회) ${isKeywordRelated ? '[키워드 관련]' : '[일반 형태소]'}`);
+      console.log(`⚠️ "${morpheme}" ${count}회 (최대 ${maxAllowed}회)`);
     }
   }
   
-  console.log(`전체 형태소 빈도 검사 완료. 초과 사용: ${overused.length}개`);
+  // 로그 최소화 - 요약만 출력
+  if (overused.length > 0) {
+    console.log(`❌ 초과 사용: ${overused.length}개`);
+  } else {
+    console.log(`✅ 모든 단어 적정 범위`);
+  }
   return { overused, allCounts: morphemeFrequency };
 }
 
 export async function analyzeMorphemes(content: string, keyword: string, customMorphemes?: string): Promise<MorphemeAnalysis> {
-  console.log(`=== Morpheme Analysis for keyword: "${keyword}" ===`);
+  console.log(`📊 형태소 분석: "${keyword}"`);
   
   try {
     // 전체 형태소 빈도 먼저 검사
@@ -794,7 +787,6 @@ export async function analyzeMorphemes(content: string, keyword: string, customM
     
     // Extract all morphemes from content
     const allMorphemes = extractKoreanMorphemes(content);
-    console.log(`Total morphemes extracted: ${allMorphemes.length}`);
     
     // Calculate character count (excluding spaces)
     const characterCount = content.replace(/\s/g, '').length;
@@ -807,14 +799,14 @@ export async function analyzeMorphemes(content: string, keyword: string, customM
   const componentMatches = await findKeywordComponentMatches(allMorphemes, keyword);
   const keywordComponents = await extractKeywordComponents(keyword);
   
-  // Check complete keyword condition (5-7 times)
-  const isCompleteKeywordOptimized = completeKeywordCount >= 5 && completeKeywordCount <= 7;
+  // Check complete keyword condition (5회 이상)
+  const isCompleteKeywordOptimized = completeKeywordCount >= 5;
   
   // Check individual component conditions (15-18 times each) - 실용적인 SEO 기준
   let areComponentsOptimized = true;
   const componentIssues: string[] = [];
   
-  console.log(`Complete keyword "${keyword}" appears: ${completeKeywordCount} times (5-7 times required)`);
+  console.log(`Complete keyword "${keyword}" appears: ${completeKeywordCount} times (5회 이상 필요)`);
   
   for (const component of keywordComponents) {
     const matches = componentMatches.get(component) || [];
