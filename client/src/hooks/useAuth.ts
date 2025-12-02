@@ -45,10 +45,10 @@ export interface User {
 export function useAuth() {
   const isLoggedOut = getLoggedOut();
   const hasAuthError = getAuthError();
-  const hasSession = localStorage.getItem('sessionId') !== null;
   
-  // 로그아웃 상태도 아니고, 인증 에러도 없고, 세션이 있을 때만 인증 체크
-  const shouldCheckAuth = !isLoggedOut && !hasAuthError && hasSession;
+  // 로그아웃 상태가 아니고, 인증 에러도 없을 때 인증 체크
+  // 소셜 로그인은 쿠키 기반 세션을 사용하므로 localStorage sessionId 체크 제거
+  const shouldCheckAuth = !isLoggedOut && !hasAuthError;
   
   // 서버에서 세션 확인 (소셜 로그인 지원)
   const { data: user, isLoading, error, isError } = useQuery({
