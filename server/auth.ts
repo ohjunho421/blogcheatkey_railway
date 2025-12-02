@@ -227,6 +227,7 @@ export function setupAuth(app: Express) {
             <html>
               <script>
                 localStorage.removeItem('auth_logged_out');
+                localStorage.removeItem('auth_has_error');
                 window.location.href = '/';
               </script>
             </html>
