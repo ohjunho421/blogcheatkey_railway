@@ -15,6 +15,7 @@ export interface IStorage {
   
   // User business info methods
   getUserBusinessInfo(userId: number): Promise<UserBusinessInfo | undefined>;
+  getBusinessInfoById(id: number): Promise<UserBusinessInfo | undefined>;
   createUserBusinessInfo(businessInfo: InsertUserBusinessInfo): Promise<UserBusinessInfo>;
   updateUserBusinessInfo(userId: number, updates: Partial<InsertUserBusinessInfo>): Promise<UserBusinessInfo>;
   updateUserBusinessInfoById(id: number, updates: Partial<InsertUserBusinessInfo>): Promise<UserBusinessInfo>;
@@ -107,6 +108,11 @@ export class DatabaseStorage implements IStorage {
 
   async getUserBusinessInfo(userId: number): Promise<UserBusinessInfo | undefined> {
     const [businessInfo] = await db.select().from(userBusinessInfo).where(eq(userBusinessInfo.userId, userId));
+    return businessInfo || undefined;
+  }
+
+  async getBusinessInfoById(id: number): Promise<UserBusinessInfo | undefined> {
+    const [businessInfo] = await db.select().from(userBusinessInfo).where(eq(userBusinessInfo.id, id));
     return businessInfo || undefined;
   }
 

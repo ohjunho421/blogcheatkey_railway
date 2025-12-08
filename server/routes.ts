@@ -1259,9 +1259,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "인증이 필요합니다" });
       }
 
-      // 업체정보 소유권 확인
-      const existingBusinessInfo = await storage.getUserBusinessInfo(userId);
-      if (!existingBusinessInfo || existingBusinessInfo.id !== id) {
+      // 업체정보 소유권 확인 - ID로 조회 후 userId 비교
+      const existingBusinessInfo = await storage.getBusinessInfoById(id);
+      if (!existingBusinessInfo) {
+        return res.status(404).json({ error: "업체 정보를 찾을 수 없습니다" });
+      }
+      if (existingBusinessInfo.userId !== userId) {
         return res.status(403).json({ error: "수정 권한이 없습니다" });
       }
 
@@ -1288,9 +1291,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: "인증이 필요합니다" });
       }
 
-      // 업체정보 소유권 확인
-      const existingBusinessInfo = await storage.getUserBusinessInfo(userId);
-      if (!existingBusinessInfo || existingBusinessInfo.id !== id) {
+      // 업체정보 소유권 확인 - ID로 조회 후 userId 비교
+      const existingBusinessInfo = await storage.getBusinessInfoById(id);
+      if (!existingBusinessInfo) {
+        return res.status(404).json({ error: "업체 정보를 찾을 수 없습니다" });
+      }
+      if (existingBusinessInfo.userId !== userId) {
         return res.status(403).json({ error: "삭제 권한이 없습니다" });
       }
 
