@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { FileText, Copy, Smartphone, CheckCircle2, AlertCircle, Download, ImageIcon, Camera, RefreshCw, Eye, EyeOff, ExternalLink } from "lucide-react";
+import { FileText, Copy, Smartphone, CheckCircle2, AlertCircle, Download, ImageIcon, Camera, RefreshCw, Eye, EyeOff, ExternalLink, Wand2 } from "lucide-react";
 
 interface BlogContentDisplayProps {
   project: any;
@@ -126,8 +126,42 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
     },
   });
 
+  const optimizeContent = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", `/api/projects/${project.id}/optimize`);
+      return response.json();
+    },
+    onSuccess: (data: any) => {
+      const result = data.optimizationResult;
+      if (result?.success) {
+        toast({
+          title: "✅ SEO 최적화 완료",
+          description: `${result.fixed?.length || 0}개 항목이 수정되었습니다. 모든 조건을 충족합니다.`,
+        });
+      } else {
+        toast({
+          title: "⚠️ 부분 최적화 완료",
+          description: `${result?.fixed?.length || 0}개 항목 수정. 일부 조건이 아직 미달성입니다.`,
+          variant: "default",
+        });
+      }
+      onRefresh();
+    },
+    onError: (error) => {
+      toast({
+        title: "최적화 실패",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleRegenerate = () => {
     regenerateContent.mutate();
+  };
+
+  const handleOptimize = () => {
+    optimizeContent.mutate();
   };
 
   const toggleMobilePreview = async () => {
@@ -345,11 +379,57 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
                 </Button>
               </div>
               
-              {/* 재생성 버튼 */}
-              <div className="flex justify-center pt-2">
+              {/* 재생성 및 최적화 버튼 */}
+              <div className="flex flex-col sm:flex-row justify-center gap-2 pt-2">
+                {/* 최적화 다시 하기 버튼 - SEO 미달성 시 강조 */}
+                {project.seoMetrics && !project.seoMetrics.isOptimized && (
+                  <Button 
+                    onClick={handleOptimize}
+                    disabled={optimizeContent.isPending || regenerateContent.isPending}
+                    variant="default"
+                    size="sm"
+                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {optimizeContent.isPending ? (
+                      <>
+                        <Wand2 className="h-4 w-4 mr-2 animate-pulse" />
+                        SEO 최적화 중...
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="h-4 w-4 mr-2" />
+                        최적화 다시 하기
+                      </>
+                    )}
+                  </Button>
+                )}
+                
+                {/* 이미 최적화된 경우에도 버튼 표시 (덜 강조) */}
+                {project.seoMetrics && project.seoMetrics.isOptimized && (
+                  <Button 
+                    onClick={handleOptimize}
+                    disabled={optimizeContent.isPending || regenerateContent.isPending}
+                    variant="outline"
+                    size="sm"
+                    className="w-full sm:w-auto"
+                  >
+                    {optimizeContent.isPending ? (
+                      <>
+                        <Wand2 className="h-4 w-4 mr-2 animate-pulse" />
+                        SEO 최적화 중...
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="h-4 w-4 mr-2" />
+                        추가 최적화
+                      </>
+                    )}
+                  </Button>
+                )}
+                
                 <Button 
                   onClick={handleRegenerate}
-                  disabled={regenerateContent.isPending}
+                  disabled={regenerateContent.isPending || optimizeContent.isPending}
                   variant="destructive"
                   size="sm"
                   className="w-full sm:w-auto"

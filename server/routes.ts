@@ -762,6 +762,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Continue SEO optimization on existing content (incremental optimization)
+  app.post("/api/projects/:id/optimize", async (req, res) => {
+    try {
+      // 타임아웃 연장: 최적화는 1-2분 소요 가능
+      req.setTimeout(120000); // 2분
+      res.setTimeout(120000);
+      
+      const id = parseInt(req.params.id);
+      const project = await storage.getBlogProject(id);
+      
+      if (!project) {
+        return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
+      }
+
+      if (!project.generatedContent) {
+        return res.status(400).json({ error: "최적화할 콘텐츠가 없습니다. 먼저 블로그를 생성해주세요." });
+      }
+
+      console.log(`🔧 SEO 최적화 시작: 프로젝트 ${id}, 키워드: ${project.keyword}`);
+
+      const { optimizeIncrementally } = await import('./services/incrementalOptimizer.js');
+      
+      // 현재 콘텐츠에서 부분 최적화 수행
+      const optimizationResult = await optimizeIncrementally(
+        project.generatedContent,
+        project.keyword,
+        project.customMorphemes as string | undefined
+      );
+      
+      const finalContent = optimizationResult.content;
+      
+      // SEO 분석 재수행
+      const { analyzeMorphemes } = await import('./services/morphemeAnalyzer.js');
+      const seoAnalysis = await analyzeMorphemes(finalContent, project.keyword, project.customMorphemes as string | undefined);
+      
+      console.log(`${optimizationResult.success ? '✅' : '⚠️'} 최적화 완료: ${optimizationResult.fixed.length}개 항목 수정`);
+
+      // 경고 메시지 생성
+      let warningMessage = null;
+      if (!optimizationResult.success) {
+        warningMessage = {
+          type: "seo_optimization_incomplete",
+          message: "일부 SEO 조건이 아직 미달성입니다. 추가 최적화가 필요할 수 있습니다.",
+          issues: optimizationResult.issues.map(i => i.description),
+          fixed: optimizationResult.fixed,
+          suggestions: seoAnalysis.suggestions || []
+        };
+      }
+
+      const updatedProject = await storage.updateBlogProject(id, {
+        generatedContent: finalContent,
+        seoMetrics: seoAnalysis,
+        status: "completed",
+      });
+
+      // 응답 반환
+      res.json({
+        ...updatedProject,
+        optimizationResult: {
+          success: optimizationResult.success,
+          fixed: optimizationResult.fixed,
+          remainingIssues: optimizationResult.issues.map(i => i.description)
+        },
+        warning: warningMessage
+      });
+    } catch (error) {
+      console.error("SEO optimization error:", error);
+      res.status(500).json({ error: "SEO 최적화에 실패했습니다" });
+    }
+  });
+
   // Copy content (normal or mobile)
   app.post("/api/projects/:id/copy", async (req, res) => {
     try {
