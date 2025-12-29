@@ -270,8 +270,8 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
                   </div>
                   <div className="bg-white dark:bg-gray-800 p-3 rounded">
                     <div className="text-muted-foreground text-xs mb-1">키워드 출현</div>
-                    <div className={`font-bold ${project.seoMetrics.isKeywordOptimized ? 'text-green-600' : 'text-orange-600'}`}>
-                      {project.seoMetrics.keywordMorphemeCount}회 {project.seoMetrics.isKeywordOptimized ? '✓' : '✗'}
+                    <div className={`font-bold ${(project.seoMetrics.isKeywordCountOptimized ?? project.seoMetrics.isKeywordOptimized) ? 'text-green-600' : 'text-orange-600'}`}>
+                      {project.seoMetrics.keywordMorphemeCount}회 {(project.seoMetrics.isKeywordCountOptimized ?? project.seoMetrics.isKeywordOptimized) ? '✓' : '✗'}
                     </div>
                     <div className="text-xs text-muted-foreground">목표: 5-7회</div>
                   </div>

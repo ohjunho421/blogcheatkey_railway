@@ -5,6 +5,9 @@ import Hangul from 'hangul-js';
 interface MorphemeAnalysis {
   isOptimized: boolean;
   isKeywordOptimized: boolean;
+  isKeywordCountOptimized: boolean;  // 완전 키워드 5-7회 체크만
+  isComponentsOptimized: boolean;    // 형태소 15-18회 체크만
+  isKeywordDominant: boolean;        // 키워드 우위성 체크
   isLengthOptimized: boolean;
   keywordMorphemeCount: number;
   characterCount: number;
@@ -982,6 +985,9 @@ export async function analyzeMorphemes(content: string, keyword: string, customM
   return {
     isOptimized,
     isKeywordOptimized,
+    isKeywordCountOptimized: isCompleteKeywordOptimized,  // 🆕 완전 키워드 5-7회만 체크
+    isComponentsOptimized: areComponentsOptimized,        // 🆕 형태소 15-18회만 체크
+    isKeywordDominant,                                    // 🆕 키워드 우위성
     isLengthOptimized,
     keywordMorphemeCount: completeKeywordCount,
     characterCount,
@@ -997,6 +1003,9 @@ export async function analyzeMorphemes(content: string, keyword: string, customM
     return {
       isOptimized: false,
       isKeywordOptimized: false,
+      isKeywordCountOptimized: false,
+      isComponentsOptimized: false,
+      isKeywordDominant: false,
       isLengthOptimized: false,
       keywordMorphemeCount: 0,
       characterCount: content.replace(/\s/g, '').length,
