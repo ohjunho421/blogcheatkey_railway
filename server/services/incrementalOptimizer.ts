@@ -1,11 +1,12 @@
 import { analyzeMorphemes } from './morphemeAnalyzer';
 
 interface OptimizationIssue {
-  type: 'character_count' | 'keyword_count' | 'overused_word';
+  type: 'character_count' | 'keyword_count' | 'overused_word' | 'structure';
   description: string;
   target: number;
   current: number;
   word?: string;
+  structureType?: 'intro_ratio' | 'conclusion_cta' | 'intro_empathy';
 }
 
 interface IncrementalOptimizationResult {
@@ -71,6 +72,129 @@ async function createSnapshot(content: string, keyword: string, customMorphemes?
     keywordCount: analysis.keywordMorphemeCount,
     overusedCount,
     score: calculateOptimizationScore(analysis.characterCount, analysis.keywordMorphemeCount, overusedCount)
+  };
+}
+
+// 🆕 설득력있는 글쓰기 구조 분석
+interface StructureAnalysis {
+  intro: { text: string; charCount: number; ratio: number };
+  body: { text: string; charCount: number };
+  conclusion: { text: string; charCount: number; hasCTA: boolean };
+  hasEmpathy: boolean; // 서론에 독자 공감 요소
+  issues: string[];
+}
+
+function analyzePersuasiveStructure(content: string): StructureAnalysis {
+  const totalCharCount = content.replace(/\s/g, '').length;
+  const lines = content.split('\n');
+  
+  // 소제목 패턴으로 구조 파악
+  const subtitlePattern = /^#+\s|^\d+\.|^[■●◆▶★☆※]/;
+  
+  let introEnd = -1;
+  let conclusionStart = -1;
+  
+  // 첫 번째 소제목 찾기 (서론 끝)
+  for (let i = 0; i < lines.length; i++) {
+    if (subtitlePattern.test(lines[i].trim())) {
+      introEnd = i;
+      break;
+    }
+  }
+  
+  // 마지막 소제목 찾기 (결론 시작)
+  for (let i = lines.length - 1; i >= 0; i--) {
+    if (subtitlePattern.test(lines[i].trim())) {
+      conclusionStart = i;
+      break;
+    }
+  }
+  
+  // 구조 분리
+  let introText = '';
+  let bodyText = '';
+  let conclusionText = '';
+  
+  if (introEnd > 0) {
+    introText = lines.slice(0, introEnd).join('\n');
+  } else {
+    // 소제목이 없으면 첫 30%를 서론으로
+    const introLines = Math.floor(lines.length * 0.3);
+    introText = lines.slice(0, introLines).join('\n');
+    introEnd = introLines;
+  }
+  
+  if (conclusionStart > introEnd) {
+    bodyText = lines.slice(introEnd, conclusionStart).join('\n');
+    conclusionText = lines.slice(conclusionStart).join('\n');
+  } else {
+    // 결론 구분이 안되면 마지막 15%를 결론으로
+    const conclusionLines = Math.floor(lines.length * 0.15);
+    conclusionStart = lines.length - conclusionLines;
+    bodyText = lines.slice(introEnd, conclusionStart).join('\n');
+    conclusionText = lines.slice(conclusionStart).join('\n');
+  }
+  
+  const introCharCount = introText.replace(/\s/g, '').length;
+  const bodyCharCount = bodyText.replace(/\s/g, '').length;
+  const conclusionCharCount = conclusionText.replace(/\s/g, '').length;
+  const introRatio = totalCharCount > 0 ? (introCharCount / totalCharCount) * 100 : 0;
+  
+  // 독자 공감 요소 체크 (서론에 있어야 함)
+  const empathyPatterns = [
+    /많은\s*(분들이|사람들이|운전자들이)/,
+    /혹시.*\?/,
+    /궁금하/,
+    /고민이/,
+    /걱정이/,
+    /어려움을/,
+    /경험이\s*있으신가요/,
+    /해보신\s*적/,
+    /느끼신\s*적/,
+    /알고\s*계신가요/
+  ];
+  const hasEmpathy = empathyPatterns.some(p => p.test(introText));
+  
+  // CTA(Call To Action) 체크 (결론에 있어야 함)
+  const ctaPatterns = [
+    /문의/,
+    /연락/,
+    /방문/,
+    /상담/,
+    /확인해\s*보세요/,
+    /추천드립니다/,
+    /참고하시기\s*바랍니다/,
+    /도움이\s*되셨/,
+    /알아보세요/
+  ];
+  const hasCTA = ctaPatterns.some(p => p.test(conclusionText));
+  
+  // 문제점 파악
+  const issues: string[] = [];
+  
+  // 서론 비율 체크 (35-40% 권장)
+  if (introRatio < 30) {
+    issues.push(`서론 비율 부족: ${introRatio.toFixed(1)}% (35-40% 권장)`);
+  } else if (introRatio > 45) {
+    issues.push(`서론 비율 초과: ${introRatio.toFixed(1)}% (35-40% 권장)`);
+  }
+  
+  // 독자 공감 체크
+  if (!hasEmpathy) {
+    issues.push('서론에 독자 공감 요소 부족');
+  }
+  
+  // CTA 체크
+  if (!hasCTA) {
+    issues.push('결론에 CTA(행동 유도) 요소 부족');
+  }
+  
+  return {
+    intro: { text: introText, charCount: introCharCount, ratio: introRatio },
+    body: { text: bodyText, charCount: bodyCharCount },
+    conclusion: { text: conclusionText, charCount: conclusionCharCount, hasCTA },
+    hasEmpathy,
+    issues
   };
 }
 
@@ -164,6 +288,64 @@ export async function optimizeIncrementally(
     });
   }
   
+  // 🆕 키워드 형태소 우위성 체크 (키워드 형태소가 가장 많이 쓰여야 함)
+  const keywordDominanceIssues = analysis.issues
+    .filter(issue => issue.includes('형태소 출현 횟수') && issue.includes('부족'));
+  
+  if (keywordDominanceIssues.length > 0) {
+    console.log(`❌ 키워드 형태소 부족: ${keywordDominanceIssues.length}개`);
+    keywordDominanceIssues.forEach(issue => {
+      // "형태소 출현 횟수 불균형: 냉각: 12회 (부족, 15-18회 권장)" 형태에서 파싱
+      const match = issue.match(/([가-힣]+):\s*(\d+)회/);
+      if (match) {
+        const morpheme = match[1];
+        const count = parseInt(match[2]);
+        issues.push({
+          type: 'keyword_count',
+          description: `키워드 형태소 "${morpheme}" ${15 - count}회 부족`,
+          target: 15,
+          current: count,
+          word: morpheme
+        });
+      }
+    });
+  }
+  
+  // 🆕 설득력있는 글쓰기 구조 체크
+  const structureAnalysis = analyzePersuasiveStructure(content);
+  console.log(`📝 설득력 구조 분석: 서론 ${structureAnalysis.intro.ratio.toFixed(1)}%, 공감 ${structureAnalysis.hasEmpathy ? '✅' : '❌'}, CTA ${structureAnalysis.conclusion.hasCTA ? '✅' : '❌'}`);
+  
+  if (structureAnalysis.issues.length > 0) {
+    console.log(`❌ 설득력 구조 문제: ${structureAnalysis.issues.length}개`);
+    structureAnalysis.issues.forEach(issue => {
+      if (issue.includes('서론 비율')) {
+        issues.push({
+          type: 'structure',
+          description: issue,
+          target: 37, // 35-40%의 중간값
+          current: Math.round(structureAnalysis.intro.ratio),
+          structureType: 'intro_ratio'
+        });
+      } else if (issue.includes('독자 공감')) {
+        issues.push({
+          type: 'structure',
+          description: issue,
+          target: 1,
+          current: 0,
+          structureType: 'intro_empathy'
+        });
+      } else if (issue.includes('CTA')) {
+        issues.push({
+          type: 'structure',
+          description: issue,
+          target: 1,
+          current: 0,
+          structureType: 'conclusion_cta'
+        });
+      }
+    });
+  }
+  
   // 3단계: 문제가 없으면 그대로 반환
   if (issues.length === 0) {
     console.log('✅ 모든 조건 충족, 수정 불필요');
@@ -195,6 +377,9 @@ export async function optimizeIncrementally(
         fixed.push(issue.description);
       } else if (issue.type === 'overused_word' && issue.word) {
         optimizedContent = await fixOverusedWord(optimizedContent, issue.word, keyword);
+        fixed.push(issue.description);
+      } else if (issue.type === 'structure') {
+        optimizedContent = await fixStructure(optimizedContent, issue, keyword);
         fixed.push(issue.description);
       }
       
@@ -272,6 +457,9 @@ export async function optimizeIncrementally(
             fixed.push(issue.description);
           } else if (issue.type === 'overused_word' && issue.word) {
             optimizedContent = await fixOverusedWord(optimizedContent, issue.word, keyword);
+            fixed.push(issue.description);
+          } else if (issue.type === 'structure') {
+            optimizedContent = await fixStructure(optimizedContent, issue, keyword);
             fixed.push(issue.description);
           }
         } catch (error) {
@@ -687,8 +875,11 @@ ${content}
 }
 
 /**
- * 키워드 빈도 조정 - 글자수 변화 없이 치환 방식으로!
- * 핵심: 새 문장 추가가 아니라, 기존 단어를 키워드로 "치환"
+ * 키워드/형태소 빈도 조정 - 글자수 변화 없이 치환 방식으로!
+ * 핵심: 새 문장 추가가 아니라, 기존 단어를 키워드/형태소로 "치환"
+ * 
+ * issue.word가 있으면: 키워드 형태소 추가 (예: "냉각", "부동")
+ * issue.word가 없으면: 완전한 키워드 추가 (예: "냉각수부동액")
  */
 async function fixKeywordCount(
   content: string,
@@ -700,9 +891,13 @@ async function fixKeywordCount(
     apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || '' 
   });
   
+  // 형태소 추가인지 완전한 키워드 추가인지 구분
+  const targetWord = issue.word || keyword;
+  const isMorpheme = !!issue.word;
+  
   const amount = issue.target - issue.current;
   const currentCharCount = content.replace(/\s/g, '').length;
-  const keywordLength = keyword.length;
+  const targetWordLength = targetWord.length;
   
   // 🆕 키워드로 치환 가능한 대상 찾기 (비슷한 글자수의 단어)
   // 예: "냉각수부동액"(6자) → "이 제품"(3자)을 치환하면 글자수 +3
@@ -906,6 +1101,127 @@ ${content}
   const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || content;
   
   console.log(`  ✓ 과다 사용 단어 치환 완료: "${word}" (${replaceCount}회 치환)`);
+  
+  return optimized;
+}
+
+/**
+ * 설득력있는 글쓰기 구조 수정
+ * - 서론 비율 조정 (35-40%)
+ * - 독자 공감 요소 추가
+ * - CTA(행동 유도) 추가
+ */
+async function fixStructure(
+  content: string,
+  issue: OptimizationIssue,
+  keyword: string
+): Promise<string> {
+  const { GoogleGenAI } = await import('@google/genai');
+  const ai = new GoogleGenAI({ 
+    apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || '' 
+  });
+  
+  const currentCharCount = content.replace(/\s/g, '').length;
+  const structureType = issue.structureType;
+  
+  let specificGuide = '';
+  
+  if (structureType === 'intro_ratio') {
+    const currentRatio = issue.current;
+    if (currentRatio < 30) {
+      // 서론이 부족 - 서론 늘리기
+      specificGuide = `
+🔧 서론 비율 늘리기 (현재 ${currentRatio}% → 목표 35-40%)
+
+✅ 방법:
+1. 서론 첫 문단에 독자 상황 공감 문장 1-2개 추가
+   예: "많은 분들이 ${keyword}에 대해 한 번쯤 고민해보셨을 겁니다."
+   예: "혹시 ${keyword} 때문에 걱정되신 적 있으신가요?"
+
+2. 서론 마지막에 글의 목적 문장 추가
+   예: "오늘은 ${keyword}에 대해 자세히 알아보겠습니다."
+
+⚠️ 주의: 본론/결론 내용은 그대로 유지!`;
+    } else {
+      // 서론이 과다 - 서론 줄이기
+      specificGuide = `
+🔧 서론 비율 줄이기 (현재 ${currentRatio}% → 목표 35-40%)
+
+✅ 방법:
+1. 서론의 반복되는 내용 압축
+2. 불필요한 배경 설명 제거
+3. 핵심 메시지만 남기기
+
+⚠️ 주의: 독자 공감 요소는 유지!`;
+    }
+  } else if (structureType === 'intro_empathy') {
+    specificGuide = `
+🔧 서론에 독자 공감 요소 추가
+
+✅ 서론 첫 부분에 다음 중 하나 추가:
+- "많은 분들이 ${keyword}에 대해 궁금해하십니다."
+- "혹시 ${keyword} 관련해서 고민이 있으신가요?"
+- "${keyword}에 대해 걱정되셨던 경험이 있으신가요?"
+- "알고 계신가요? ${keyword}는 생각보다 중요합니다."
+
+✅ 삽입 위치: 서론 첫 번째 또는 두 번째 문장
+
+⚠️ 주의: 
+- 글자수 최소한으로 변경 (±30자 이내)
+- 기존 서론 내용 유지`;
+  } else if (structureType === 'conclusion_cta') {
+    specificGuide = `
+🔧 결론에 CTA(행동 유도) 요소 추가
+
+✅ 결론 마지막에 다음 중 하나 추가:
+- "더 궁금한 점이 있으시면 문의해 주세요."
+- "도움이 되셨다면 다른 글도 확인해 보세요."
+- "전문가 상담이 필요하시면 연락 주세요."
+- "${keyword} 관련 추가 정보가 필요하시면 방문해 주세요."
+
+✅ 삽입 위치: 결론 마지막 문장
+
+⚠️ 주의:
+- 부담스럽지 않은 자연스러운 CTA
+- 글자수 최소한으로 변경 (±30자 이내)`;
+  }
+  
+  const prompt = `당신은 설득력있는 글쓰기 전문가입니다.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 현재 상태
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- 문제: ${issue.description}
+- 글자수: ${currentCharCount}자 (±30자 이내 유지!)
+
+${specificGuide}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 원본 글
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${content}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✏️ 출력 규칙
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. 수정된 블로그 글 본문만 출력
+2. 설명문 금지
+3. 소제목 구조 유지
+4. 글자수 ${currentCharCount - 30}~${currentCharCount + 30}자 범위 유지`;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-pro',
+    contents: [{
+      role: 'user',
+      parts: [{ text: prompt }]
+    }]
+  });
+  
+  const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || content;
+  const newCharCount = optimized.replace(/\s/g, '').length;
+  
+  console.log(`  ✓ 설득력 구조 수정 완료: ${issue.description}`);
+  console.log(`  ✓ 글자수 변화: ${currentCharCount} → ${newCharCount} (${newCharCount - currentCharCount > 0 ? '+' : ''}${newCharCount - currentCharCount}자)`);
   
   return optimized;
 }

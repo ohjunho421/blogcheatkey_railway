@@ -741,6 +741,16 @@ async function checkAllMorphemeFrequencies(content: string, keyword: string): Pr
   // 로그 최소화 - 키워드 형태소만 한 번만 출력
   console.log(`✅ 키워드 형태소: [${keywordComponents.join(', ')}]`);
   
+  // 🆕 키워드 형태소의 최소 빈도 찾기 (우위성 비교용)
+  let minKeywordMorphemeCount = Infinity;
+  for (const comp of keywordComponentsLower) {
+    const count = morphemeFrequency.get(comp) || 0;
+    if (count < minKeywordMorphemeCount) {
+      minKeywordMorphemeCount = count;
+    }
+  }
+  console.log(`📊 키워드 형태소 최소 빈도: ${minKeywordMorphemeCount}회`);
+  
   for (const [morpheme, count] of Array.from(morphemeFrequency.entries())) {
     // 1. 정확한 매칭: 키워드 형태소 목록에 정확히 포함되어 있는지
     const isKeywordMorpheme = keywordComponentsLower.includes(morpheme);
@@ -758,6 +768,14 @@ async function checkAllMorphemeFrequencies(content: string, keyword: string): Pr
     if (count >= 20) {
       overused.push({ morpheme, count });
       console.log(`🚨 "${morpheme}" ${count}회 (상한선 20회 초과)`);
+      continue;
+    }
+    
+    // 🆕 키워드 우위성 체크: 일반 단어가 키워드 형태소보다 많으면 과다 사용
+    if (!isKeywordRelated && count >= minKeywordMorphemeCount && minKeywordMorphemeCount > 0) {
+      // 일반 단어가 키워드 형태소 최소값 이상이면 과다 사용으로 처리
+      overused.push({ morpheme, count });
+      console.log(`⚠️ "${morpheme}" ${count}회 (키워드 형태소 ${minKeywordMorphemeCount}회보다 많음 - 우위성 위반)`);
       continue;
     }
     
