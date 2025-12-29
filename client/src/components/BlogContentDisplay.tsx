@@ -22,7 +22,7 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
 
   const copyContent = useMutation({
     mutationFn: async (format: 'normal' | 'mobile') => {
-      // mobile 포맷은 자동으로 AI 스마트 포맷팅 사용
+      // 서버에서 항상 최신 저장된 콘텐츠를 가져옴 (최적화된 콘텐츠 반영)
       const url = format === 'mobile'
         ? `/api/projects/${project.id}/copy?smart=true` 
         : `/api/projects/${project.id}/copy`;
