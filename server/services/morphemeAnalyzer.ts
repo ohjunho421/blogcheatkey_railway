@@ -778,6 +778,88 @@ async function checkAllMorphemeFrequencies(content: string, keyword: string): Pr
   return { overused, allCounts: morphemeFrequency };
 }
 
+// 🆕 키워드 우위성 검사: 키워드 형태소가 가장 빈번한 단어인지 확인
+interface KeywordDominanceResult {
+  isDominant: boolean;
+  keywordMorphemeCounts: Map<string, number>;
+  nonKeywordTopWords: Array<{word: string, count: number}>;
+  issues: string[];
+}
+
+async function checkKeywordDominance(
+  allCounts: Map<string, number>, 
+  keyword: string
+): Promise<KeywordDominanceResult> {
+  console.log('🏆 키워드 우위성 검사 시작...');
+  
+  const keywordComponents = await extractKeywordComponents(keyword);
+  const keywordComponentsLower = keywordComponents.map(comp => comp.toLowerCase());
+  
+  // 키워드 형태소 빈도 추출
+  const keywordMorphemeCounts = new Map<string, number>();
+  let minKeywordCount = Infinity;
+  
+  for (const comp of keywordComponentsLower) {
+    // 키워드 형태소 자체 + 파생어 합산
+    let totalCount = 0;
+    for (const [morpheme, count] of Array.from(allCounts.entries())) {
+      if (morpheme === comp || morpheme.includes(comp) || comp.includes(morpheme)) {
+        totalCount += count;
+      }
+    }
+    keywordMorphemeCounts.set(comp, totalCount);
+    if (totalCount < minKeywordCount) {
+      minKeywordCount = totalCount;
+    }
+  }
+  
+  // 키워드가 아닌 단어들 중 가장 빈번한 것들 찾기
+  const nonKeywordTopWords: Array<{word: string, count: number}> = [];
+  
+  for (const [morpheme, count] of Array.from(allCounts.entries())) {
+    // 키워드 관련 단어인지 확인
+    const isKeywordRelated = keywordComponentsLower.some(comp => 
+      morpheme === comp || morpheme.includes(comp) || comp.includes(morpheme)
+    );
+    
+    // 1글자 단어, 조사, 일반적인 단어 제외
+    const commonWords = ['있다', '있는', '하는', '하고', '되는', '이런', '그런', '위해', '때문', '경우', '통해', '대해'];
+    const isCommonWord = commonWords.includes(morpheme) || morpheme.length === 1;
+    
+    if (!isKeywordRelated && !isCommonWord && count >= minKeywordCount) {
+      nonKeywordTopWords.push({ word: morpheme, count });
+    }
+  }
+  
+  // 빈도순 정렬
+  nonKeywordTopWords.sort((a, b) => b.count - a.count);
+  
+  // 키워드 우위성 판단: 키워드 형태소보다 빈번한 일반 단어가 없어야 함
+  const issues: string[] = [];
+  let isDominant = true;
+  
+  for (const { word, count } of nonKeywordTopWords.slice(0, 5)) {
+    if (count >= minKeywordCount) {
+      isDominant = false;
+      issues.push(`"${word}" ${count}회가 키워드 형태소(최소 ${minKeywordCount}회)보다 많거나 같음`);
+      console.log(`❌ 키워드 우위 위반: "${word}" ${count}회 >= 키워드 최소 ${minKeywordCount}회`);
+    }
+  }
+  
+  if (isDominant) {
+    console.log(`✅ 키워드 우위성 확보: 키워드 형태소가 가장 빈번함`);
+  } else {
+    console.log(`⚠️ 키워드 우위성 미달: ${issues.length}개 일반 단어가 키워드만큼 빈번함`);
+  }
+  
+  return {
+    isDominant,
+    keywordMorphemeCounts,
+    nonKeywordTopWords: nonKeywordTopWords.slice(0, 10),
+    issues
+  };
+}
+
 export async function analyzeMorphemes(content: string, keyword: string, customMorphemes?: string): Promise<MorphemeAnalysis> {
   console.log(`📊 형태소 분석: "${keyword}"`);
   
@@ -832,9 +914,13 @@ export async function analyzeMorphemes(content: string, keyword: string, customM
   const customMorphemeCheck = checkCustomMorphemes(content, customMorphemes);
   const isCustomMorphemesOptimized = customMorphemeCheck.missing.length === 0;
   
+  // 🆕 키워드 우위성 검사
+  const dominanceCheck = await checkKeywordDominance(frequencyCheck.allCounts, keyword);
+  const isKeywordDominant = dominanceCheck.isDominant;
+  
   // 형태소 빈도 검사 결과 반영
   const hasOverusedMorphemes = frequencyCheck.overused.length > 0;
-  const isOptimized = isLengthOptimized && isKeywordOptimized && !hasOverusedMorphemes;
+  const isOptimized = isLengthOptimized && isKeywordOptimized && !hasOverusedMorphemes && isKeywordDominant;
   
   // Generate issues and suggestions
   const issues: string[] = [];
@@ -882,6 +968,15 @@ export async function analyzeMorphemes(content: string, keyword: string, customM
       issues.push(`형태소 과다 사용: "${overused.morpheme}" ${overused.count}회 (최대 ${maxAllowed}회)`);
     }
     suggestions.push(`과다 사용된 형태소들을 동의어나 유의어로 교체해주세요`);
+  }
+  
+  // 🆕 키워드 우위성 미달 검사 결과 추가
+  if (!isKeywordDominant) {
+    for (const issue of dominanceCheck.issues) {
+      issues.push(`키워드 우위성 미달: ${issue}`);
+    }
+    const topNonKeywords = dominanceCheck.nonKeywordTopWords.slice(0, 3).map(w => `"${w.word}"(${w.count}회)`).join(', ');
+    suggestions.push(`키워드 형태소가 가장 빈번하게 사용되어야 합니다. ${topNonKeywords} 등의 빈도를 줄여주세요.`);
   }
 
   return {

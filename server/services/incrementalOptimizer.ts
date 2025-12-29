@@ -1,11 +1,12 @@
 import { analyzeMorphemes } from './morphemeAnalyzer';
 
 interface OptimizationIssue {
-  type: 'character_count' | 'keyword_count' | 'overused_word';
+  type: 'character_count' | 'keyword_count' | 'overused_word' | 'keyword_dominance';
   description: string;
   target: number;
   current: number;
   word?: string;
+  dominantWords?: Array<{word: string, count: number}>; // 🆕 키워드보다 빈번한 일반 단어들
 }
 
 interface IncrementalOptimizationResult {
@@ -100,6 +101,29 @@ export async function optimizeIncrementally(
     });
   }
   
+  // 🆕 키워드 우위성 체크
+  const dominanceIssues = analysis.issues.filter(issue => issue.includes('키워드 우위성 미달'));
+  if (dominanceIssues.length > 0) {
+    console.log(`❌ 키워드 우위성 미달: ${dominanceIssues.length}개 일반 단어가 키워드보다 빈번함`);
+    
+    // 문제가 되는 단어들 추출
+    const dominantWords: Array<{word: string, count: number}> = [];
+    dominanceIssues.forEach(issue => {
+      const match = issue.match(/"([^"]+)"\s+(\d+)회/);
+      if (match) {
+        dominantWords.push({ word: match[1], count: parseInt(match[2]) });
+      }
+    });
+    
+    issues.push({
+      type: 'keyword_dominance',
+      description: `키워드보다 빈번한 일반 단어: ${dominantWords.map(w => `"${w.word}"(${w.count}회)`).join(', ')}`,
+      target: 0,
+      current: dominantWords.length,
+      dominantWords
+    });
+  }
+  
   // 3단계: 문제가 없으면 그대로 반환
   if (issues.length === 0) {
     console.log('✅ 모든 조건 충족, 수정 불필요');
@@ -126,6 +150,10 @@ export async function optimizeIncrementally(
         fixed.push(issue.description);
       } else if (issue.type === 'overused_word' && issue.word) {
         optimizedContent = await fixOverusedWord(optimizedContent, issue.word);
+        fixed.push(issue.description);
+      } else if (issue.type === 'keyword_dominance' && issue.dominantWords) {
+        // 🆕 키워드 우위성 수정
+        optimizedContent = await fixKeywordDominance(optimizedContent, issue.dominantWords, keyword);
         fixed.push(issue.description);
       }
     } catch (error) {
@@ -183,6 +211,10 @@ export async function optimizeIncrementally(
           } else if (issue.type === 'overused_word' && issue.word) {
             optimizedContent = await fixOverusedWord(optimizedContent, issue.word);
             fixed.push(issue.description);
+          } else if (issue.type === 'keyword_dominance' && issue.dominantWords) {
+            // 🆕 키워드 우위성 수정
+            optimizedContent = await fixKeywordDominance(optimizedContent, issue.dominantWords, keyword);
+            fixed.push(issue.description);
           }
         } catch (error) {
           console.error(`수정 실패 (${issue.description}):`, error);
@@ -191,22 +223,28 @@ export async function optimizeIncrementally(
     }
   }
   
-  // 5단계: 최종 검증 (과다사용 문제까지 확인)
+  // 5단계: 최종 검증 (과다사용 + 키워드 우위성까지 확인)
   const finalAnalysis = await analyzeMorphemes(optimizedContent, keyword, customMorphemes);
   
   const hasNoOveruse = !finalAnalysis.issues.some(issue => 
     issue.includes('초과') || issue.includes('과다')
   );
   
+  // 🆕 키워드 우위성 검증 추가
+  const hasKeywordDominance = !finalAnalysis.issues.some(issue => 
+    issue.includes('키워드 우위성 미달')
+  );
+  
   const isSuccess = 
     finalAnalysis.characterCount >= 1700 && 
     finalAnalysis.characterCount <= 2000 &&
     finalAnalysis.keywordMorphemeCount >= 5 &&
-    hasNoOveruse; // 과다사용 문제도 확인
+    hasNoOveruse && 
+    hasKeywordDominance; // 🆕 키워드 우위성도 확인
     // 키워드는 5회 이상이면 통과 (상한 제거)
   
   console.log(`${isSuccess ? '✅' : '⚠️'} 부분 최적화 완료: ${fixed.length}개 수정`);
-  console.log(`  최종 검증: 글자수 ${finalAnalysis.characterCount}자, 키워드 ${finalAnalysis.keywordMorphemeCount}회, 과다사용 ${hasNoOveruse ? '없음' : '있음'}`);
+  console.log(`  최종 검증: 글자수 ${finalAnalysis.characterCount}자, 키워드 ${finalAnalysis.keywordMorphemeCount}회, 과다사용 ${hasNoOveruse ? '없음' : '있음'}, 키워드우위 ${hasKeywordDominance ? '확보' : '미달'}`);
   
   return {
     content: optimizedContent,
@@ -254,6 +292,11 @@ async function fixAllIssuesAtOnce(
     } else if (issue.type === 'overused_word' && issue.word) {
       problems.push(`"${issue.word}" 과다 사용`);
       solutions.push(`"${issue.word}"를 5-7회 동의어로 치환`);
+    } else if (issue.type === 'keyword_dominance' && issue.dominantWords) {
+      // 🆕 키워드 우위성 문제 처리
+      const wordsStr = issue.dominantWords.slice(0, 3).map(w => `"${w.word}"(${w.count}회)`).join(', ');
+      problems.push(`키워드 우위성 미달: ${wordsStr} 등이 키워드보다 빈번함`);
+      solutions.push(`위 단어들을 동의어로 치환하여 각 10회 이하로 줄이고, 키워드 "${keyword}"가 가장 빈번하게 유지`);
     }
   });
 
@@ -457,6 +500,60 @@ ${content}
   const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || content;
   
   console.log(`  ✓ 과다 사용 단어 치환 완료: "${word}"`);
+  
+  return optimized;
+}
+
+/**
+ * 🆕 키워드 우위성 확보: 키워드보다 빈번한 일반 단어들의 빈도를 낮춤
+ */
+async function fixKeywordDominance(
+  content: string,
+  dominantWords: Array<{word: string, count: number}>,
+  keyword: string
+): Promise<string> {
+  const { GoogleGenAI } = await import('@google/genai');
+  const ai = new GoogleGenAI({ 
+    apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || '' 
+  });
+  
+  const wordsToReduce = dominantWords.slice(0, 5).map(w => `"${w.word}"(현재 ${w.count}회 → 10회 이하로)`).join('\n   - ');
+  
+  const prompt = `다음 블로그 글에서 특정 단어들의 빈도를 줄여서 키워드 "${keyword}"가 가장 빈번하게 사용되도록 수정하세요.
+
+[원본 글]
+${content}
+
+[문제점]
+키워드 "${keyword}"보다 다음 일반 단어들이 더 많이 사용되어 SEO 키워드 우위성이 확보되지 않았습니다.
+
+[빈도를 낮춰야 할 단어들]
+   - ${wordsToReduce}
+
+[작업 지침]
+1. 위 단어들 중 일부를 동의어나 다른 표현으로 치환하여 빈도를 낮추세요
+2. 키워드 "${keyword}"는 현재 빈도를 유지하거나 살짝 늘려주세요
+3. 글의 자연스러운 흐름과 의미는 반드시 유지하세요
+4. 소제목은 그대로 유지하세요
+5. 각 단어를 10회 이하로 줄이는 것이 목표입니다
+
+[중요 출력 규칙]
+- 수정된 블로그 글의 본문만 출력하세요
+- 설명문, 메타 정보, 마크다운 형식 등 어떤 추가 텍스트도 포함하지 마세요
+- "수정된 글:", "다음과 같이", "요청하신" 등의 서술 표현 절대 금지
+- 순수한 블로그 본문 텍스트만 반환하세요`;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-pro',
+    contents: [{
+      role: 'user',
+      parts: [{ text: prompt }]
+    }]
+  });
+  
+  const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || content;
+  
+  console.log(`  ✓ 키워드 우위성 확보 완료: ${dominantWords.length}개 단어 빈도 조정`);
   
   return optimized;
 }
