@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { FileText, Copy, Smartphone, CheckCircle2, AlertCircle, Download, ImageIcon, Camera, RefreshCw, Eye, EyeOff, ExternalLink, Wand2 } from "lucide-react";
+import { FileText, Copy, Smartphone, CheckCircle2, AlertCircle, Download, ImageIcon, Camera, RefreshCw, Eye, EyeOff, ExternalLink } from "lucide-react";
 
 interface BlogContentDisplayProps {
   project: any;
@@ -126,25 +126,20 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
     },
   });
 
-  const optimizeContent = useMutation({
+  // 🆕 부분 최적화 (기존 콘텐츠에서 조건 미달 부분만 수정)
+  const reoptimizeContent = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest("POST", `/api/projects/${project.id}/optimize`);
+      const response = await apiRequest("POST", `/api/projects/${project.id}/reoptimize`);
       return response.json();
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data) => {
       const result = data.optimizationResult;
-      if (result?.success) {
-        toast({
-          title: "✅ SEO 최적화 완료",
-          description: `${result.fixed?.length || 0}개 항목이 수정되었습니다. 모든 조건을 충족합니다.`,
-        });
-      } else {
-        toast({
-          title: "⚠️ 부분 최적화 완료",
-          description: `${result?.fixed?.length || 0}개 항목 수정. 일부 조건이 아직 미달성입니다.`,
-          variant: "default",
-        });
-      }
+      toast({
+        title: result?.success ? "최적화 완료" : "최적화 부분 완료",
+        description: result?.success 
+          ? "SEO 조건이 모두 충족되었습니다." 
+          : "일부 조건이 개선되었습니다. 필요시 다시 시도하세요.",
+      });
       onRefresh();
     },
     onError: (error) => {
@@ -160,8 +155,8 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
     regenerateContent.mutate();
   };
 
-  const handleOptimize = () => {
-    optimizeContent.mutate();
+  const handleReoptimize = () => {
+    reoptimizeContent.mutate();
   };
 
   const toggleMobilePreview = async () => {
@@ -270,8 +265,8 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
                   </div>
                   <div className="bg-white dark:bg-gray-800 p-3 rounded">
                     <div className="text-muted-foreground text-xs mb-1">키워드 출현</div>
-                    <div className={`font-bold ${(project.seoMetrics.isKeywordCountOptimized ?? project.seoMetrics.isKeywordOptimized) ? 'text-green-600' : 'text-orange-600'}`}>
-                      {project.seoMetrics.keywordMorphemeCount}회 {(project.seoMetrics.isKeywordCountOptimized ?? project.seoMetrics.isKeywordOptimized) ? '✓' : '✗'}
+                    <div className={`font-bold ${project.seoMetrics.isKeywordOptimized ? 'text-green-600' : 'text-orange-600'}`}>
+                      {project.seoMetrics.keywordMorphemeCount}회 {project.seoMetrics.isKeywordOptimized ? '✓' : '✗'}
                     </div>
                     <div className="text-xs text-muted-foreground">목표: 5-7회</div>
                   </div>
@@ -379,57 +374,33 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
                 </Button>
               </div>
               
-              {/* 재생성 및 최적화 버튼 */}
+              {/* 최적화/재생성 버튼 */}
               <div className="flex flex-col sm:flex-row justify-center gap-2 pt-2">
-                {/* 최적화 다시 하기 버튼 - SEO 미달성 시 강조 */}
-                {project.seoMetrics && !project.seoMetrics.isOptimized && (
-                  <Button 
-                    onClick={handleOptimize}
-                    disabled={optimizeContent.isPending || regenerateContent.isPending}
-                    variant="default"
-                    size="sm"
-                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    {optimizeContent.isPending ? (
-                      <>
-                        <Wand2 className="h-4 w-4 mr-2 animate-pulse" />
-                        SEO 최적화 중...
-                      </>
-                    ) : (
-                      <>
-                        <Wand2 className="h-4 w-4 mr-2" />
-                        최적화 다시 하기
-                      </>
-                    )}
-                  </Button>
-                )}
+                {/* 🆕 부분 최적화 버튼 */}
+                <Button 
+                  onClick={handleReoptimize}
+                  disabled={reoptimizeContent.isPending || regenerateContent.isPending}
+                  variant="outline"
+                  size="sm"
+                  className="w-full sm:w-auto border-blue-500 text-blue-600 hover:bg-blue-50"
+                >
+                  {reoptimizeContent.isPending ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      최적화 중...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      최적화 다시하기
+                    </>
+                  )}
+                </Button>
                 
-                {/* 이미 최적화된 경우에도 버튼 표시 (덜 강조) */}
-                {project.seoMetrics && project.seoMetrics.isOptimized && (
-                  <Button 
-                    onClick={handleOptimize}
-                    disabled={optimizeContent.isPending || regenerateContent.isPending}
-                    variant="outline"
-                    size="sm"
-                    className="w-full sm:w-auto"
-                  >
-                    {optimizeContent.isPending ? (
-                      <>
-                        <Wand2 className="h-4 w-4 mr-2 animate-pulse" />
-                        SEO 최적화 중...
-                      </>
-                    ) : (
-                      <>
-                        <Wand2 className="h-4 w-4 mr-2" />
-                        추가 최적화
-                      </>
-                    )}
-                  </Button>
-                )}
-                
+                {/* 완전 재생성 버튼 */}
                 <Button 
                   onClick={handleRegenerate}
-                  disabled={regenerateContent.isPending || optimizeContent.isPending}
+                  disabled={regenerateContent.isPending || reoptimizeContent.isPending}
                   variant="destructive"
                   size="sm"
                   className="w-full sm:w-auto"
@@ -437,12 +408,12 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
                   {regenerateContent.isPending ? (
                     <>
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      콘텐츠 재생성 중...
+                      재생성 중...
                     </>
                   ) : (
                     <>
                       <RefreshCw className="h-4 w-4 mr-2" />
-                      다시 생성 (완전히 새로운 콘텐츠)
+                      완전히 새로 생성
                     </>
                   )}
                 </Button>

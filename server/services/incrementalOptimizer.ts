@@ -1,19 +1,11 @@
 import { analyzeMorphemes } from './morphemeAnalyzer';
-import Anthropic from '@anthropic-ai/sdk';
-
-// Claude API 클라이언트 (Gemini 대신 사용)
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY_ENV_VAR || "default_key",
-});
-const MODEL = 'claude-sonnet-4-5-20250929';
 
 interface OptimizationIssue {
-  type: 'character_count' | 'keyword_count' | 'overused_word' | 'keyword_dominance';
+  type: 'character_count' | 'keyword_count' | 'overused_word';
   description: string;
   target: number;
   current: number;
   word?: string;
-  dominantWords?: Array<{word: string, count: number}>; // 🆕 키워드보다 빈번한 일반 단어들
 }
 
 interface IncrementalOptimizationResult {
@@ -25,7 +17,7 @@ interface IncrementalOptimizationResult {
 
 /**
  * 조건에 안 맞는 부분만 찾아서 자연스럽게 수정하는 함수
- * 🆕 3회 시도 후 가장 좋은 결과 반환 (문제가 가장 적은 버전)
+ * 재생성이 아닌 정밀한 부분 수정 방식 사용
  */
 export async function optimizeIncrementally(
   content: string,
@@ -33,120 +25,236 @@ export async function optimizeIncrementally(
   customMorphemes?: string
 ): Promise<IncrementalOptimizationResult> {
   
-  console.log('📊 부분 최적화 시작 (최대 3회 시도, 최선 결과 반환)');
+  console.log('📊 부분 최적화 시작: 조건 미달 부분만 정밀 수정');
   
-  const MAX_ATTEMPTS = 3;
+  // 1단계: 현재 상태 분석
+  const analysis = await analyzeMorphemes(content, keyword, customMorphemes);
+  const issues: OptimizationIssue[] = [];
+  const fixed: string[] = [];
   
-  // 각 시도의 결과를 저장
-  interface AttemptResult {
-    content: string;
-    issueCount: number;
-    analysis: any;
-  }
-  const attempts: AttemptResult[] = [];
+  let optimizedContent = content;
   
-  let currentContent = content;
+  console.log('현재 상태:', {
+    글자수: analysis.characterCount,
+    키워드빈도: analysis.keywordMorphemeCount,
+    최적화여부: analysis.isOptimized
+  });
   
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    console.log(`\n🔄 시도 ${attempt}/${MAX_ATTEMPTS}`);
-    
-    // 현재 상태 분석
-    const analysis = await analyzeMorphemes(currentContent, keyword, customMorphemes);
-    
-    // 문제 개수 계산
-    let issueCount = 0;
-    if (analysis.characterCount < 1700 || analysis.characterCount > 2000) issueCount++;
-    if (analysis.keywordMorphemeCount < 5) issueCount++;
-    const overuseCount = analysis.issues.filter((i: string) => i.includes('초과') || i.includes('과다')).length;
-    issueCount += overuseCount;
-    
-    console.log(`  상태: 글자수 ${analysis.characterCount}자, 키워드 ${analysis.keywordMorphemeCount}회, 문제 ${issueCount}개`);
-    
-    // 결과 저장
-    attempts.push({
-      content: currentContent,
-      issueCount,
-      analysis
+  // 2단계: 문제점 파악
+  console.log('🔍 문제점 파악 중...');
+  
+  // 글자수 체크
+  if (analysis.characterCount < 1700) {
+    const deficit = 1700 - analysis.characterCount;
+    issues.push({
+      type: 'character_count',
+      description: `글자수 ${deficit}자 부족`,
+      target: 1700,
+      current: analysis.characterCount
     });
-    
-    // 완벽하면 바로 반환
-    if (issueCount === 0) {
-      console.log('✅ 모든 조건 충족!');
-      return {
-        content: currentContent,
-        success: true,
-        issues: [],
-        fixed: [`${attempt}회 시도 후 최적화 완료`]
-      };
+    console.log(`❌ 글자수 부족: ${analysis.characterCount}자 (${deficit}자 부족)`);
+  } else if (analysis.characterCount > 2000) {
+    const excess = analysis.characterCount - 2000;
+    issues.push({
+      type: 'character_count',
+      description: `글자수 ${excess}자 초과`,
+      target: 2000,
+      current: analysis.characterCount
+    });
+    console.log(`❌ 글자수 초과: ${analysis.characterCount}자 (${excess}자 초과)`);
+  } else {
+    console.log(`✅ 글자수 적정: ${analysis.characterCount}자`);
+  }
+  
+  // 키워드 빈도 체크 (5회 이상이면 통과)
+  if (analysis.keywordMorphemeCount < 5) {
+    const deficit = 5 - analysis.keywordMorphemeCount;
+    issues.push({
+      type: 'keyword_count',
+      description: `키워드 "${keyword}" ${deficit}회 부족`,
+      target: 5, // 최소값
+      current: analysis.keywordMorphemeCount
+    });
+    console.log(`❌ 키워드 부족: ${analysis.keywordMorphemeCount}회 (${deficit}회 부족)`);
+  } else {
+    console.log(`✅ 키워드 빈도 적정: ${analysis.keywordMorphemeCount}회 (5회 이상)`);
+  }
+  // 5회 이상이면 과다 체크 안 함
+  
+  // 과다 사용 단어 체크
+  const overusedWords = analysis.issues
+    .filter(issue => issue.includes('초과') || issue.includes('과다'))
+    .slice(0, 3);
+  
+  if (overusedWords.length > 0) {
+    console.log(`❌ 과다 사용 단어 발견: ${overusedWords.length}개`);
+    overusedWords.forEach(issue => {
+      const word = issue.split(' ')[0];
+      issues.push({
+        type: 'overused_word',
+        description: issue,
+        target: 14,
+        current: 15,
+        word
+      });
+    });
+  }
+  
+  // 3단계: 문제가 없으면 그대로 반환
+  if (issues.length === 0) {
+    console.log('✅ 모든 조건 충족, 수정 불필요');
+    return {
+      content,
+      success: true,
+      issues: [],
+      fixed: []
+    };
+  }
+  
+  // 4단계: 🆕 모든 문제를 통합 수정 (순차가 아닌 동시 해결)
+  console.log(`🔧 ${issues.length}개 문제 통합 수정 시작`);
+  
+  if (issues.length === 1) {
+    // 문제가 1개면 개별 수정
+    const issue = issues[0];
+    try {
+      // 🔍 디버깅: 수정 전 상태
+      const beforeCharCount = optimizedContent.replace(/\s/g, '').length;
+      const beforeKeywordCount = (optimizedContent.match(new RegExp(keyword, 'g')) || []).length;
+      console.log(`\n📝 [수정 전] 글자수: ${beforeCharCount}자, 키워드 "${keyword}": ${beforeKeywordCount}회`);
+      
+      if (issue.type === 'character_count') {
+        optimizedContent = await fixCharacterCount(optimizedContent, issue, keyword);
+        fixed.push(issue.description);
+      } else if (issue.type === 'keyword_count') {
+        optimizedContent = await fixKeywordCount(optimizedContent, issue, keyword);
+        fixed.push(issue.description);
+      } else if (issue.type === 'overused_word' && issue.word) {
+        optimizedContent = await fixOverusedWord(optimizedContent, issue.word);
+        fixed.push(issue.description);
+      }
+      
+      // 🔍 디버깅: 수정 후 상태
+      const afterCharCount = optimizedContent.replace(/\s/g, '').length;
+      const afterKeywordCount = (optimizedContent.match(new RegExp(keyword, 'g')) || []).length;
+      console.log(`📝 [수정 후] 글자수: ${afterCharCount}자, 키워드 "${keyword}": ${afterKeywordCount}회`);
+      console.log(`📊 [변화량] 글자수: ${afterCharCount - beforeCharCount > 0 ? '+' : ''}${afterCharCount - beforeCharCount}자, 키워드: ${afterKeywordCount - beforeKeywordCount > 0 ? '+' : ''}${afterKeywordCount - beforeKeywordCount}회`);
+    } catch (error) {
+      console.error(`수정 실패 (${issue.description}):`, error);
     }
+  } else if (issues.length > 1) {
+    // 문제가 2개 이상이면 통합 수정 (최대 2회 미세조정)
+    let attemptCount = 0;
+    const maxMicroAdjustments = 2; // 미세조정 최대 2회
     
-    // 마지막 시도가 아니면 수정 시도
-    if (attempt < MAX_ATTEMPTS) {
-      try {
-        const issues: OptimizationIssue[] = [];
+    try {
+      // 🔍 디버깅: 수정 전 상태
+      const beforeCharCount = optimizedContent.replace(/\s/g, '').length;
+      const beforeKeywordCount = (optimizedContent.match(new RegExp(keyword, 'g')) || []).length;
+      console.log(`\n📝 [통합수정 전] 글자수: ${beforeCharCount}자, 키워드 "${keyword}": ${beforeKeywordCount}회`);
+      
+      // 1차 통합 수정
+      optimizedContent = await fixAllIssuesAtOnce(optimizedContent, issues, keyword);
+      fixed.push(...issues.map(i => i.description));
+      
+      // 🔍 디버깅: 수정 후 상태
+      const afterCharCount = optimizedContent.replace(/\s/g, '').length;
+      const afterKeywordCount = (optimizedContent.match(new RegExp(keyword, 'g')) || []).length;
+      console.log(`📝 [통합수정 후] 글자수: ${afterCharCount}자, 키워드 "${keyword}": ${afterKeywordCount}회`);
+      console.log(`📊 [변화량] 글자수: ${afterCharCount - beforeCharCount > 0 ? '+' : ''}${afterCharCount - beforeCharCount}자, 키워드: ${afterKeywordCount - beforeKeywordCount > 0 ? '+' : ''}${afterKeywordCount - beforeKeywordCount}회`);
+      
+      if (optimizedContent === content) {
+        console.log(`⚠️ [경고] Gemini가 내용을 변경하지 않음!`);
+      }
+      
+      // 미세조정: 키워드 빈도만 재확인하고 1-2회 조정 (5회 미만일 때만)
+      while (attemptCount < maxMicroAdjustments) {
+        const quickCheck = await analyzeMorphemes(optimizedContent, keyword, customMorphemes);
+        const currentKeywordCount = quickCheck.keywordMorphemeCount;
         
-        if (analysis.characterCount < 1700) {
-          issues.push({ type: 'character_count', description: '글자수 부족', target: 1700, current: analysis.characterCount });
-        } else if (analysis.characterCount > 2000) {
-          issues.push({ type: 'character_count', description: '글자수 초과', target: 2000, current: analysis.characterCount });
+        if (currentKeywordCount >= 5) {
+          console.log(`✓ 미세조정 불필요: 키워드 ${currentKeywordCount}회 (5회 이상)`);
+          break;
         }
         
-        if (analysis.keywordMorphemeCount < 5) {
-          issues.push({ type: 'keyword_count', description: '키워드 부족', target: 5, current: analysis.keywordMorphemeCount });
+        // 1-2회만 부족하면 미세조정
+        const diff = 5 - currentKeywordCount;
+        if (diff <= 2) {
+          console.log(`🔧 미세조정 시도 ${attemptCount + 1}: 키워드 ${diff}회 추가 필요`);
+          const microIssue: OptimizationIssue = {
+            type: 'keyword_count',
+            description: `키워드 미세조정 ${diff}회`,
+            target: 5,
+            current: currentKeywordCount
+          };
+          optimizedContent = await fixKeywordCount(optimizedContent, microIssue, keyword);
+          attemptCount++;
+        } else {
+          console.log(`⚠️ 차이가 커서 미세조정 스킵 (${diff}회 부족)`);
+          break;
         }
-        
-        if (issues.length > 0) {
-          currentContent = await fixAllIssuesAtOnce(currentContent, issues, keyword);
+      }
+      
+    } catch (error) {
+      console.error(`통합 수정 실패, 순차 수정으로 전환:`, error);
+      // 통합 실패 시 순차 처리로 폴백
+      for (const issue of issues) {
+        try {
+          if (issue.type === 'character_count') {
+            optimizedContent = await fixCharacterCount(optimizedContent, issue, keyword);
+            fixed.push(issue.description);
+          } else if (issue.type === 'keyword_count') {
+            optimizedContent = await fixKeywordCount(optimizedContent, issue, keyword);
+            fixed.push(issue.description);
+          } else if (issue.type === 'overused_word' && issue.word) {
+            optimizedContent = await fixOverusedWord(optimizedContent, issue.word);
+            fixed.push(issue.description);
+          }
+        } catch (error) {
+          console.error(`수정 실패 (${issue.description}):`, error);
         }
-      } catch (error) {
-        console.error('수정 오류:', error);
       }
     }
   }
   
-  // 🆕 가장 좋은 결과 선택 (문제가 가장 적은 버전)
-  const bestAttempt = attempts.reduce((best, current) => 
-    current.issueCount < best.issueCount ? current : best
+  // 5단계: 최종 검증 (과다사용 문제까지 확인)
+  const finalAnalysis = await analyzeMorphemes(optimizedContent, keyword, customMorphemes);
+  
+  const hasNoOveruse = !finalAnalysis.issues.some(issue => 
+    issue.includes('초과') || issue.includes('과다')
   );
   
-  console.log(`\n📤 최선 결과 반환: 문제 ${bestAttempt.issueCount}개`);
+  const isSuccess = 
+    finalAnalysis.characterCount >= 1700 && 
+    finalAnalysis.characterCount <= 2000 &&
+    finalAnalysis.keywordMorphemeCount >= 5 &&
+    hasNoOveruse; // 과다사용 문제도 확인
+    // 키워드는 5회 이상이면 통과 (상한 제거)
+  
+  console.log(`${isSuccess ? '✅' : '⚠️'} 부분 최적화 완료: ${fixed.length}개 수정`);
+  console.log(`  최종 검증: 글자수 ${finalAnalysis.characterCount}자, 키워드 ${finalAnalysis.keywordMorphemeCount}회, 과다사용 ${hasNoOveruse ? '없음' : '있음'}`);
   
   return {
-    content: bestAttempt.content,
-    success: bestAttempt.issueCount === 0,
-    issues: [],
-    fixed: [`3회 시도 중 최선 결과 (문제 ${bestAttempt.issueCount}개)`]
+    content: optimizedContent,
+    success: isSuccess,
+    issues,
+    fixed
   };
 }
 
 /**
- * 🆕 단일 문제 수정 헬퍼 함수
- */
-async function fixSingleIssue(
-  content: string,
-  issue: OptimizationIssue,
-  keyword: string
-): Promise<string> {
-  if (issue.type === 'character_count') {
-    return await fixCharacterCount(content, issue, keyword);
-  } else if (issue.type === 'keyword_count') {
-    return await fixKeywordCount(content, issue, keyword);
-  } else if (issue.type === 'overused_word' && issue.word) {
-    return await fixOverusedWord(content, issue.word);
-  } else if (issue.type === 'keyword_dominance' && issue.dominantWords) {
-    return await fixKeywordDominance(content, issue.dominantWords, keyword);
-  }
-  return content;
-}
-
-/**
- * 🆕 모든 문제를 한번에 해결하는 통합 수정 함수 (Claude 사용)
+ * 🆕 모든 문제를 한번에 해결하는 통합 수정 함수
  */
 async function fixAllIssuesAtOnce(
   content: string,
   issues: OptimizationIssue[],
   keyword: string
 ): Promise<string> {
+  const { GoogleGenAI } = await import('@google/genai');
+  const ai = new GoogleGenAI({ 
+    apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || '' 
+  });
+  
   // 문제점과 해결방법을 구조화
   const problems: string[] = [];
   const solutions: string[] = [];
@@ -162,70 +270,76 @@ async function fixAllIssuesAtOnce(
         solutions.push(`불필요한 부연설명 ${diff}자 제거`);
       }
     } else if (issue.type === 'keyword_count') {
+      // 키워드는 5회 미만일 때만 문제로 처리
       if (issue.current < issue.target) {
         const diff = issue.target - issue.current;
         problems.push(`키워드 "${keyword}" ${diff}회 부족 (현재 ${issue.current}회)`);
         solutions.push(`"${keyword}" ${diff}회 자연스럽게 추가`);
       }
+      // 5회 이상이면 과다 처리 안 함
     } else if (issue.type === 'overused_word' && issue.word) {
       problems.push(`"${issue.word}" 과다 사용`);
-      solutions.push(`"${issue.word}"를 동의어로 5-7회 치환`);
-    } else if (issue.type === 'keyword_dominance' && issue.dominantWords) {
-      const wordsStr = issue.dominantWords.slice(0, 3).map(w => `"${w.word}"(${w.count}회)`).join(', ');
-      problems.push(`키워드 우위성 미달: ${wordsStr} 등이 키워드보다 빈번함`);
-      solutions.push(`위 단어들을 동의어로 치환하여 각 10회 이하로 줄임`);
+      solutions.push(`"${issue.word}"를 5-7회 동의어로 치환`);
     }
   });
 
-  const prompt = `다음 블로그 글을 수정하세요.
+  const prompt = `다음 블로그 글을 수정하는 작업을 수행하세요.
 
 [원본 글]
 ${content}
 
-[문제점]
+[발견된 ${problems.length}개 문제]
 ${problems.map((p, i) => `${i+1}. ${p}`).join('\n')}
 
-[해결 방법]
+[해결 방법 - 모두 동시에 적용]
 ${solutions.map((s, i) => `${i+1}. ${s}`).join('\n')}
 
-[규칙]
-1. 위 문제들을 모두 해결하되, 다른 조건이 깨지지 않도록 주의
-2. 기존 글의 흐름과 소제목 유지
-3. 수정된 블로그 본문만 출력 (설명 없이)`;
+[중요 작업 규칙]
+1. 위 모든 문제를 동시에 해결하세요
+2. 한 문제를 해결할 때 다른 문제가 생기지 않도록 주의하세요
+3. 글의 자연스러운 흐름과 의미는 반드시 유지하세요
+4. 숫자 조건(글자수, 빈도)을 정확히 맞추세요
+5. 소제목은 그대로 유지하세요
 
-  try {
-    const response = await anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 4000,
-      messages: [{ role: 'user', content: prompt }],
-    });
-    
-    const messageContent = response.content[0];
-    if (messageContent.type !== 'text') {
-      return content;
-    }
-    
-    console.log(`  ✓ Claude 통합 수정 완료: ${issues.length}개 문제`);
-    return messageContent.text.trim();
-  } catch (error) {
-    console.error('Claude API 오류:', error);
-    return content;
-  }
+[중요 출력 규칙]
+- 수정된 블로그 글의 본문만 출력하세요
+- 설명문, 메타 정보, 마크다운 형식 등 어떤 추가 텍스트도 포함하지 마세요
+- "수정된 글:", "다음과 같이", "요청하신" 등의 서술 표현 절대 금지
+- 순수한 블로그 본문 텍스트만 반환하세요`;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-pro',
+    contents: [{
+      role: 'user',
+      parts: [{ text: prompt }]
+    }]
+  });
+  
+  const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || content;
+  
+  console.log(`  ✓ 통합 수정 완료: ${issues.length}개 문제 동시 해결`);
+  
+  return optimized;
 }
 
 /**
- * 글자수 조정 (Claude 사용)
+ * 글자수 조정 (부족하면 확장, 초과하면 축소)
  */
 async function fixCharacterCount(
   content: string,
   issue: OptimizationIssue,
   keyword: string
 ): Promise<string> {
+  const { GoogleGenAI } = await import('@google/genai');
+  const ai = new GoogleGenAI({ 
+    apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || '' 
+  });
+  
   const isDeficit = issue.current < issue.target;
   const amount = Math.abs(issue.target - issue.current);
   
   const prompt = isDeficit 
-    ? `다음 블로그 글의 본론 부분을 ${amount}자 정도 확장하세요.
+    ? `다음 블로그 글의 본론 부분을 ${amount}자 정도 확장하는 작업을 수행하세요.
 
 [원본 글]
 ${content}
@@ -237,8 +351,12 @@ ${content}
 4. 구체적인 예시나 부연 설명을 추가하세요
 5. 소제목은 그대로 유지하세요
 
-수정된 블로그 글의 본문만 출력하세요.`
-    : `다음 블로그 글을 ${amount}자 정도 줄이세요.
+[중요 출력 규칙]
+- 수정된 블로그 글의 본문만 출력하세요
+- 설명문, 메타 정보, 마크다운 형식 등 어떤 추가 텍스트도 포함하지 마세요
+- "확장된 글:", "다음과 같이", "요청하신" 등의 서술 표현 절대 금지
+- 순수한 블로그 본문 텍스트만 반환하세요`
+    : `다음 블로그 글을 ${amount}자 정도 줄이는 작업을 수행하세요.
 
 [원본 글]
 ${content}
@@ -249,124 +367,122 @@ ${content}
 3. 자연스러운 흐름을 유지하세요
 4. 소제목은 그대로 유지하세요
 
-수정된 블로그 글의 본문만 출력하세요.`;
-
-  try {
-    const response = await anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 4000,
-      messages: [{ role: 'user', content: prompt }],
-    });
-    
-    const messageContent = response.content[0];
-    if (messageContent.type !== 'text') return content;
-    
-    const optimized = messageContent.text.trim();
-    console.log(`  ✓ 글자수 조정: ${issue.current}자 → ${optimized.replace(/\s/g, '').length}자`);
-    return optimized;
-  } catch (error) {
-    console.error('Claude API 오류:', error);
-    return content;
-  }
+[중요 출력 규칙]
+- 수정된 블로그 글의 본문만 출력하세요
+- 설명문, 메타 정보, 마크다운 형식 등 어떤 추가 텍스트도 포함하지 마세요
+- "축소된 글:", "다음과 같이", "요청하신" 등의 서술 표현 절대 금지
+- 순수한 블로그 본문 텍스트만 반환하세요`;
+  
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-pro',
+    contents: [{
+      role: 'user',
+      parts: [{ text: prompt }]
+    }]
+  });
+  
+  const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || content;
+  
+  console.log(`  ✓ 글자수 조정 완료: ${issue.current}자 → ${optimized.replace(/\s/g, '').length}자`);
+  
+  return optimized;
 }
 
 /**
- * 키워드 빈도 조정 (Claude 사용)
+ * 키워드 빈도 조정
  */
 async function fixKeywordCount(
   content: string,
   issue: OptimizationIssue,
   keyword: string
 ): Promise<string> {
+  const { GoogleGenAI } = await import('@google/genai');
+  const ai = new GoogleGenAI({ 
+    apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || '' 
+  });
+  
+  // 5회 이상이면 이 함수가 호출되지 않음 (추가만 수행)
   const amount = issue.target - issue.current;
   
-  const prompt = `다음 블로그 글에 키워드 "${keyword}"를 ${amount}회 더 추가하세요.
+  const prompt = `다음 블로그 글에 키워드 "${keyword}"를 ${amount}회 더 추가하는 작업을 수행하세요.
 
 [원본 글]
 ${content}
 
 [작업 지침]
-1. 키워드 "${keyword}"를 정확히 ${amount}회만 추가하세요
+1. 키워드 "${keyword}"를 정확히 ${amount}회만 추가하세요 (${amount}회 초과 금지)
 2. 추가 위치 예시:
    - 서론: "이번에는 ${keyword}에 대해..."
    - 본론: "${keyword}의 경우에는...", "${keyword}를 선택할 때..."
    - 결론: "${keyword}에 대한 올바른 이해..."
 3. 기존 문장을 자연스럽게 수정하여 키워드를 포함하세요
-4. 전체 글의 흐름과 길이는 최대한 유지하세요
+4. 억지로 끼워넣지 말고 문맥에 맞게 추가하세요
+5. 전체 글의 흐름과 길이는 최대한 유지하세요
+6. ⚠️ 중요: 정확히 ${amount}회만 추가하고, 추가한 위치를 마음속으로 세어가며 작업하세요
 
-수정된 블로그 글의 본문만 출력하세요.`;
+[검증]
+작업 완료 후 키워드 "${keyword}"가 정확히 ${amount}회 추가되었는지 확인하세요.
 
-  try {
-    const response = await anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 4000,
-      messages: [{ role: 'user', content: prompt }],
-    });
-    
-    const messageContent = response.content[0];
-    if (messageContent.type !== 'text') return content;
-    
-    console.log(`  ✓ 키워드 추가: ${issue.current}회 → 목표 ${issue.target}회`);
-    return messageContent.text.trim();
-  } catch (error) {
-    console.error('Claude API 오류:', error);
-    return content;
-  }
+[중요 출력 규칙]
+- 수정된 블로그 글의 본문만 출력하세요
+- 설명문, 메타 정보, 마크다운 형식 등 어떤 추가 텍스트도 포함하지 마세요
+- "수정된 글:", "다음과 같이", "요청하신" 등의 서술 표현 절대 금지
+- 순수한 블로그 본문 텍스트만 반환하세요`;
+  
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-pro',
+    contents: [{
+      role: 'user',
+      parts: [{ text: prompt }]
+    }]
+  });
+  
+  const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || content;
+  
+  console.log(`  ✓ 키워드 조정 완료: ${issue.current}회 → 목표 ${issue.target}회`);
+  
+  return optimized;
 }
 
 /**
- * 과다 사용 단어를 동의어로 치환 (Claude 사용)
+ * 과다 사용 단어를 동의어로 치환
  */
 async function fixOverusedWord(
   content: string,
   word: string
 ): Promise<string> {
-  const prompt = `블로그 글에서 "${word}"를 5-7회 동의어로 치환하세요. 흐름 유지. 본문만 출력.\n\n${content}`;
-
-  try {
-    const response = await anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 4000,
-      messages: [{ role: 'user', content: prompt }],
-    });
-    
-    const messageContent = response.content[0];
-    if (messageContent.type !== 'text') return content;
-    
-    console.log(`  ✓ 과다 단어 치환: "${word}"`);
-    return messageContent.text.trim();
-  } catch (error) {
-    console.error('Claude API 오류:', error);
-    return content;
-  }
-}
-
-/**
- * 키워드 우위성 확보 (Claude 사용)
- */
-async function fixKeywordDominance(
-  content: string,
-  dominantWords: Array<{word: string, count: number}>,
-  keyword: string
-): Promise<string> {
-  const wordsStr = dominantWords.slice(0, 3).map(w => `"${w.word}"(${w.count}회)`).join(', ');
+  const { GoogleGenAI } = await import('@google/genai');
+  const ai = new GoogleGenAI({ 
+    apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || '' 
+  });
   
-  const prompt = `블로그 글에서 ${wordsStr} 단어들을 동의어로 치환하여 빈도를 10회 이하로 줄이세요. 키워드 "${keyword}"는 유지. 본문만 출력.\n\n${content}`;
+  const prompt = `다음 블로그 글에서 "${word}"라는 단어를 동의어로 일부 치환하는 작업을 수행하세요.
 
-  try {
-    const response = await anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 4000,
-      messages: [{ role: 'user', content: prompt }],
-    });
-    
-    const messageContent = response.content[0];
-    if (messageContent.type !== 'text') return content;
-    
-    console.log(`  ✓ 키워드 우위성 확보: ${dominantWords.length}개 단어 조정`);
-    return messageContent.text.trim();
-  } catch (error) {
-    console.error('Claude API 오류:', error);
-    return content;
-  }
+[원본 글]
+${content}
+
+[작업 지침]
+1. "${word}"라는 단어 중 5-7개를 문맥에 맞는 자연스러운 동의어로 치환하세요
+2. 글의 전체 의미와 흐름은 반드시 유지하세요
+3. 너무 어색하거나 전문적이지 않은 단어는 사용하지 마세요
+
+[중요 출력 규칙]
+- 수정된 블로그 글의 본문만 출력하세요
+- 설명문, 메타 정보, 마크다운 형식 등 어떤 추가 텍스트도 포함하지 마세요
+- "수정된 글:", "다음과 같이", "요청하신" 등의 서술 표현 절대 금지
+- 순수한 블로그 본문 텍스트만 반환하세요`;  
+  
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-pro',
+    contents: [{
+      role: 'user',
+      parts: [{ text: prompt }]
+    }]
+  });
+  
+  const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || content;
+  
+  console.log(`  ✓ 과다 사용 단어 치환 완료: "${word}"`);
+  
+  return optimized;
 }
