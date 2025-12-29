@@ -225,8 +225,31 @@ async function fixCharacterCount(
   const amount = Math.abs(issue.target - issue.current);
   
   const prompt = isDeficit 
-    ? `블로그 글을 ${amount}자 정도 확장하세요. 키워드 "${keyword}" 유지. 본문만 출력.\n\n${content}`
-    : `블로그 글을 ${amount}자 정도 축소하세요. 키워드 "${keyword}" 유지. 본문만 출력.\n\n${content}`;
+    ? `다음 블로그 글의 본론 부분을 ${amount}자 정도 확장하세요.
+
+[원본 글]
+${content}
+
+[작업 지침]
+1. 본론 부분만 ${amount}자 정도 확장하세요
+2. 키워드 "${keyword}"를 자연스럽게 포함하세요
+3. 기존 내용의 흐름을 해치지 않고 자연스럽게 추가하세요
+4. 구체적인 예시나 부연 설명을 추가하세요
+5. 소제목은 그대로 유지하세요
+
+수정된 블로그 글의 본문만 출력하세요.`
+    : `다음 블로그 글을 ${amount}자 정도 줄이세요.
+
+[원본 글]
+${content}
+
+[작업 지침]
+1. ${amount}자 정도 축소하세요
+2. 핵심 내용과 키워드 "${keyword}"는 유지하세요
+3. 자연스러운 흐름을 유지하세요
+4. 소제목은 그대로 유지하세요
+
+수정된 블로그 글의 본문만 출력하세요.`;
 
   try {
     const response = await anthropic.messages.create({
@@ -257,7 +280,21 @@ async function fixKeywordCount(
 ): Promise<string> {
   const amount = issue.target - issue.current;
   
-  const prompt = `블로그 글에 키워드 "${keyword}"를 ${amount}회만 자연스럽게 추가하세요. 다른 조건 유지. 본문만 출력.\n\n${content}`;
+  const prompt = `다음 블로그 글에 키워드 "${keyword}"를 ${amount}회 더 추가하세요.
+
+[원본 글]
+${content}
+
+[작업 지침]
+1. 키워드 "${keyword}"를 정확히 ${amount}회만 추가하세요
+2. 추가 위치 예시:
+   - 서론: "이번에는 ${keyword}에 대해..."
+   - 본론: "${keyword}의 경우에는...", "${keyword}를 선택할 때..."
+   - 결론: "${keyword}에 대한 올바른 이해..."
+3. 기존 문장을 자연스럽게 수정하여 키워드를 포함하세요
+4. 전체 글의 흐름과 길이는 최대한 유지하세요
+
+수정된 블로그 글의 본문만 출력하세요.`;
 
   try {
     const response = await anthropic.messages.create({
