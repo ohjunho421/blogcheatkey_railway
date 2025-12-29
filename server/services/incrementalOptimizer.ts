@@ -18,7 +18,7 @@ interface IncrementalOptimizationResult {
 
 /**
  * 조건에 안 맞는 부분만 찾아서 자연스럽게 수정하는 함수
- * 재생성이 아닌 정밀한 부분 수정 방식 사용
+ * 🆕 반복 검증 루프: 수정 → 검증 → 다시 수정 (최대 3회)
  */
 export async function optimizeIncrementally(
   content: string,
@@ -26,232 +26,178 @@ export async function optimizeIncrementally(
   customMorphemes?: string
 ): Promise<IncrementalOptimizationResult> {
   
-  console.log('📊 부분 최적화 시작: 조건 미달 부분만 정밀 수정');
+  console.log('📊 부분 최적화 시작: 조건 미달 부분만 정밀 수정 (반복 검증 방식)');
   
-  // 1단계: 현재 상태 분석
-  const analysis = await analyzeMorphemes(content, keyword, customMorphemes);
-  const issues: OptimizationIssue[] = [];
-  const fixed: string[] = [];
-  
+  const MAX_ITERATIONS = 3; // 최대 반복 횟수
   let optimizedContent = content;
+  const allFixed: string[] = [];
+  let iteration = 0;
   
-  console.log('현재 상태:', {
-    글자수: analysis.characterCount,
-    키워드빈도: analysis.keywordMorphemeCount,
-    최적화여부: analysis.isOptimized
-  });
-  
-  // 2단계: 문제점 파악
-  console.log('🔍 문제점 파악 중...');
-  
-  // 글자수 체크
-  if (analysis.characterCount < 1700) {
-    const deficit = 1700 - analysis.characterCount;
-    issues.push({
-      type: 'character_count',
-      description: `글자수 ${deficit}자 부족`,
-      target: 1700,
-      current: analysis.characterCount
+  while (iteration < MAX_ITERATIONS) {
+    iteration++;
+    console.log(`\n🔄 === 최적화 시도 ${iteration}/${MAX_ITERATIONS} ===`);
+    
+    // 1단계: 현재 상태 분석
+    const analysis = await analyzeMorphemes(optimizedContent, keyword, customMorphemes);
+    const issues: OptimizationIssue[] = [];
+    
+    console.log('현재 상태:', {
+      글자수: analysis.characterCount,
+      키워드빈도: analysis.keywordMorphemeCount,
+      최적화여부: analysis.isOptimized
     });
-    console.log(`❌ 글자수 부족: ${analysis.characterCount}자 (${deficit}자 부족)`);
-  } else if (analysis.characterCount > 2000) {
-    const excess = analysis.characterCount - 2000;
-    issues.push({
-      type: 'character_count',
-      description: `글자수 ${excess}자 초과`,
-      target: 2000,
-      current: analysis.characterCount
-    });
-    console.log(`❌ 글자수 초과: ${analysis.characterCount}자 (${excess}자 초과)`);
-  } else {
-    console.log(`✅ 글자수 적정: ${analysis.characterCount}자`);
-  }
-  
-  // 키워드 빈도 체크 (5회 이상이면 통과)
-  if (analysis.keywordMorphemeCount < 5) {
-    const deficit = 5 - analysis.keywordMorphemeCount;
-    issues.push({
-      type: 'keyword_count',
-      description: `키워드 "${keyword}" ${deficit}회 부족`,
-      target: 5, // 최소값
-      current: analysis.keywordMorphemeCount
-    });
-    console.log(`❌ 키워드 부족: ${analysis.keywordMorphemeCount}회 (${deficit}회 부족)`);
-  } else {
-    console.log(`✅ 키워드 빈도 적정: ${analysis.keywordMorphemeCount}회 (5회 이상)`);
-  }
-  // 5회 이상이면 과다 체크 안 함
-  
-  // 과다 사용 단어 체크
-  const overusedWords = analysis.issues
-    .filter(issue => issue.includes('초과') || issue.includes('과다'))
-    .slice(0, 3);
-  
-  if (overusedWords.length > 0) {
-    console.log(`❌ 과다 사용 단어 발견: ${overusedWords.length}개`);
-    overusedWords.forEach(issue => {
-      const word = issue.split(' ')[0];
+    
+    // 2단계: 문제점 파악 (모든 조건 체크)
+    console.log('🔍 문제점 파악 중...');
+    
+    // 글자수 체크
+    if (analysis.characterCount < 1700) {
+      const deficit = 1700 - analysis.characterCount;
       issues.push({
-        type: 'overused_word',
-        description: issue,
-        target: 14,
-        current: 15,
-        word
+        type: 'character_count',
+        description: `글자수 ${deficit}자 부족`,
+        target: 1700,
+        current: analysis.characterCount
       });
-    });
-  }
-  
-  // 🆕 키워드 우위성 체크
-  const dominanceIssues = analysis.issues.filter(issue => issue.includes('키워드 우위성 미달'));
-  if (dominanceIssues.length > 0) {
-    console.log(`❌ 키워드 우위성 미달: ${dominanceIssues.length}개 일반 단어가 키워드보다 빈번함`);
-    
-    // 문제가 되는 단어들 추출
-    const dominantWords: Array<{word: string, count: number}> = [];
-    dominanceIssues.forEach(issue => {
-      const match = issue.match(/"([^"]+)"\s+(\d+)회/);
-      if (match) {
-        dominantWords.push({ word: match[1], count: parseInt(match[2]) });
-      }
-    });
-    
-    issues.push({
-      type: 'keyword_dominance',
-      description: `키워드보다 빈번한 일반 단어: ${dominantWords.map(w => `"${w.word}"(${w.count}회)`).join(', ')}`,
-      target: 0,
-      current: dominantWords.length,
-      dominantWords
-    });
-  }
-  
-  // 3단계: 문제가 없으면 그대로 반환
-  if (issues.length === 0) {
-    console.log('✅ 모든 조건 충족, 수정 불필요');
-    return {
-      content,
-      success: true,
-      issues: [],
-      fixed: []
-    };
-  }
-  
-  // 4단계: 🆕 모든 문제를 통합 수정 (순차가 아닌 동시 해결)
-  console.log(`🔧 ${issues.length}개 문제 통합 수정 시작`);
-  
-  if (issues.length === 1) {
-    // 문제가 1개면 개별 수정
-    const issue = issues[0];
-    try {
-      if (issue.type === 'character_count') {
-        optimizedContent = await fixCharacterCount(optimizedContent, issue, keyword);
-        fixed.push(issue.description);
-      } else if (issue.type === 'keyword_count') {
-        optimizedContent = await fixKeywordCount(optimizedContent, issue, keyword);
-        fixed.push(issue.description);
-      } else if (issue.type === 'overused_word' && issue.word) {
-        optimizedContent = await fixOverusedWord(optimizedContent, issue.word);
-        fixed.push(issue.description);
-      } else if (issue.type === 'keyword_dominance' && issue.dominantWords) {
-        // 🆕 키워드 우위성 수정
-        optimizedContent = await fixKeywordDominance(optimizedContent, issue.dominantWords, keyword);
-        fixed.push(issue.description);
-      }
-    } catch (error) {
-      console.error(`수정 실패 (${issue.description}):`, error);
+      console.log(`❌ 글자수 부족: ${analysis.characterCount}자 (${deficit}자 부족)`);
+    } else if (analysis.characterCount > 2000) {
+      const excess = analysis.characterCount - 2000;
+      issues.push({
+        type: 'character_count',
+        description: `글자수 ${excess}자 초과`,
+        target: 2000,
+        current: analysis.characterCount
+      });
+      console.log(`❌ 글자수 초과: ${analysis.characterCount}자 (${excess}자 초과)`);
+    } else {
+      console.log(`✅ 글자수 적정: ${analysis.characterCount}자`);
     }
-  } else if (issues.length > 1) {
-    // 문제가 2개 이상이면 통합 수정 (최대 2회 미세조정)
-    let attemptCount = 0;
-    const maxMicroAdjustments = 2; // 미세조정 최대 2회
     
+    // 키워드 빈도 체크 (5회 이상이면 통과)
+    if (analysis.keywordMorphemeCount < 5) {
+      const deficit = 5 - analysis.keywordMorphemeCount;
+      issues.push({
+        type: 'keyword_count',
+        description: `키워드 "${keyword}" ${deficit}회 부족`,
+        target: 5,
+        current: analysis.keywordMorphemeCount
+      });
+      console.log(`❌ 키워드 부족: ${analysis.keywordMorphemeCount}회 (${deficit}회 부족)`);
+    } else {
+      console.log(`✅ 키워드 빈도 적정: ${analysis.keywordMorphemeCount}회 (5회 이상)`);
+    }
+    
+    // 과다 사용 단어 체크
+    const overusedWords = analysis.issues
+      .filter(issue => issue.includes('초과') || issue.includes('과다'))
+      .slice(0, 3);
+    
+    if (overusedWords.length > 0) {
+      console.log(`❌ 과다 사용 단어 발견: ${overusedWords.length}개`);
+      overusedWords.forEach(issue => {
+        const match = issue.match(/"([^"]+)"/);
+        const word = match ? match[1] : issue.split(' ')[0];
+        issues.push({
+          type: 'overused_word',
+          description: issue,
+          target: 14,
+          current: 15,
+          word
+        });
+      });
+    } else {
+      console.log(`✅ 과다 사용 단어 없음`);
+    }
+    
+    // 키워드 우위성 체크
+    const dominanceIssues = analysis.issues.filter(issue => issue.includes('키워드 우위성 미달'));
+    if (dominanceIssues.length > 0) {
+      console.log(`❌ 키워드 우위성 미달: ${dominanceIssues.length}개 일반 단어가 키워드보다 빈번함`);
+      
+      const dominantWords: Array<{word: string, count: number}> = [];
+      dominanceIssues.forEach(issue => {
+        const match = issue.match(/"([^"]+)"\s+(\d+)회/);
+        if (match) {
+          dominantWords.push({ word: match[1], count: parseInt(match[2]) });
+        }
+      });
+      
+      issues.push({
+        type: 'keyword_dominance',
+        description: `키워드보다 빈번한 일반 단어: ${dominantWords.map(w => `"${w.word}"(${w.count}회)`).join(', ')}`,
+        target: 0,
+        current: dominantWords.length,
+        dominantWords
+      });
+    } else {
+      console.log(`✅ 키워드 우위성 확보`);
+    }
+    
+    // 3단계: 문제가 없으면 성공 반환
+    if (issues.length === 0) {
+      console.log(`\n✅ 모든 조건 충족! (${iteration}회 시도 후 성공)`);
+      return {
+        content: optimizedContent,
+        success: true,
+        issues: [],
+        fixed: allFixed
+      };
+    }
+    
+    console.log(`\n🔧 ${issues.length}개 문제 발견, 수정 시작...`);
+    
+    // 4단계: 문제 수정
     try {
-      // 1차 통합 수정
-      optimizedContent = await fixAllIssuesAtOnce(optimizedContent, issues, keyword);
-      fixed.push(...issues.map(i => i.description));
-      
-      // 미세조정: 키워드 빈도만 재확인하고 1-2회 조정 (5회 미만일 때만)
-      while (attemptCount < maxMicroAdjustments) {
-        const quickCheck = await analyzeMorphemes(optimizedContent, keyword, customMorphemes);
-        const currentKeywordCount = quickCheck.keywordMorphemeCount;
-        
-        if (currentKeywordCount >= 5) {
-          console.log(`✓ 미세조정 불필요: 키워드 ${currentKeywordCount}회 (5회 이상)`);
-          break;
-        }
-        
-        // 1-2회만 부족하면 미세조정
-        const diff = 5 - currentKeywordCount;
-        if (diff <= 2) {
-          console.log(`🔧 미세조정 시도 ${attemptCount + 1}: 키워드 ${diff}회 추가 필요`);
-          const microIssue: OptimizationIssue = {
-            type: 'keyword_count',
-            description: `키워드 미세조정 ${diff}회`,
-            target: 5,
-            current: currentKeywordCount
-          };
-          optimizedContent = await fixKeywordCount(optimizedContent, microIssue, keyword);
-          attemptCount++;
-        } else {
-          console.log(`⚠️ 차이가 커서 미세조정 스킵 (${diff}회 부족)`);
-          break;
-        }
+      if (issues.length === 1) {
+        // 문제가 1개면 개별 수정
+        const issue = issues[0];
+        optimizedContent = await fixSingleIssue(optimizedContent, issue, keyword);
+        allFixed.push(`[시도${iteration}] ${issue.description}`);
+      } else {
+        // 문제가 2개 이상이면 통합 수정
+        optimizedContent = await fixAllIssuesAtOnce(optimizedContent, issues, keyword);
+        issues.forEach(i => allFixed.push(`[시도${iteration}] ${i.description}`));
       }
-      
     } catch (error) {
-      console.error(`통합 수정 실패, 순차 수정으로 전환:`, error);
-      // 통합 실패 시 순차 처리로 폴백
-      for (const issue of issues) {
-        try {
-          if (issue.type === 'character_count') {
-            optimizedContent = await fixCharacterCount(optimizedContent, issue, keyword);
-            fixed.push(issue.description);
-          } else if (issue.type === 'keyword_count') {
-            optimizedContent = await fixKeywordCount(optimizedContent, issue, keyword);
-            fixed.push(issue.description);
-          } else if (issue.type === 'overused_word' && issue.word) {
-            optimizedContent = await fixOverusedWord(optimizedContent, issue.word);
-            fixed.push(issue.description);
-          } else if (issue.type === 'keyword_dominance' && issue.dominantWords) {
-            // 🆕 키워드 우위성 수정
-            optimizedContent = await fixKeywordDominance(optimizedContent, issue.dominantWords, keyword);
-            fixed.push(issue.description);
-          }
-        } catch (error) {
-          console.error(`수정 실패 (${issue.description}):`, error);
-        }
-      }
+      console.error(`수정 중 오류 발생:`, error);
+      // 오류 발생해도 다음 반복 시도
     }
   }
   
-  // 5단계: 최종 검증 (과다사용 + 키워드 우위성까지 확인)
+  // 최대 반복 후에도 완료 못 했을 경우 최종 상태 반환
+  console.log(`\n⚠️ 최대 ${MAX_ITERATIONS}회 시도 후에도 일부 조건 미달`);
+  
   const finalAnalysis = await analyzeMorphemes(optimizedContent, keyword, customMorphemes);
+  const isSuccess = finalAnalysis.isOptimized;
   
-  const hasNoOveruse = !finalAnalysis.issues.some(issue => 
-    issue.includes('초과') || issue.includes('과다')
-  );
-  
-  // 🆕 키워드 우위성 검증 추가
-  const hasKeywordDominance = !finalAnalysis.issues.some(issue => 
-    issue.includes('키워드 우위성 미달')
-  );
-  
-  const isSuccess = 
-    finalAnalysis.characterCount >= 1700 && 
-    finalAnalysis.characterCount <= 2000 &&
-    finalAnalysis.keywordMorphemeCount >= 5 &&
-    hasNoOveruse && 
-    hasKeywordDominance; // 🆕 키워드 우위성도 확인
-    // 키워드는 5회 이상이면 통과 (상한 제거)
-  
-  console.log(`${isSuccess ? '✅' : '⚠️'} 부분 최적화 완료: ${fixed.length}개 수정`);
-  console.log(`  최종 검증: 글자수 ${finalAnalysis.characterCount}자, 키워드 ${finalAnalysis.keywordMorphemeCount}회, 과다사용 ${hasNoOveruse ? '없음' : '있음'}, 키워드우위 ${hasKeywordDominance ? '확보' : '미달'}`);
+  console.log(`최종 상태: 글자수 ${finalAnalysis.characterCount}자, 키워드 ${finalAnalysis.keywordMorphemeCount}회, 최적화 ${isSuccess ? '완료' : '미완료'}`);
   
   return {
     content: optimizedContent,
     success: isSuccess,
-    issues,
-    fixed
+    issues: [],
+    fixed: allFixed
   };
+}
+
+/**
+ * 🆕 단일 문제 수정 헬퍼 함수
+ */
+async function fixSingleIssue(
+  content: string,
+  issue: OptimizationIssue,
+  keyword: string
+): Promise<string> {
+  if (issue.type === 'character_count') {
+    return await fixCharacterCount(content, issue, keyword);
+  } else if (issue.type === 'keyword_count') {
+    return await fixKeywordCount(content, issue, keyword);
+  } else if (issue.type === 'overused_word' && issue.word) {
+    return await fixOverusedWord(content, issue.word);
+  } else if (issue.type === 'keyword_dominance' && issue.dominantWords) {
+    return await fixKeywordDominance(content, issue.dominantWords, keyword);
+  }
+  return content;
 }
 
 /**
