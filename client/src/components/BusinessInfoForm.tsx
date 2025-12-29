@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -92,6 +92,7 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
   const [customMorphemes, setCustomMorphemes] = useState(project?.customMorphemes || "");
 
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Get saved business info from user profile
   const { data: savedBusinessInfo, isLoading: loadingBusinessInfo } = useQuery({
@@ -110,10 +111,17 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
   // Save to user profile (reusable across projects)
   const saveToProfile = useMutation({
     mutationFn: async (data: any) => {
-      // Check if user already has business info
-      if (savedBusinessInfo && savedBusinessInfo.id) {
+      // savedBusinessInfos는 배열이므로, 같은 업체명이 있는지 확인
+      const existingBusiness = Array.isArray(savedBusinessInfos) 
+        ? savedBusinessInfos.find((info: any) => info.businessName === data.businessName)
+        : null;
+      
+      // selectedSavedBusiness가 있으면 해당 ID로 업데이트
+      const targetId = selectedSavedBusiness?.id || existingBusiness?.id;
+      
+      if (targetId) {
         // Update existing business info
-        const response = await apiRequest("PUT", `/api/user/business-info/${savedBusinessInfo.id}`, data);
+        const response = await apiRequest("PUT", `/api/user/business-info/${targetId}`, data);
         return response.json();
       } else {
         // Create new business info
@@ -122,9 +130,12 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
       }
     },
     onSuccess: () => {
+      // 쿼리 무효화하여 목록 새로고침
+      queryClient.invalidateQueries({ queryKey: ["/api/user/business-info"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user/business-infos"] });
       toast({
         title: "업체 정보 저장 완료",
-        description: savedBusinessInfo && savedBusinessInfo.id ? "업체 정보가 수정되었습니다." : "업체 정보가 프로필에 저장되었습니다.",
+        description: selectedSavedBusiness?.id ? "업체 정보가 수정되었습니다." : "업체 정보가 프로필에 저장되었습니다.",
       });
     },
     onError: (error) => {
