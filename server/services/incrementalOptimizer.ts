@@ -482,19 +482,25 @@ export async function optimizeIncrementally(
     finalAnalysis.keywordMorphemeCount >= 5 &&
     hasNoOveruse; // 과다사용 문제도 확인
   
-  // 🆕 롤백 판단: 수정 후 점수가 더 낮아졌으면 원본 사용
+  // 🆕 롤백 판단: 수정 후 점수가 크게 낮아졌으면 원본 사용 (10점 이상 하락 시에만)
   const finalSnapshot = await createSnapshot(optimizedContent, keyword, customMorphemes);
   
-  if (finalSnapshot.score < bestSnapshot.score) {
-    console.log(`⚠️ 롤백 실행: 수정 후 점수(${finalSnapshot.score}) < 원본 점수(${bestSnapshot.score})`);
+  const scoreDrop = bestSnapshot.score - finalSnapshot.score;
+  if (scoreDrop > 10) {
+    console.log(`⚠️ 롤백 실행: 수정 후 점수(${finalSnapshot.score}) << 원본 점수(${bestSnapshot.score}) - ${scoreDrop}점 하락`);
     console.log(`   → 원본 콘텐츠로 복원합니다.`);
     
     return {
       content: bestSnapshot.content,
-      success: bestSnapshot.score >= 80, // 80점 이상이면 성공으로 간주
+      success: bestSnapshot.score >= 80,
       issues,
-      fixed: [] // 롤백했으므로 수정 없음
+      fixed: []
     };
+  }
+  
+  // 점수가 약간 낮아지거나 같아도 수정된 콘텐츠 사용 (AI가 다른 부분을 개선했을 수 있음)
+  if (scoreDrop > 0 && scoreDrop <= 10) {
+    console.log(`⚠️ 점수 소폭 하락 (${scoreDrop}점), 수정된 콘텐츠 유지`);
   }
   
   console.log(`${isSuccess ? '✅' : '⚠️'} 부분 최적화 완료: ${fixed.length}개 수정`);
@@ -748,19 +754,29 @@ ${content}
 - 설명문, 메타정보 절대 포함 금지
 - "수정된 글:", "다음과 같이" 등 서술 표현 금지`;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-pro',
-    contents: [{
-      role: 'user',
-      parts: [{ text: prompt }]
-    }]
-  });
-  
-  const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || content;
-  
-  console.log(`  ✓ 통합 수정 완료: ${issues.length}개 문제 (구체적 가이드 적용)`);
-  
-  return optimized;
+  try {
+    console.log(`  🤖 Gemini API 호출 중... (통합 수정)`);
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-pro',
+      contents: [{
+        role: 'user',
+        parts: [{ text: prompt }]
+      }]
+    });
+    
+    const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    
+    if (!optimized || optimized.length < 100) {
+      console.log(`  ⚠️ Gemini 응답이 비정상적, 원본 유지`);
+      return content;
+    }
+    
+    console.log(`  ✓ 통합 수정 완료: ${issues.length}개 문제 (구체적 가이드 적용)`);
+    return optimized;
+  } catch (error) {
+    console.error(`  ❌ Gemini API 오류:`, error);
+    return content; // 오류 시 원본 반환
+  }
 }
 
 /**
@@ -859,19 +875,29 @@ ${content}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✏️ 출력: 수정된 블로그 글 본문만 (설명문 금지)`;
   
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-pro',
-    contents: [{
-      role: 'user',
-      parts: [{ text: prompt }]
-    }]
-  });
-  
-  const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || content;
-  
-  console.log(`  ✓ 글자수 조정 완료: ${issue.current}자 → ${optimized.replace(/\s/g, '').length}자`);
-  
-  return optimized;
+  try {
+    console.log(`  🤖 Gemini API 호출 중... (글자수 조정)`);
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-pro',
+      contents: [{
+        role: 'user',
+        parts: [{ text: prompt }]
+      }]
+    });
+    
+    const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    
+    if (!optimized || optimized.length < 100) {
+      console.log(`  ⚠️ Gemini 응답이 비정상적, 원본 유지`);
+      return content;
+    }
+    
+    console.log(`  ✓ 글자수 조정 완료: ${issue.current}자 → ${optimized.replace(/\s/g, '').length}자`);
+    return optimized;
+  } catch (error) {
+    console.error(`  ❌ Gemini API 오류 (글자수 조정):`, error);
+    return content;
+  }
 }
 
 /**
@@ -979,22 +1005,34 @@ ${content}
    - "${keyword}"가 ${issue.target}회인가?
    - 글자수가 ${currentCharCount - 30}~${currentCharCount + 30}자 범위인가?`;
   
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-pro',
-    contents: [{
-      role: 'user',
-      parts: [{ text: prompt }]
-    }]
-  });
-  
-  const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || content;
-  const newCharCount = optimized.replace(/\s/g, '').length;
-  const charDiff = newCharCount - currentCharCount;
-  
-  console.log(`  ✓ 키워드 조정: ${issue.current}회 → 목표 ${issue.target}회`);
-  console.log(`  ✓ 글자수 변화: ${currentCharCount} → ${newCharCount} (${charDiff > 0 ? '+' : ''}${charDiff}자)`);
-  
-  return optimized;
+  try {
+    console.log(`  🤖 Gemini API 호출 중... (키워드 조정)`);
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-pro',
+      contents: [{
+        role: 'user',
+        parts: [{ text: prompt }]
+      }]
+    });
+    
+    const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    
+    if (!optimized || optimized.length < 100) {
+      console.log(`  ⚠️ Gemini 응답이 비정상적, 원본 유지`);
+      return content;
+    }
+    
+    const newCharCount = optimized.replace(/\s/g, '').length;
+    const charDiff = newCharCount - currentCharCount;
+    
+    console.log(`  ✓ 키워드 조정: ${issue.current}회 → 목표 ${issue.target}회`);
+    console.log(`  ✓ 글자수 변화: ${currentCharCount} → ${newCharCount} (${charDiff > 0 ? '+' : ''}${charDiff}자)`);
+    
+    return optimized;
+  } catch (error) {
+    console.error(`  ❌ Gemini API 오류 (키워드 조정):`, error);
+    return content;
+  }
 }
 
 /**
@@ -1090,19 +1128,29 @@ ${content}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✏️ 출력: 수정된 블로그 글 본문만 (설명문 금지)`;  
   
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-pro',
-    contents: [{
-      role: 'user',
-      parts: [{ text: prompt }]
-    }]
-  });
-  
-  const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || content;
-  
-  console.log(`  ✓ 과다 사용 단어 치환 완료: "${word}" (${replaceCount}회 치환)`);
-  
-  return optimized;
+  try {
+    console.log(`  🤖 Gemini API 호출 중... (과다 사용 단어 치환)`);
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-pro',
+      contents: [{
+        role: 'user',
+        parts: [{ text: prompt }]
+      }]
+    });
+    
+    const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    
+    if (!optimized || optimized.length < 100) {
+      console.log(`  ⚠️ Gemini 응답이 비정상적, 원본 유지`);
+      return content;
+    }
+    
+    console.log(`  ✓ 과다 사용 단어 치환 완료: "${word}" (${replaceCount}회 치환)`);
+    return optimized;
+  } catch (error) {
+    console.error(`  ❌ Gemini API 오류 (과다 사용 단어 치환):`, error);
+    return content;
+  }
 }
 
 /**
@@ -1209,19 +1257,31 @@ ${content}
 3. 소제목 구조 유지
 4. 글자수 ${currentCharCount - 30}~${currentCharCount + 30}자 범위 유지`;
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-pro',
-    contents: [{
-      role: 'user',
-      parts: [{ text: prompt }]
-    }]
-  });
-  
-  const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || content;
-  const newCharCount = optimized.replace(/\s/g, '').length;
-  
-  console.log(`  ✓ 설득력 구조 수정 완료: ${issue.description}`);
-  console.log(`  ✓ 글자수 변화: ${currentCharCount} → ${newCharCount} (${newCharCount - currentCharCount > 0 ? '+' : ''}${newCharCount - currentCharCount}자)`);
-  
-  return optimized;
+  try {
+    console.log(`  🤖 Gemini API 호출 중... (설득력 구조 수정)`);
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-pro',
+      contents: [{
+        role: 'user',
+        parts: [{ text: prompt }]
+      }]
+    });
+    
+    const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    
+    if (!optimized || optimized.length < 100) {
+      console.log(`  ⚠️ Gemini 응답이 비정상적, 원본 유지`);
+      return content;
+    }
+    
+    const newCharCount = optimized.replace(/\s/g, '').length;
+    
+    console.log(`  ✓ 설득력 구조 수정 완료: ${issue.description}`);
+    console.log(`  ✓ 글자수 변화: ${currentCharCount} → ${newCharCount} (${newCharCount - currentCharCount > 0 ? '+' : ''}${newCharCount - currentCharCount}자)`);
+    
+    return optimized;
+  } catch (error) {
+    console.error(`  ❌ Gemini API 오류 (설득력 구조 수정):`, error);
+    return content;
+  }
 }

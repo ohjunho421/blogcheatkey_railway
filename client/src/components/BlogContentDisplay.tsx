@@ -132,15 +132,18 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
       const response = await apiRequest("POST", `/api/projects/${project.id}/reoptimize`);
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       const result = data.optimizationResult;
       toast({
         title: result?.success ? "최적화 완료" : "최적화 부분 완료",
         description: result?.success 
           ? "SEO 조건이 모두 충족되었습니다." 
-          : "일부 조건이 개선되었습니다. 필요시 다시 시도하세요.",
+          : `${result?.fixed?.length || 0}개 항목이 개선되었습니다. 필요시 다시 시도하세요.`,
       });
-      onRefresh();
+      // 🆕 데이터 갱신 완료까지 대기
+      await onRefresh();
+      // 모바일 미리보기 캐시 초기화 (최신 콘텐츠 반영)
+      setMobilePreviewContent('');
     },
     onError: (error) => {
       toast({

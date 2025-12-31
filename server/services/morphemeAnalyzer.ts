@@ -751,6 +751,13 @@ async function checkAllMorphemeFrequencies(content: string, keyword: string): Pr
   }
   console.log(`📊 키워드 형태소 최소 빈도: ${minKeywordMorphemeCount}회`);
   
+  // 🆕 우위성 체크 활성화 조건: 키워드 형태소가 최소 10회 이상 나와야 의미있는 비교 가능
+  // 키워드 형태소가 너무 적으면 (1~9회) 우위성 체크를 하지 않음
+  const enableDominanceCheck = minKeywordMorphemeCount >= 10;
+  if (!enableDominanceCheck) {
+    console.log(`⚠️ 키워드 형태소가 ${minKeywordMorphemeCount}회로 부족 - 우위성 체크 비활성화 (10회 이상 필요)`);
+  }
+  
   for (const [morpheme, count] of Array.from(morphemeFrequency.entries())) {
     // 1. 정확한 매칭: 키워드 형태소 목록에 정확히 포함되어 있는지
     const isKeywordMorpheme = keywordComponentsLower.includes(morpheme);
@@ -771,11 +778,11 @@ async function checkAllMorphemeFrequencies(content: string, keyword: string): Pr
       continue;
     }
     
-    // 🆕 키워드 우위성 체크: 일반 단어가 키워드 형태소보다 많으면 과다 사용
-    if (!isKeywordRelated && count >= minKeywordMorphemeCount && minKeywordMorphemeCount > 0) {
-      // 일반 단어가 키워드 형태소 최소값 이상이면 과다 사용으로 처리
+    // 🆕 키워드 우위성 체크 (키워드 형태소가 10회 이상일 때만 활성화)
+    // 일반 단어가 키워드 형태소보다 확실히 많을 때만 과다 사용 (키워드+3회 초과)
+    if (enableDominanceCheck && !isKeywordRelated && count > minKeywordMorphemeCount + 3) {
       overused.push({ morpheme, count });
-      console.log(`⚠️ "${morpheme}" ${count}회 (키워드 형태소 ${minKeywordMorphemeCount}회보다 많음 - 우위성 위반)`);
+      console.log(`⚠️ "${morpheme}" ${count}회 (키워드 형태소 ${minKeywordMorphemeCount}회보다 ${count - minKeywordMorphemeCount}회 많음 - 우위성 위반)`);
       continue;
     }
     
