@@ -116,6 +116,9 @@ export default function PaymentModal({ children }: PaymentModalProps) {
       // 포트원 V2 결제 요청 - KG이니시스 채널키 사용
       const channelKey = 'channel-key-60e08fc8-6f08-4e58-aa60-41f2a81e2e7a';
       
+      // 결제창이 뜨기 전에 요금제 선택 모달 닫기
+      setIsOpen(false);
+      
       const paymentResponse = await PortOne.requestPayment({
         storeId: storeId,
         channelKey: channelKey,
