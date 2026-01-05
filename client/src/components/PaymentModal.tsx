@@ -87,11 +87,11 @@ export default function PaymentModal({ children }: PaymentModalProps) {
       
       const { merchant_uid, amount } = result.data;
 
-      // 포트원 SDK 로드 확인 및 초기화
-      if (!(window as any).IMP) {
-        console.log('Loading PortOne SDK...');
+      // 포트원 V2 SDK 로드 확인
+      if (!(window as any).PortOne) {
+        console.log('Loading PortOne V2 SDK...');
         const script = document.createElement('script');
-        script.src = 'https://cdn.iamport.kr/v1/iamport.js';
+        script.src = 'https://cdn.portone.io/v2/browser-sdk.js';
         document.head.appendChild(script);
         
         await new Promise((resolve, reject) => {
@@ -100,12 +100,12 @@ export default function PaymentModal({ children }: PaymentModalProps) {
         });
       }
       
-      const IMP = (window as any).IMP;
-      if (!IMP) {
+      const PortOne = (window as any).PortOne;
+      if (!PortOne) {
         throw new Error('PortOne SDK를 불러올 수 없습니다');
       }
       
-      // 포트원 초기화 (Store ID 확인)
+      // 포트원 V2 Store ID 확인
       const storeId = import.meta.env.VITE_PORTONE_STORE_ID;
       console.log('PortOne Store ID:', storeId);
       
@@ -113,28 +113,29 @@ export default function PaymentModal({ children }: PaymentModalProps) {
         throw new Error('PortOne Store ID가 설정되지 않았습니다');
       }
       
-      IMP.init(storeId);
+      // 포트원 V2 결제 요청 - KG이니시스 채널키 사용
+      const channelKey = 'channel-key-60e08fc8-6f08-4e58-aa60-41f2a81e2e7a';
       
-      // 결제 요청 - 포트원 V1 테스트 모드
-      // 포트원 콘솔에서 테스트 PG 설정 필요
-      const paymentResponse = await new Promise((resolve) => {
-        (window as any).IMP.request_pay({
-          pg: 'kcp.T0000', // KCP 테스트 모드 (포트원 기본 제공)
-          pay_method: 'card',
-          merchant_uid: merchant_uid,
-          name: `블로그치트키 ${plan.name} 월구독`,
-          amount: amount,
-          buyer_email: 'customer@example.com',
-          buyer_name: '구매자',
-          buyer_tel: '010-0000-0000',
-        }, resolve);
+      const paymentResponse = await PortOne.requestPayment({
+        storeId: storeId,
+        channelKey: channelKey,
+        paymentId: merchant_uid,
+        orderName: `블로그치트키 ${plan.name} 월구독`,
+        totalAmount: amount,
+        currency: 'KRW',
+        payMethod: 'CARD',
+        customer: {
+          email: 'customer@example.com',
+          phoneNumber: '010-0000-0000',
+          fullName: '구매자',
+        },
       });
 
-      if ((paymentResponse as any).error_code) {
+      if (paymentResponse.code) {
         // 결제 실패
         toast({
           title: '결제 실패',
-          description: (paymentResponse as any).error_msg || '결제 중 오류가 발생했습니다.',
+          description: paymentResponse.message || '결제 중 오류가 발생했습니다.',
           variant: 'destructive',
         });
       } else {
