@@ -115,17 +115,18 @@ export default function PaymentModal({ children }: PaymentModalProps) {
       
       IMP.init(storeId);
       
-      // 결제 요청
+      // 결제 요청 - 포트원 콘솔에서 설정된 PG사 사용
+      // 테스트: kakaopay.TC0ONETIME (카카오페이 테스트)
+      // 실제: html5_inicis (이니시스) 또는 tosspay (토스페이) 등
       const paymentResponse = await new Promise((resolve) => {
         (window as any).IMP.request_pay({
-          pg: 'html5_inicis',
+          pg: 'kakaopay.TC0ONETIME', // 카카오페이 테스트 모드
           pay_method: 'card',
           merchant_uid: merchant_uid,
           name: `블로그치트키 ${plan.name} 월구독`,
           amount: amount,
           buyer_email: 'customer@example.com',
           buyer_name: '구매자',
-          customer_uid: `customer_${Date.now()}`, // 정기결제용 고객 식별자
         }, resolve);
       });
 
