@@ -65,11 +65,14 @@ export function useAuth() {
 
   // 401 에러 발생 시 세션 정보 즉시 정리 (무한 반복 방지)
   useEffect(() => {
-    if (isError && error && (error as any).status === 401) {
-      console.log("401 error detected, clearing all session data");
-      localStorage.removeItem('sessionId');
-      localStorage.removeItem('user');
-      setAuthError(true);
+    if (isError && error) {
+      const status = (error as any).status || (error as any).message?.includes('401') ? 401 : 0;
+      if (status === 401 || (error as any).message?.includes('401')) {
+        console.log("401 error detected, clearing all session data");
+        localStorage.removeItem('sessionId');
+        localStorage.removeItem('user');
+        setAuthError(true);
+      }
     }
   }, [isError, error]);
 

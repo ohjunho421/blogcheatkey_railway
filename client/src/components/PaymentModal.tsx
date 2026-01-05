@@ -65,6 +65,7 @@ export default function PaymentModal({ children }: PaymentModalProps) {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           amount: plan.price,
           name: `${plan.name} 월구독`,
@@ -72,7 +73,18 @@ export default function PaymentModal({ children }: PaymentModalProps) {
         }),
       });
 
+      // 401 에러 체크 (로그인 필요)
+      if (response.status === 401) {
+        throw new Error('로그인이 필요합니다. 먼저 로그인해주세요.');
+      }
+      
       const result = await response.json();
+      
+      // 서버 응답 검증
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || '결제 준비에 실패했습니다.');
+      }
+      
       const { merchant_uid, amount } = result.data;
 
       // 포트원 SDK 로드 확인 및 초기화
@@ -153,11 +165,11 @@ export default function PaymentModal({ children }: PaymentModalProps) {
           });
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Payment error:', error);
       toast({
         title: '결제 오류',
-        description: '결제 처리 중 오류가 발생했습니다. 다시 시도해주세요.',
+        description: error?.message || '결제 처리 중 오류가 발생했습니다. 다시 시도해주세요.',
         variant: 'destructive',
       });
     } finally {

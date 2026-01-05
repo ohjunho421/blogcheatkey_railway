@@ -26,9 +26,10 @@ type SignupForm = z.infer<typeof signupSchema>;
 export default function Signup() {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
-  // 회원가입 페이지에서는 인증 체크 불필요 - localStorage만 확인
-  const isAuthenticated = localStorage.getItem('sessionId') !== null && localStorage.getItem('user') !== null;
   const signupMutation = useSignup();
+  
+  // 회원가입 페이지에서는 인증 체크 불필요 - 리다이렉트 방지
+  const isAuthenticated = false;
 
   const form = useForm<SignupForm>({
     resolver: zodResolver(signupSchema),

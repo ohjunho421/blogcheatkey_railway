@@ -1,10 +1,16 @@
 import axios from 'axios';
 
 // 포트원 API 설정
-const { PORTONE_API_KEY, PORTONE_API_SECRET } = process.env;
+const PORTONE_API_KEY = process.env.PORTONE_API_KEY;
+const PORTONE_API_SECRET = process.env.PORTONE_API_SECRET;
 
-if (!PORTONE_API_KEY || !PORTONE_API_SECRET) {
-  throw new Error('포트원 API 키가 설정되지 않았습니다. PORTONE_API_KEY와 PORTONE_API_SECRET을 환경변수에 설정해주세요.');
+// 환경변수 체크 함수
+function checkPortOneConfig() {
+  if (!PORTONE_API_KEY || !PORTONE_API_SECRET) {
+    console.warn('⚠️ 포트원 API 키가 설정되지 않았습니다. 결제 기능이 비활성화됩니다.');
+    return false;
+  }
+  return true;
 }
 
 // 포트원 API 베이스 URL
@@ -40,6 +46,10 @@ export function preparePayment(paymentData: PaymentData) {
  * 포트원 액세스 토큰 획득
  */
 async function getAccessToken(): Promise<string> {
+  if (!checkPortOneConfig()) {
+    throw new Error('포트원 API 키가 설정되지 않았습니다. 관리자에게 문의해주세요.');
+  }
+  
   try {
     const response = await axios.post(`${PORTONE_API_BASE}/users/getToken`, {
       imp_key: PORTONE_API_KEY,
