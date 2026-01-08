@@ -643,6 +643,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // 활동 로그 기록
+      try {
+        await storage.createActivityLog({
+          userId: userId,
+          activityType: 'content_generated',
+          projectId: id,
+          tokensUsed: finalContent.length, // 대략적인 토큰 수 (글자 수로 대체)
+          details: {
+            keyword: project.keyword,
+            characterCount: finalContent.length,
+            seoOptimized: generationResult.success,
+            attempts: generationResult.attempts,
+          }
+        });
+        console.log(`Activity log created for user ${userId}`);
+      } catch (logError) {
+        console.error("Failed to create activity log:", logError);
+      }
+
       // 완성된 글을 작성 내역에 저장
       try {
         await storage.createCompletedProject({

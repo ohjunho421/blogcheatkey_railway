@@ -1,4 +1,4 @@
-import { users, userBusinessInfo, blogProjects, chatMessages, projectSessions, completedProjects, type User, type InsertUser, type UserBusinessInfo, type InsertUserBusinessInfo, type BlogProject, type InsertBlogProject, type ChatMessage, type InsertChatMessage, type ProjectSession, type InsertProjectSession, type CompletedProject, type InsertCompletedProject, type UpdateUserPermissions } from "@shared/schema";
+import { users, userBusinessInfo, blogProjects, chatMessages, projectSessions, completedProjects, userActivityLog, type User, type InsertUser, type UserBusinessInfo, type InsertUserBusinessInfo, type BlogProject, type InsertBlogProject, type ChatMessage, type InsertChatMessage, type ProjectSession, type InsertProjectSession, type CompletedProject, type InsertCompletedProject, type UpdateUserPermissions, type InsertUserActivityLog } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 
@@ -376,6 +376,23 @@ export class DatabaseStorage implements IStorage {
   async getFreeGenerationCount(userId: number): Promise<number> {
     const user = await this.getUser(userId);
     return user?.freeGenerationCount || 0;
+  }
+
+  // Activity log methods
+  async createActivityLog(activityData: {
+    userId: number;
+    activityType: string;
+    projectId?: number;
+    tokensUsed?: number;
+    details?: any;
+  }): Promise<void> {
+    await db.insert(userActivityLog).values({
+      userId: activityData.userId,
+      activityType: activityData.activityType,
+      projectId: activityData.projectId || null,
+      tokensUsed: activityData.tokensUsed || 0,
+      details: activityData.details || null,
+    });
   }
 }
 
