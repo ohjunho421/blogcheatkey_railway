@@ -107,25 +107,23 @@ export function SavedSessionsList({ onSessionSelect }: SavedSessionsListProps) {
                 className="group p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
                 onClick={() => onSessionSelect(session.id)}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-sm truncate">
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <h4 className="font-medium text-sm line-clamp-2 break-words">
                       {session.sessionName || session.keyword}
                     </h4>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="outline" className="text-xs">
-                        {session.keyword}
-                      </Badge>
-                    </div>
+                    <Badge variant="outline" className="text-xs mt-1 max-w-full truncate">
+                      {session.keyword}
+                    </Badge>
                     <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      <span>{formatDate(session.updatedAt)}</span>
+                      <Clock className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">{formatDate(session.updatedAt)}</span>
                     </div>
                   </div>
                   <Button
                     variant="ghost"
-                    size="sm"
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    size="icon"
+                    className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
                   >
                     <ArrowRight className="h-4 w-4" />
                   </Button>

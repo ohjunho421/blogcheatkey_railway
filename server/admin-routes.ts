@@ -6,6 +6,21 @@ import { eq, desc } from "drizzle-orm";
 
 export function setupAdminRoutes(app: Express, storage: IStorage) {
   
+  // Get all users
+  app.get("/api/admin/users", async (req, res) => {
+    try {
+      const allUsers = await db
+        .select()
+        .from(users)
+        .orderBy(desc(users.createdAt));
+
+      res.json(allUsers);
+    } catch (error) {
+      console.error("Get users error:", error);
+      res.status(500).json({ error: "사용자 목록 조회에 실패했습니다" });
+    }
+  });
+
   // Grant subscription to user
   app.post("/api/admin/users/:id/grant-subscription", async (req, res) => {
     try {
