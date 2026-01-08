@@ -1,11 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { FolderOpen, Clock, FileText, ArrowRight } from "lucide-react";
+import { FolderOpen, Clock, FileText, ArrowRight, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProjectSession {
   id: number;
@@ -22,11 +23,47 @@ interface SavedSessionsListProps {
 
 export function SavedSessionsList({ onSessionSelect }: SavedSessionsListProps) {
   const { user, isAuthenticated } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: sessions, isLoading, error } = useQuery<ProjectSession[]>({
     queryKey: ["/api/sessions"],
     enabled: isAuthenticated,
   });
+
+  const deleteSessionMutation = useMutation({
+    mutationFn: async (sessionId: number) => {
+      const response = await fetch(`/api/sessions/${sessionId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        throw new Error('세션 삭제에 실패했습니다');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sessions"] });
+      toast({
+        title: "삭제 완료",
+        description: "세션이 삭제되었습니다.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "삭제 실패",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDelete = (e: React.MouseEvent, sessionId: number) => {
+    e.stopPropagation(); // 부모 클릭 이벤트 방지
+    if (confirm('이 세션을 삭제하시겠습니까?')) {
+      deleteSessionMutation.mutate(sessionId);
+    }
+  };
 
   if (!isAuthenticated || !user) {
     return null;
@@ -120,13 +157,25 @@ export function SavedSessionsList({ onSessionSelect }: SavedSessionsListProps) {
                       <span className="truncate">{formatDate(session.updatedAt)}</span>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
-                  >
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
+                  <div className="flex flex-col gap-1 flex-shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
+                      onClick={() => onSessionSelect(session.id)}
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={(e) => handleDelete(e, session.id)}
+                      disabled={deleteSessionMutation.isPending}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}

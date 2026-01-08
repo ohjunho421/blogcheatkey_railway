@@ -72,15 +72,21 @@ router.post('/portone/verify', requireAuth, async (req, res) => {
         const expiresAt = new Date(paymentDate);
         expiresAt.setMonth(expiresAt.getMonth() + 1); // 1개월 추가
         
+        // merchant_uid에서 planType 추출 (형식: blogcheatkey_planType_userId_timestamp)
+        // 또는 결제 금액으로 판단 (20000원 = basic, 50000원 = premium)
+        const amount = result.payment.amount;
+        const planType = amount >= 50000 ? 'premium' : 'basic';
+        const isPremium = planType === 'premium';
+        
         await storage.updateUser(userId, {
-          subscriptionTier: 'premium',
+          subscriptionTier: planType,
           subscriptionExpiresAt: expiresAt,
           canGenerateContent: true,
           canGenerateImages: true,
-          canUseChatbot: true,
+          canUseChatbot: isPremium, // 프리미엄만 챗봇 사용 가능
         } as any);
         
-        console.log(`User ${userId} subscription updated. Expires at: ${expiresAt.toISOString()}`);
+        console.log(`User ${userId} subscription updated. Plan: ${planType}, Expires at: ${expiresAt.toISOString()}`);
       } catch (updateError) {
         console.error('Failed to update user subscription:', updateError);
         // 구독 업데이트 실패해도 결제 자체는 성공으로 처리
@@ -207,15 +213,20 @@ router.post('/portone/webhook', async (req, res) => {
               const expiresAt = new Date(paymentDate);
               expiresAt.setMonth(expiresAt.getMonth() + 1);
               
+              // 결제 금액으로 플랜 타입 판단 (20000원 = basic, 50000원 = premium)
+              const amount = verification.payment.amount;
+              const planType = amount >= 50000 ? 'premium' : 'basic';
+              const isPremium = planType === 'premium';
+              
               await storage.updateUser(userId, {
-                subscriptionTier: 'premium',
+                subscriptionTier: planType,
                 subscriptionExpiresAt: expiresAt,
                 canGenerateContent: true,
                 canGenerateImages: true,
-                canUseChatbot: true,
+                canUseChatbot: isPremium, // 프리미엄만 챗봇 사용 가능
               } as any);
               
-              console.log(`Webhook: User ${userId} subscription updated. Expires at: ${expiresAt.toISOString()}`);
+              console.log(`Webhook: User ${userId} subscription updated. Plan: ${planType}, Expires at: ${expiresAt.toISOString()}`);
             } catch (updateError) {
               console.error('Webhook: Failed to update user subscription:', updateError);
             }
