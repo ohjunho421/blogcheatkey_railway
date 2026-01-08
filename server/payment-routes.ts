@@ -8,6 +8,7 @@ import {
   type PaymentVerification,
 } from './services/portone';
 import { requireAuth } from './auth';
+import { storage } from './storage';
 
 const router = Router();
 
@@ -62,9 +63,29 @@ router.post('/portone/verify', requireAuth, async (req, res) => {
       return res.status(400).json(result);
     }
 
-    // TODO: 결제 성공 시 데이터베이스에 저장하고 사용자 권한 업데이트
-    // await storage.createPaymentRecord(...)
-    // await storage.updateUserPermissions(...)
+    // 결제 성공 시 사용자 구독 정보 업데이트
+    const userId = (req as any).session?.userId;
+    if (userId && result.payment) {
+      try {
+        // 결제일로부터 1개월 후를 만료일로 설정
+        const paymentDate = new Date(result.payment.paid_at * 1000); // Unix timestamp to Date
+        const expiresAt = new Date(paymentDate);
+        expiresAt.setMonth(expiresAt.getMonth() + 1); // 1개월 추가
+        
+        await storage.updateUser(userId, {
+          subscriptionTier: 'premium',
+          subscriptionExpiresAt: expiresAt,
+          canGenerateContent: true,
+          canGenerateImages: true,
+          canUseChatbot: true,
+        } as any);
+        
+        console.log(`User ${userId} subscription updated. Expires at: ${expiresAt.toISOString()}`);
+      } catch (updateError) {
+        console.error('Failed to update user subscription:', updateError);
+        // 구독 업데이트 실패해도 결제 자체는 성공으로 처리
+      }
+    }
 
     res.json(result);
   } catch (error) {
@@ -175,10 +196,30 @@ router.post('/portone/webhook', async (req, res) => {
         
         // 결제 성공 시 처리
         if (status === 'paid') {
-          // TODO: DB에 결제 기록 저장 및 사용자 권한 업데이트
-          // const userId = ...; // merchant_uid에서 사용자 ID 추출
-          // await storage.createPaymentRecord({ ... });
-          // await storage.updateUserPermissions(userId, { ... });
+          // merchant_uid 형식: blogcheatkey_userId_timestamp
+          const parts = merchant_uid.split('_');
+          const userId = parts.length >= 2 ? parseInt(parts[1]) : null;
+          
+          if (userId && verification.payment) {
+            try {
+              // 결제일로부터 1개월 후를 만료일로 설정
+              const paymentDate = new Date(verification.payment.paid_at * 1000);
+              const expiresAt = new Date(paymentDate);
+              expiresAt.setMonth(expiresAt.getMonth() + 1);
+              
+              await storage.updateUser(userId, {
+                subscriptionTier: 'premium',
+                subscriptionExpiresAt: expiresAt,
+                canGenerateContent: true,
+                canGenerateImages: true,
+                canUseChatbot: true,
+              } as any);
+              
+              console.log(`Webhook: User ${userId} subscription updated. Expires at: ${expiresAt.toISOString()}`);
+            } catch (updateError) {
+              console.error('Webhook: Failed to update user subscription:', updateError);
+            }
+          }
           console.log('Payment completed via webhook:', merchant_uid);
         }
       } else {

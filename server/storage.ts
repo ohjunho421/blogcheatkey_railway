@@ -360,6 +360,23 @@ export class DatabaseStorage implements IStorage {
       .where(eq(projectSessions.id, id));
     return (result.rowCount ?? 0) > 0;
   }
+
+  // Free generation count methods
+  async incrementFreeGenerationCount(userId: number): Promise<void> {
+    const { sql } = await import("drizzle-orm");
+    await db
+      .update(users)
+      .set({ 
+        freeGenerationCount: sql`COALESCE(free_generation_count, 0) + 1`,
+        updatedAt: new Date() 
+      })
+      .where(eq(users.id, userId));
+  }
+
+  async getFreeGenerationCount(userId: number): Promise<number> {
+    const user = await this.getUser(userId);
+    return user?.freeGenerationCount || 0;
+  }
 }
 
 export const storage = new DatabaseStorage();

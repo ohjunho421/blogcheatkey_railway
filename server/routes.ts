@@ -545,6 +545,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
       }
 
+      // 사용자 인증 및 무료 횟수 체크
+      const userId = project.userId;
+      if (!userId) {
+        return res.status(401).json({ error: "로그인이 필요합니다" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(401).json({ error: "사용자를 찾을 수 없습니다" });
+      }
+
+      // 슈퍼관리자 또는 유료 구독자는 무제한
+      const isAdmin = user.isAdmin;
+      const hasActiveSubscription = user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt) > new Date();
+      const hadPreviousSubscription = user.subscriptionExpiresAt !== null; // 이전에 구독한 적이 있는지
+
+      if (!isAdmin && !hasActiveSubscription) {
+        // 이전에 구독했던 사용자 - 구독 만료 시 무료 체험 없이 바로 결제 필요
+        if (hadPreviousSubscription) {
+          const expiredAt = new Date(user.subscriptionExpiresAt!);
+          return res.status(403).json({ 
+            error: "구독이 만료되었습니다",
+            code: "SUBSCRIPTION_EXPIRED",
+            expiredAt: expiredAt.toISOString(),
+            message: "계속 사용하시려면 구독을 갱신해주세요"
+          });
+        }
+        
+        // 신규 사용자 - 5회 무료 체험 제한 체크
+        const freeCount = user.freeGenerationCount || 0;
+        if (freeCount >= 5) {
+          return res.status(403).json({ 
+            error: "무료 체험 횟수를 모두 사용하셨습니다",
+            code: "FREE_LIMIT_EXCEEDED",
+            freeCount: freeCount,
+            maxFreeCount: 5,
+            message: "계속 사용하시려면 구독이 필요합니다"
+          });
+        }
+      }
+
       // First update status to show generation is starting
       await storage.updateBlogProject(id, {
         status: "content_generation",
@@ -576,7 +617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (!generationResult.success) {
         console.log(`⚠️ SEO 최적화 조건 미달성, 현재 상태 그대로 저장`);
-        projectStatus = "completed_with_warnings"; // 경고 있음 표시
+        projectStatus = "completed_with_warnings";
         warningMessage = {
           type: "seo_optimization_incomplete",
           message: `${generationResult.attempts}회 시도 후 일부 SEO 조건 미달성. 콘텐츠는 저장되었으나 수동 수정이 필요할 수 있습니다.`,
@@ -591,6 +632,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         seoMetrics: seoAnalysis,
         status: projectStatus === "completed_with_warnings" ? "completed" : projectStatus,
       });
+
+      // 무료 체험 사용자인 경우에만 생성 횟수 증가 (구독 만료 사용자는 제외)
+      if (!isAdmin && !hasActiveSubscription && !hadPreviousSubscription) {
+        try {
+          await storage.incrementFreeGenerationCount(userId);
+          console.log(`Free generation count incremented for user ${userId}`);
+        } catch (countError) {
+          console.error("Failed to increment free generation count:", countError);
+        }
+      }
 
       // 완성된 글을 작성 내역에 저장
       try {

@@ -28,6 +28,8 @@ export const users = pgTable("users", {
   totalTokensUsed: integer("total_tokens_used").default(0),
   monthlyTokensUsed: integer("monthly_tokens_used").default(0),
   lastTokenResetAt: timestamp("last_token_reset_at").defaultNow(),
+  // Free generation count (max 5 for non-subscribers)
+  freeGenerationCount: integer("free_generation_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

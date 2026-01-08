@@ -21,6 +21,8 @@ import { ReferenceBlogLinksForm } from "@/components/ReferenceBlogLinksForm";
 import { GenerateBlogButton } from "@/components/GenerateBlogButton";
 import { RequiredItemsCheck } from "@/components/RequiredItemsCheck";
 import { ContentGenerationProgress } from "@/components/ContentGenerationProgress";
+import { FreeTrialStatus } from "@/components/FreeTrialStatus";
+import { SavedSessionsList } from "@/components/SavedSessionsList";
 import { MessageSquare, FileText, Search, Building2, Sparkles, RotateCw, LogOut, User, ChevronDown, CreditCard, Shield } from "lucide-react";
 import blogCheatKeyLogo from "@assets/Gemini_Generated_Image_4aroxj4aroxj4aro_1757661484778.png";
 import PaymentModal from "@/components/PaymentModal";
@@ -206,6 +208,9 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Input Forms */}
           <div className="lg:col-span-1 space-y-6">
+            {/* Free Trial Status */}
+            <FreeTrialStatus />
+
             {/* Keyword Analysis Form */}
             <KeywordAnalysisForm 
               onProjectCreated={(newProject) => {
@@ -217,6 +222,26 @@ export default function Home() {
 
             {/* Required Items Check */}
             <RequiredItemsCheck project={project} />
+
+            {/* Saved Sessions List - Show when no project is selected */}
+            {!project && (
+              <SavedSessionsList 
+                onSessionSelect={(sessionId) => {
+                  // 세션 로드 API 호출 후 프로젝트로 이동
+                  fetch(`/api/sessions/${sessionId}/load`, {
+                    method: 'POST',
+                    credentials: 'include'
+                  })
+                    .then(res => res.json())
+                    .then(data => {
+                      if (data.projectId) {
+                        navigate(`/project/${data.projectId}`);
+                      }
+                    })
+                    .catch(console.error);
+                }}
+              />
+            )}
           </div>
 
           {/* Right Column - Results */}

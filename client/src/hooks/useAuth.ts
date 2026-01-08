@@ -37,9 +37,11 @@ export interface User {
   profileImage?: string;
   isAdmin?: boolean;
   subscriptionTier?: string;
+  subscriptionExpiresAt?: string;
   canGenerateContent?: boolean;
   canGenerateImages?: boolean;
   canUseChatbot?: boolean;
+  freeGenerationCount?: number;
 }
 
 export function useAuth() {
