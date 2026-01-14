@@ -33,20 +33,25 @@
 - 연구 자료 기반 설득력 있는 콘텐츠
 - 출처 자동 인용
 
-### 🖼️ AI 이미지 자동 생성
-- 각 섹션별 맞춤 인포그래픽 생성
-- 전문적인 비주얼 자동 제작
-- 블로그 품질 향상
-
-### 💬 AI 챗봇 편집
+### 💬 AI 챗봇 편집 (프리미엄)
 - 자연어로 콘텐츠 수정 요청
+- **SSR 평가 기반 Top 5 제목 추천** (25가지 스타일 → AI 평가 → 상위 5개)
+- 톤앤매너, 설득력, 가독성 조정
 - 실시간 SEO 조건 재검증
-- 톤앤매너 조정
 
 ### 📱 모바일 최적화 포맷팅
-- 25-30자 단위 자동 줄바꿈
-- 모바일 가독성 최적화
+- 25-30자 단위 자동 줄바꿈 (규칙 기반)
+- AI 스마트 포맷팅 (문맥 이해 기반)
 - 원클릭 복사 기능
+
+### 💾 세션 관리
+- 작업 내용 자동/수동 저장
+- 이전 세션 불러오기
+- 프로젝트 히스토리
+
+### 🖼️ 이미지 생성 안내
+- 이미지 요청 시 **외부 도구 안내**
+- 추천: [Google Whisk](https://labs.google/fx/tools/whisk), [Napkin AI](https://www.napkin.ai/)
 
 ---
 
@@ -54,10 +59,9 @@
 
 | AI 모델 | 역할 |
 |---------|------|
-| **Claude Sonnet 4.5** | 메인 콘텐츠 생성, SEO 최적화, 편집 |
-| **Gemini 3 Pro** | 키워드 분석, 검색 의도 파악, 콘텐츠 개선 |
-| **Perplexity Sonar Pro** | 실시간 연구 데이터 수집 |
-| **Google Imagen 3.0** | 인포그래픽 및 이미지 생성 |
+| **Claude Sonnet 4.5** | 메인 콘텐츠 생성, SEO 최적화 |
+| **Gemini 2.5 Pro** | 키워드 분석, 챗봇 편집, 콘텐츠 개선 |
+| **Perplexity Sonar** | 실시간 연구 데이터 수집 |
 
 ---
 
@@ -65,10 +69,10 @@
 
 | 플랜 | 가격 | 포함 기능 |
 |------|------|-----------|
-| **베이직** | 20,000원/월 | 콘텐츠 생성 + 이미지 생성 + SEO 최적화 + 키워드 분석 |
-| **프리미엄** | 50,000원/월 | 모든 기능 + **AI 챗봇 편집** |
+| **베이직** | 20,000원/월 | 콘텐츠 생성, SEO 최적화, 키워드 분석, 세션 저장 |
+| **프리미엄** | 50,000원/월 | 베이직 + **AI 챗봇 편집** (제목 추천, 콘텐츠 수정) |
 
-**결제 지원**: 포트원(PortOne), 토스페이먼츠(Toss Payments), 계좌이체
+**결제 지원**: 포트원(PortOne), 계좌이체(카카오뱅크)
 
 ---
 
@@ -85,11 +89,9 @@
        ↓
 5. SEO 최적화 콘텐츠 자동 생성 (Claude)
        ↓
-6. AI 이미지 생성 (선택)
+6. AI 챗봇으로 편집/제목 추천 (프리미엄)
        ↓
-7. AI 챗봇으로 편집/수정
-       ↓
-8. 모바일 최적화 포맷 → 복사 → 블로그 발행
+7. 모바일 최적화 포맷 → 복사 → 블로그 발행
 ```
 
 ---
@@ -130,11 +132,11 @@
 ### 인증 시스템
 - **소셜 로그인**: Google, Kakao, Naver OAuth
 - **이메일/비밀번호** 로그인
-- **관리자 대시보드**
+- **관리자 대시보드** (권한 관리, 사용자 관리)
 
 ### 결제 연동
-- **포트원(PortOne)** - 정기결제
-- **토스페이먼츠(Toss Payments)**
+- **포트원(PortOne)** - 카드/계좌이체 결제
+- **무통장 입금** - 카카오뱅크 계좌이체 후 수동 권한 부여
 
 ---
 
@@ -164,7 +166,8 @@ PERPLEXITY_API_KEY=pplx-...
 
 # 결제
 PORTONE_API_KEY=imp_...
-TOSS_PAYMENTS_SECRET_KEY=test_sk_...
+PORTONE_API_SECRET=...
+VITE_PORTONE_STORE_ID=imp_...
 
 # 소셜 로그인
 GOOGLE_CLIENT_ID=...
@@ -176,6 +179,9 @@ DATABASE_URL=postgresql://...
 
 # 세션
 SESSION_SECRET=your-secret-key
+
+# 관리자
+SUPER_ADMIN_EMAIL=your-admin@email.com
 ```
 
 자세한 가이드: [RAILWAY_QUICK_START.md](RAILWAY_QUICK_START.md)
@@ -189,6 +195,11 @@ SESSION_SECRET=your-secret-key
 │   └── src/
 │       ├── components/        # UI 컴포넌트 (74개)
 │       ├── pages/             # 페이지 (12개)
+│       │   ├── home.tsx       # 메인 콘텐츠 생성
+│       │   ├── login.tsx      # 로그인
+│       │   ├── subscribe.tsx  # 구독/결제
+│       │   ├── admin.tsx      # 관리자 대시보드
+│       │   └── history.tsx    # 프로젝트 히스토리
 │       ├── hooks/             # 커스텀 훅
 │       └── lib/               # 유틸리티
 ├── server/                    # Express 백엔드
@@ -196,11 +207,14 @@ SESSION_SECRET=your-secret-key
 │   │   ├── anthropic.ts       # Claude 콘텐츠 생성
 │   │   ├── gemini.ts          # 키워드 분석
 │   │   ├── perplexity.ts      # 연구 데이터 수집
-│   │   ├── imageGeneration.ts # 이미지 생성
 │   │   ├── morphemeAnalyzer.ts # 형태소 분석
-│   │   └── ...
+│   │   ├── enhancedChatbot.ts # AI 챗봇 편집
+│   │   ├── titleGenerator.ts  # 제목 생성기
+│   │   └── mobileFormatter.ts # 모바일 포맷팅
 │   ├── routes.ts              # API 라우트
-│   ├── auth.ts                # 인증
+│   ├── auth.ts                # 인증 (OAuth + 세션)
+│   ├── admin-routes.ts        # 관리자 API
+│   ├── payment-routes.ts      # 결제 API
 │   └── storage.ts             # 데이터베이스
 └── shared/                    # 공유 타입/스키마
 ```
@@ -219,10 +233,15 @@ SESSION_SECRET=your-secret-key
 - 다중 비즈니스 프로필 관리
 - 자동 완성 지원
 
-### ✅ 프로젝트 히스토리
+### ✅ 세션/히스토리 관리
 - 생성된 콘텐츠 자동 저장
 - 이전 프로젝트 불러오기
-- 편집 이력 관리
+- 재생성 시 자동 세션 저장
+
+### ✅ 부분 최적화
+- 전체 재생성 대신 문제 부분만 수정
+- 글자수/키워드 빈도 자동 조절
+- 과다 사용 단어 동의어 치환
 
 ---
 
