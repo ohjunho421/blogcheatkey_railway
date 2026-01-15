@@ -311,7 +311,21 @@ export async function optimizeIncrementally(
       }
     });
   }
-  
+
+  // 🆕 customMorphemes 누락 체크
+  if (customMorphemes && analysis.customMorphemes.missing.length > 0) {
+    console.log(`❌ 필수 추가 형태소 누락: ${analysis.customMorphemes.missing.length}개`);
+    analysis.customMorphemes.missing.forEach(morpheme => {
+      issues.push({
+        type: 'keyword_count',
+        description: `필수 형태소 "${morpheme}" 누락 (최소 1회 필요)`,
+        target: 1,
+        current: 0,
+        word: morpheme
+      });
+    });
+  }
+
   // 🆕 설득력있는 글쓰기 구조 체크
   const structureAnalysis = analyzePersuasiveStructure(content);
   console.log(`📝 설득력 구조 분석: 서론 ${structureAnalysis.intro.ratio.toFixed(1)}%, 공감 ${structureAnalysis.hasEmpathy ? '✅' : '❌'}, CTA ${structureAnalysis.conclusion.hasCTA ? '✅' : '❌'}`);
@@ -357,9 +371,44 @@ export async function optimizeIncrementally(
       fixed: []
     };
   }
-  
-  // 4단계: 🆕 모든 문제를 통합 수정 (순차가 아닌 동시 해결)
-  console.log(`🔧 ${issues.length}개 문제 통합 수정 시작`);
+
+  // 🆕 3.5단계: 우선순위 기반 정렬 (가장 중요한 것부터)
+  console.log(`📋 ${issues.length}개 문제 우선순위 정렬 중...`);
+
+  const priorityOrder = {
+    'keyword_count': 1, // 형태소/키워드 빈도 (최우선)
+    'character_count': 2, // 글자수
+    'overused_word': 3, // 과다 사용 단어
+    'structure': 4 // 구조
+  };
+
+  issues.sort((a, b) => {
+    const priorityA = priorityOrder[a.type] || 99;
+    const priorityB = priorityOrder[b.type] || 99;
+
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+
+    // 같은 타입이면 형태소가 우선 (issue.word 있으면 형태소)
+    if (a.type === 'keyword_count' && b.type === 'keyword_count') {
+      const aIsMorpheme = !!a.word;
+      const bIsMorpheme = !!b.word;
+      if (aIsMorpheme && !bIsMorpheme) return -1; // 형태소 우선
+      if (!aIsMorpheme && bIsMorpheme) return 1;
+    }
+
+    return 0;
+  });
+
+  console.log(`우선순위 정렬 결과:`);
+  issues.forEach((issue, idx) => {
+    const label = issue.word ? `형태소 "${issue.word}"` : issue.description;
+    console.log(`  ${idx + 1}. [${issue.type}] ${label}`);
+  });
+
+  // 4단계: 🆕 모든 문제를 통합 수정 (우선순위 순서로)
+  console.log(`\n🔧 ${issues.length}개 문제 통합 수정 시작 (우선순위 기반)`);
   
   if (issues.length === 1) {
     // 문제가 1개면 개별 수정
@@ -620,11 +669,92 @@ function generateDetailedFixGuide(
       }
     } else if (issue.type === 'keyword_count') {
       const diff = issue.target - issue.current;
-      
+      const isMorpheme = !!issue.word; // 형태소인지 완전 키워드인지
+      const targetWord = issue.word || keyword;
+
       if (diff > 0) {
-        // 키워드 부족 - 정확한 삽입 위치와 문장 패턴 제공
-        guides.push(`
-🔑 [키워드 "${keyword}" ${diff}회 추가 방법]
+        if (isMorpheme) {
+          // 🆕 형태소 부족 - 구체적인 치환 대상 찾기
+          const { extractKoreanMorphemes } = require('./morphemeAnalyzer');
+          const allMorphemes = extractKoreanMorphemes(content);
+
+          // 치환 가능한 일반 단어 찾기 (형태소 유사도 기반)
+          const replacementCandidates: string[] = [];
+          const pronouns = ['이것', '그것', '저것', '이', '그', '해당'];
+          const genericWords = ['제품', '물건', '것', '부분', '요소', '항목'];
+
+          // 본문에서 치환 가능한 단어 찾기
+          for (const word of [...pronouns, ...genericWords]) {
+            if (content.includes(word)) {
+              replacementCandidates.push(word);
+            }
+          }
+
+          // 형태소를 포함할 수 있는 단어 제안
+          const morphemeVariations = [
+            `${targetWord}`,
+            `${targetWord}수`,
+            `${targetWord}기`,
+            `${targetWord}제`,
+            `${targetWord}계통`,
+            `${targetWord} 시스템`,
+            `${targetWord} 관리`,
+          ];
+
+          guides.push(`
+🔑 [형태소 "${targetWord}" ${diff}회 추가 방법] ⭐ 가장 중요!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 현재 상황:
+   - "${targetWord}" 형태소: ${issue.current}회 → 목표: ${issue.target}회
+   - 부족분: ${diff}회 추가 필요
+
+⚠️ 형태소 카운트 규칙:
+   - "${targetWord}"를 포함하는 모든 단어가 카운트됩니다
+   - 예: "${targetWord}", "${targetWord}수", "${targetWord}기" 등
+   - 다양한 형태로 자연스럽게 사용하세요!
+
+✅ 방법 1: 일반 단어를 형태소 포함 단어로 치환 (권장!)
+${replacementCandidates.length > 0 ? `
+   발견된 치환 대상: ${replacementCandidates.slice(0, 5).join(', ')}
+
+   치환 예시:
+   - "이것은 중요합니다" → "${targetWord}는 중요합니다"
+   - "해당 제품을 확인" → "${targetWord}수를 확인"
+   - "그 부분이 핵심" → "${targetWord}기가 핵심"
+
+   ⚠️ ${diff}곳에서 위와 같이 치환하세요!
+` : ''}
+
+✅ 방법 2: 형태소를 다양한 형태로 추가
+   사용 가능한 형태들:
+   ${morphemeVariations.slice(0, 5).map((v, i) => `${i+1}. "${v}"`).join('\n   ')}
+
+   삽입 예시:
+   - "정기적인 관리가 필요합니다"
+     → "${targetWord} 관리가 정기적으로 필요합니다"
+   - "시스템 점검을 해야 합니다"
+     → "${targetWord} 시스템 점검을 해야 합니다"
+
+✅ 방법 3: 본문 내 ${diff}곳 선택하여 자연스럽게 추가
+   - 본론 첫 번째 단락에 ${Math.ceil(diff / 3)}회
+   - 본론 중간 단락에 ${Math.floor(diff / 3)}회
+   - 본론 마지막 단락에 ${diff - Math.ceil(diff / 3) - Math.floor(diff / 3)}회
+
+⚠️ 절대 하지 말 것:
+   - 한 문장에 "${targetWord}" 3번 이상 넣기 ❌
+   - 글자수 크게 변경 ❌ (±30자 이내 유지)
+   - 어색한 위치에 억지로 넣기 ❌
+
+🎯 작업 순서:
+   1. 위 "일반 단어 → ${targetWord} 포함 단어" 치환부터 시작
+   2. 부족하면 새로운 형태 추가
+   3. 최종 ${diff}회가 추가되었는지 확인!
+`);
+        } else {
+          // 완전한 키워드 부족
+          guides.push(`
+🔑 [완전 키워드 "${keyword}" ${diff}회 추가 방법]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ✅ 추가할 위치와 문장 패턴:
@@ -632,7 +762,7 @@ function generateDetailedFixGuide(
 ${diff >= 1 ? `   1회차: 본론 첫 번째 단락에 추가
           패턴: "이러한 ${keyword}의 경우..." 또는 "${keyword}를 선택할 때..."` : ''}
 
-${diff >= 2 ? `   2회차: 본론 중간 단락에 추가  
+${diff >= 2 ? `   2회차: 본론 중간 단락에 추가
           패턴: "${keyword}의 장점은..." 또는 "좋은 ${keyword}란..."` : ''}
 
 ${diff >= 3 ? `   3회차: 결론 직전 단락에 추가
@@ -647,7 +777,25 @@ ${diff >= 3 ? `   3회차: 결론 직전 단락에 추가
    - 어색한 위치에 억지로 넣기 ❌
    - 글자수 크게 변경 ❌ (±50자 이내 유지)
 `);
+        }
+      } else if (diff < 0) {
+        // 🆕 형태소/키워드 초과
+        guides.push(`
+🔄 [${isMorpheme ? '형태소' : '키워드'} "${targetWord}" ${Math.abs(diff)}회 줄이기]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 현재: ${issue.current}회 → 목표: ${issue.target}회 이하
+   ${Math.abs(diff)}회 줄여야 합니다
+
+✅ 줄이는 방법:
+   1. "${targetWord}" 포함 문장 중 일부를 동의어로 치환
+   2. 중복되는 "${targetWord}" 제거
+   3. 불필요한 "${targetWord}" 언급 삭제
+
+⚠️ 주의: 키워드가 아닌 문장에서만 줄이세요!
+`);
       }
+}
     } else if (issue.type === 'overused_word' && issue.word) {
       // 과다 사용 단어 - 동의어 목록과 치환 위치 안내
       const synonymMap: Record<string, string[]> = {
