@@ -14,6 +14,7 @@ import NotFound from "@/pages/not-found";
 import PricingPage from "@/pages/PricingPage";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import AdminPage from "@/pages/admin-dashboard";
+import LandingPage from "@/pages/LandingPage";
 
 import { useAuth } from "@/hooks/useAuth";
 
@@ -29,26 +30,29 @@ function Router() {
     return () => clearTimeout(timeout);
   }, []);
 
-  // 로딩 중이면 바로 로그인 페이지로 이동 (무한 루프 방지)
+  // 로딩 중이면 랜딩 페이지 또는 공개 페이지 표시
   if (isLoading) {
     return (
       <Switch>
+        <Route path="/" component={LandingPage} />
         <Route path="/login" component={Login} />
         <Route path="/signup" component={Signup} />
         <Route path="/privacy-policy" component={PrivacyPolicy} />
-        <Route path="*" component={Login} />
+        <Route path="*" component={LandingPage} />
       </Switch>
     );
   }
 
   return (
     <Switch>
+      {/* 랜딩 페이지 - 비로그인 시 메인 */}
+      <Route path="/" component={isAuthenticated ? Home : LandingPage} />
       <Route path="/login" component={Login} />
       <Route path="/signup" component={Signup} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       {isAuthenticated ? (
         <>
-          <Route path="/" component={Home} />
+          <Route path="/app" component={Home} />
           <Route path="/project/:id" component={Home} />
           <Route path="/pricing" component={PricingPage} />
           <Route path="/subscribe" component={Subscribe} />
@@ -57,8 +61,7 @@ function Router() {
         </>
       ) : (
         <>
-          <Route path="/" component={Login} />
-          <Route path="*" component={Login} />
+          <Route path="/pricing" component={PricingPage} />
         </>
       )}
       <Route component={NotFound} />
