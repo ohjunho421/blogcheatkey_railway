@@ -13,7 +13,13 @@ import {
   Check, 
   Menu, 
   X,
-  Star
+  Star,
+  AlertTriangle,
+  XCircle,
+  Store,
+  Users,
+  ShieldCheck,
+  TrendingUp
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -117,24 +123,24 @@ export default function LandingPage() {
             <div className="max-w-4xl mx-auto text-center">
               {/* Badge */}
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary mb-8 animate-fade-in">
-                <Sparkles className="w-4 h-4" />
-                <span className="text-sm font-medium">AI 기반 SEO 최적화 플랫폼</span>
+                <Store className="w-4 h-4" />
+                <span className="text-sm font-medium">자영업자를 위한 AI 블로그 마케팅 솔루션</span>
               </div>
 
               {/* Headline */}
               <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6">
-                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">블로그치트키</span>
+                <span className="text-foreground">본업에 집중하세요</span>
                 <br />
-                <span className="text-foreground">3분 만에 전문가 수준의</span>
+                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">블로그 글은 AI가</span>
                 <br />
-                <span className="text-foreground">블로그 글 완성</span>
+                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">대신 써드립니다</span>
               </h1>
 
               {/* Subheadline */}
               <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
-                키워드 하나만 입력하면, AI가 SEO 조건을 완벽히 충족하는
+                SEO 몰라도 괜찮아요. 키워드 하나만 입력하면
                 <br className="hidden md:block" />
-                고품질 블로그 글을 자동으로 작성합니다.
+                <span className="text-primary font-semibold">상위노출 조건을 완벽히 충족</span>하는 글이 3분 만에 완성됩니다.
               </p>
 
               {/* CTA Buttons */}
@@ -150,30 +156,155 @@ export default function LandingPage() {
                 <Button 
                   size="lg"
                   variant="outline"
-                  onClick={() => scrollToSection("features")}
+                  onClick={() => scrollToSection("pain-points")}
                   className="text-lg px-8 py-6 border-primary/30 hover:bg-primary/5 transition-all duration-300"
                 >
-                  더 알아보기
+                  이런 고민 있으신가요?
                 </Button>
               </div>
 
-              {/* Stats Cards */}
+              {/* Stats Cards - 자영업자 관점 */}
               <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="flex flex-col items-center p-6 rounded-2xl bg-card/50 backdrop-blur border border-border/50">
                   <Clock className="w-8 h-8 text-primary mb-3" />
-                  <span className="text-2xl font-bold text-foreground">3분</span>
-                  <span className="text-sm text-muted-foreground">콘텐츠 생성 시간</span>
+                  <span className="text-2xl font-bold text-foreground">6시간 → 3분</span>
+                  <span className="text-sm text-muted-foreground">글 작성 시간 단축</span>
                 </div>
                 <div className="flex flex-col items-center p-6 rounded-2xl bg-card/50 backdrop-blur border border-border/50">
-                  <Sparkles className="w-8 h-8 text-primary mb-3" />
-                  <span className="text-2xl font-bold text-foreground">15-17회</span>
-                  <span className="text-sm text-muted-foreground">형태소 최적화</span>
+                  <ShieldCheck className="w-8 h-8 text-primary mb-3" />
+                  <span className="text-2xl font-bold text-foreground">직접 생성</span>
+                  <span className="text-sm text-muted-foreground">대행업체 사기 걱정 NO</span>
                 </div>
                 <div className="flex flex-col items-center p-6 rounded-2xl bg-card/50 backdrop-blur border border-border/50">
-                  <Zap className="w-8 h-8 text-primary mb-3" />
-                  <span className="text-2xl font-bold text-foreground">1,700-2,000자</span>
-                  <span className="text-sm text-muted-foreground">글자수 자동 조절</span>
+                  <TrendingUp className="w-8 h-8 text-primary mb-3" />
+                  <span className="text-2xl font-bold text-foreground">SEO 자동 최적화</span>
+                  <span className="text-sm text-muted-foreground">전문지식 필요 없음</span>
                 </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Pain Points Section - 자영업자의 현실 */}
+        <section id="pain-points" className="py-24 bg-gradient-to-b from-background to-muted/30">
+          <div className="container px-4 mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">
+                <span className="text-foreground">혹시 이런 고민 있으신가요?</span>
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                "블로그 상위노출이 중요하다는 건 알겠는데..."
+              </p>
+            </div>
+
+            {/* Pain Points Grid */}
+            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-16">
+              <PainPointCard 
+                icon={<AlertTriangle className="w-6 h-6" />}
+                title="SEO가 뭔지도 모르겠어요"
+                description="형태소 빈도? 키워드 최적화? 처음 듣는 용어뿐이에요"
+              />
+              <PainPointCard 
+                icon={<Clock className="w-6 h-6" />}
+                title="글 하나 쓰는데 6시간 이상"
+                description="본업하면서 이걸 언제 해요? 시간이 없어요"
+              />
+              <PainPointCard 
+                icon={<XCircle className="w-6 h-6" />}
+                title="대행업체 믿기 어려워요"
+                description="사기 당했다는 얘기도 많고, 효과도 의문이에요"
+              />
+              <PainPointCard 
+                icon={<Users className="w-6 h-6" />}
+                title="체험단 블로거와는 달라요"
+                description="우리는 직접 내 사업을 알려야 해요"
+              />
+            </div>
+
+            {/* Comparison Table */}
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-8">
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-medium">
+                  <XCircle className="w-4 h-4" />
+                  블로그치트키는 체험단 서비스가 아닙니다
+                </span>
+              </div>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* 체험단 블로거 */}
+                <div className="p-6 rounded-2xl bg-muted/50 border border-border/50">
+                  <h3 className="text-lg font-semibold text-muted-foreground mb-4 flex items-center gap-2">
+                    <Users className="w-5 h-5" />
+                    체험단 블로거
+                  </h3>
+                  <ul className="space-y-3 text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <span className="text-muted-foreground/50">•</span>
+                      블로그 글쓰기가 <span className="font-medium">본업</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-muted-foreground/50">•</span>
+                      SEO 노하우 보유
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-muted-foreground/50">•</span>
+                      하루 여러 글 작성 가능
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-muted-foreground/50">•</span>
+                      다양한 업체 홍보
+                    </li>
+                  </ul>
+                </div>
+
+                {/* 자영업자 (우리의 고객) */}
+                <div className="p-6 rounded-2xl bg-primary/5 border-2 border-primary/30">
+                  <h3 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2">
+                    <Store className="w-5 h-5" />
+                    자영업자 (우리의 고객)
+                  </h3>
+                  <ul className="space-y-3 text-foreground">
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      블로그는 <span className="font-semibold text-primary">마케팅 수단</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      SEO? 그게 뭔데?
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      글 하나에 반나절
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                      <span className="font-semibold text-primary">내 가게만</span> 알리고 싶음
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Solution CTA */}
+            <div className="mt-16 text-center">
+              <div className="inline-block p-8 rounded-3xl bg-gradient-to-br from-primary/10 to-purple-500/10 border border-primary/20">
+                <h3 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
+                  블로그치트키가 해결합니다
+                </h3>
+                <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <SolutionBadge icon={<Search className="w-4 h-4" />} text="SEO 몰라도 OK" />
+                  <SolutionBadge icon={<Clock className="w-4 h-4" />} text="6시간 → 3분" />
+                  <SolutionBadge icon={<ShieldCheck className="w-4 h-4" />} text="사기 걱정 NO" />
+                  <SolutionBadge icon={<Store className="w-4 h-4" />} text="내 전문성 담기" />
+                </div>
+                <Button 
+                  size="lg"
+                  onClick={() => navigate("/login")}
+                  className="text-lg px-8 py-6 bg-primary hover:bg-primary/90 shadow-lg transition-all duration-300 hover:scale-105"
+                >
+                  <Zap className="w-5 h-5 mr-2" />
+                  지금 바로 시작하기
+                </Button>
               </div>
             </div>
           </div>
@@ -262,7 +393,10 @@ export default function LandingPage() {
                 <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">💳 요금제</span>
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                비즈니스 성장에 맞는 플랜을 선택하세요
+                대행업체 월 수십만원 vs 블로그치트키 월 2-5만원
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                직접 생성하고, 직접 확인하고, 내 전문성을 담으세요
               </p>
             </div>
 
@@ -335,10 +469,13 @@ export default function LandingPage() {
         <div className="container px-4 py-16 mx-auto">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
-              지금 바로 시작하세요
+              이러지도 저러지도 못하셨다면
             </h2>
-            <p className="text-lg text-muted-foreground mb-8">
-              3분 만에 SEO 최적화된 블로그 글을 작성해보세요
+            <p className="text-lg text-muted-foreground mb-4">
+              SEO 공부할 시간도 없고, 대행업체 맡기기도 불안하셨죠?
+            </p>
+            <p className="text-xl text-primary font-semibold mb-8">
+              블로그치트키로 직접 해보세요. 3분이면 충분합니다.
             </p>
             <Button 
               size="lg"
@@ -448,5 +585,36 @@ function PricingFeature({ text, highlighted = false }: { text: string; highlight
       </div>
       <span className="text-foreground">{text}</span>
     </li>
+  );
+}
+
+// Pain Point Card Component
+function PainPointCard({ 
+  icon, 
+  title, 
+  description 
+}: { 
+  icon: React.ReactNode; 
+  title: string; 
+  description: string;
+}) {
+  return (
+    <div className="p-6 rounded-2xl bg-card border border-border/50 hover:border-red-500/30 transition-all duration-300">
+      <div className="w-12 h-12 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center mb-4">
+        {icon}
+      </div>
+      <h3 className="text-lg font-semibold mb-2 text-foreground">{title}</h3>
+      <p className="text-muted-foreground">{description}</p>
+    </div>
+  );
+}
+
+// Solution Badge Component
+function SolutionBadge({ icon, text }: { icon: React.ReactNode; text: string }) {
+  return (
+    <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary">
+      {icon}
+      <span className="text-sm font-medium">{text}</span>
+    </div>
   );
 }
