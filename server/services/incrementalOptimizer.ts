@@ -795,7 +795,6 @@ ${diff >= 3 ? `   3회차: 결론 직전 단락에 추가
 ⚠️ 주의: 키워드가 아닌 문장에서만 줄이세요!
 `);
       }
-}
     } else if (issue.type === 'overused_word' && issue.word) {
       // 과다 사용 단어 - 동의어 목록과 치환 위치 안내
       const synonymMap: Record<string, string[]> = {
