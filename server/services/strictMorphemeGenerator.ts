@@ -29,23 +29,40 @@ export async function generateStrictMorphemeContent(
       console.log(`🎯 시도 ${attempt}/${maxAttempts}: ${attempt === 1 ? 'AI 콘텐츠 생성' : '부분 최적화'}`);
       console.log(`${'='.repeat(60)}\n`);
       
+      // 🆕 키워드 형태소 분석 (미리 계산)
+      const { extractKeywordComponents } = await import('./morphemeAnalyzer');
+      const keywordMorphemes = await extractKeywordComponents(keyword);
+      console.log(`🔍 키워드 형태소 추출 완료: [${keywordMorphemes.join(', ')}]`);
+
       // 기본 지침 (더 강화된 SEO 조건 - 구체적 배치 가이드 포함)
       const baseInstructions = [
         `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
-        `📊 SEO 최적화 목표 (3가지 조건 모두 충족 필수!)`,
+        `📊 SEO 최적화 목표 (4가지 조건 모두 충족 필수!)`,
         `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
         ``,
-        `1️⃣ 글자수: 1800자 목표 (1700-2000자 범위)`,
+        `1️⃣ 글자수: 1850자 목표 (1750-1950자 엄격! 2000자 초과 절대 금지)`,
         `   • 서론: 600-700자`,
         `   • 본론: 900-1100자`,
         `   • 결론: 200-300자`,
+        `   ⚠️ 중요: 2000자 초과하면 실패입니다!`,
         ``,
-        `2️⃣ 키워드 "${keyword}": 6회 목표 (5-7회 범위)`,
+        `2️⃣ 완전한 키워드 "${keyword}": 6회 목표 (5-7회 범위)`,
         `   • 서론에 2회: 첫 문단 + 서론 마지막`,
         `   • 본론에 3회: 각 소제목 아래 1회씩`,
         `   • 결론에 1회: 마무리 문장`,
         ``,
-        `3️⃣ 과다 사용 금지: 모든 단어 14회 이하`,
+        `3️⃣ 🚨 [가장 중요] 키워드 형태소 빈도 (각각 별도로!)`,
+        `   키워드 "${keyword}"는 다음 형태소로 구성:`,
+        `   ${keywordMorphemes.map(m => `• "${m}": 정확히 16회 (15-18회 허용)`).join('\n   ')}`,
+        `   `,
+        `   ⚠️ 주의사항:`,
+        `   - 각 형태소는 독립적으로 세어짐!`,
+        `   - 예: "자동차"가 "자동차냉각수"에 포함되어도 별도 1회로 카운트`,
+        `   - 반드시 각 형태소를 정확히 16회씩 사용하세요!`,
+        `   - 15회 미만이나 18회 초과는 실패입니다!`,
+        ``,
+        `4️⃣ 과다 사용 금지: 일반 단어 14회 이하`,
+        `   • 키워드 형태소가 아닌 단어: 최대 14회`,
         `   • 동의어 활용 필수!`,
         `   • 예: 교체→변경/갈아주기, 점검→확인/체크`,
         ``,
@@ -191,11 +208,16 @@ export async function generateStrictMorphemeContent(
         }
       }
       
-      // 추가 형태소가 있으면 포함
+      // 🆕 추가 형태소 필수 사용 강조
       if (customMorphemes) {
         const customMorphemesArray = customMorphemes.split(' ').filter(m => m.trim().length > 0);
         if (customMorphemesArray.length > 0) {
-          seoSuggestions.push(`다음 단어들도 자연스럽게 포함해주세요: ${customMorphemesArray.join(', ')}`);
+          seoSuggestions.push(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+          seoSuggestions.push(`🚨 필수 추가 형태소 (반드시 모두 사용!)`);
+          seoSuggestions.push(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+          seoSuggestions.push(`다음 단어들을 글에 최소 1회씩 반드시 포함하세요:`);
+          seoSuggestions.push(`${customMorphemesArray.map((m, i) => `  ${i+1}. "${m}" - 자연스럽게 본론에 포함`).join('\n')}`);
+          seoSuggestions.push(`⚠️ 이 단어들이 하나라도 누락되면 실패입니다!`);
         }
       }
       

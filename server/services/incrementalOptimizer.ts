@@ -288,22 +288,23 @@ export async function optimizeIncrementally(
     });
   }
   
-  // 🆕 키워드 형태소 우위성 체크 (키워드 형태소가 가장 많이 쓰여야 함)
+  // 🆕 키워드 형태소 빈도 체크 (15-18회 엄격)
   const keywordDominanceIssues = analysis.issues
-    .filter(issue => issue.includes('형태소 출현 횟수') && issue.includes('부족'));
-  
+    .filter(issue => issue.includes('형태소 출현 횟수'));
+
   if (keywordDominanceIssues.length > 0) {
-    console.log(`❌ 키워드 형태소 부족: ${keywordDominanceIssues.length}개`);
+    console.log(`❌ 키워드 형태소 빈도 문제: ${keywordDominanceIssues.length}개`);
     keywordDominanceIssues.forEach(issue => {
       // "형태소 출현 횟수 불균형: 냉각: 12회 (부족, 15-18회 권장)" 형태에서 파싱
-      const match = issue.match(/([가-힣]+):\s*(\d+)회/);
+      const match = issue.match(/([가-힣a-zA-Z0-9]+):\s*(\d+)회/);
       if (match) {
         const morpheme = match[1];
         const count = parseInt(match[2]);
+        const target = count < 15 ? 16 : 16; // 목표는 항상 16회
         issues.push({
           type: 'keyword_count',
-          description: `키워드 형태소 "${morpheme}" ${15 - count}회 부족`,
-          target: 15,
+          description: `키워드 형태소 "${morpheme}" ${issue.includes('부족') ? '부족' : '초과'} (현재 ${count}회 → 목표 15-18회)`,
+          target: target,
           current: count,
           word: morpheme
         });
@@ -701,30 +702,56 @@ async function fixAllIssuesAtOnce(
   keyword: string
 ): Promise<string> {
   const { GoogleGenAI } = await import('@google/genai');
-  const ai = new GoogleGenAI({ 
-    apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || '' 
+  const ai = new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || ''
   });
-  
+
+  // 키워드 형태소 추출
+  const { extractKeywordComponents } = await import('./morphemeAnalyzer');
+  const keywordMorphemes = await extractKeywordComponents(keyword);
+
   // 글 구조 분석
   const structure = analyzeContentStructure(content);
-  
+
   // 구체적인 수정 가이드 생성
   const detailedGuide = generateDetailedFixGuide(content, issues, keyword, structure);
-  
+
   // 현재 상태 요약
   const currentCharCount = content.replace(/\s/g, '').length;
   const currentKeywordCount = (content.match(new RegExp(keyword, 'g')) || []).length;
+
+  // 🆕 각 형태소 현재 빈도 계산
+  const { extractKoreanMorphemes } = await import('./morphemeAnalyzer');
+  const allMorphemes = extractKoreanMorphemes(content);
+  const morphemeFrequency = new Map<string, number>();
+  allMorphemes.forEach(m => {
+    const lower = m.toLowerCase();
+    morphemeFrequency.set(lower, (morphemeFrequency.get(lower) || 0) + 1);
+  });
+
+  const morphemeStatus = keywordMorphemes.map(m => {
+    const count = morphemeFrequency.get(m.toLowerCase()) || 0;
+    return `"${m}": ${count}회 (목표 15-18회)`;
+  }).join('\n');
 
   const prompt = `당신은 SEO 전문 에디터입니다. 아래 블로그 글을 수정해주세요.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📊 현재 상태
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- 글자수: ${currentCharCount}자 (목표: 1700-2000자)
-- 키워드 "${keyword}": ${currentKeywordCount}회 (목표: 5-7회)
+- 글자수: ${currentCharCount}자 (목표: 1750-1950자 엄격, 2000자 초과 금지!)
+- 완전 키워드 "${keyword}": ${currentKeywordCount}회 (목표: 5-7회)
 - 서론: 약 ${structure.intro.text.length}자
-- 본론: 약 ${structure.body.text.length}자  
+- 본론: 약 ${structure.body.text.length}자
 - 결론: 약 ${structure.conclusion.text.length}자
+
+🚨 [가장 중요] 키워드 형태소 빈도 (각각 별도로!)
+키워드 "${keyword}"는 다음 형태소로 구성:
+${morphemeStatus}
+
+⚠️ 주의: 각 형태소는 독립적으로 세어집니다!
+- 예: "자동차"가 "자동차냉각수"에 포함되어도 별도로 1회 카운트
+- 반드시 각 형태소를 15-18회 범위로 맞추세요!
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🔧 수정 가이드 (반드시 따라주세요!)
@@ -738,8 +765,9 @@ ${detailedGuide}
 2. 소제목 구조 100% 유지
 3. 글의 자연스러운 흐름 유지
 4. 수정 후 반드시 조건 재확인:
-   - 글자수 1700-2000자 범위인가?
-   - 키워드 5-7회인가?
+   - 글자수 1750-1950자 범위인가? (2000자 초과 절대 금지!)
+   - 완전 키워드 5-7회인가?
+   - 각 형태소 15-18회인가? (가장 중요!)
    - 과다 사용 단어 없는가?
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -796,13 +824,13 @@ async function fixCharacterCount(
   const amount = Math.abs(issue.target - issue.current);
   const currentKeywordCount = (content.match(new RegExp(keyword, 'g')) || []).length;
   
-  const prompt = isDeficit 
+  const prompt = isDeficit
     ? `당신은 SEO 전문 에디터입니다. 글자수를 ${amount}자 추가해주세요.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📊 현재 상태 (반드시 유지해야 할 조건)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- 현재 글자수: ${issue.current}자 → 목표: ${issue.target}자 이상
+- 현재 글자수: ${issue.current}자 → 목표: 1750-1950자 (절대 2000자 초과 금지!)
 - 키워드 "${keyword}": 현재 ${currentKeywordCount}회 ⚠️ 이 횟수 그대로 유지!
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -956,8 +984,13 @@ async function fixKeywordCount(
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📊 키워드 조건
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-키워드 "${keyword}" (${keywordLength}자)
+${isMorpheme ? `형태소 "${targetWord}"` : `키워드 "${keyword}"`} (${targetWordLength}자)
 현재: ${issue.current}회 → 목표: ${issue.target}회 (${amount}회 추가)
+
+${isMorpheme ? `⚠️ 중요 - 형태소 카운트 규칙:
+- "${targetWord}"를 포함하는 모든 단어가 카운트됩니다
+  예: "${targetWord}", "${targetWord}수", "${targetWord}기" 등
+- 목표: 15-18회 범위 (16회 목표)` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🔧 글자수 유지하면서 키워드 추가하는 방법
