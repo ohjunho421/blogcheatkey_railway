@@ -981,16 +981,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               quickAnalysis
             );
             
-            let titleResponse = `📝 **SSR 평가 기반 Top 5 제목 추천**\n\n`;
+            let titleResponse = `📝 SSR 평가 기반 Top 5 제목 추천\n\n`;
             titleResponse += `✨ 25가지 스타일로 제목 생성 후 클릭 유도력 평가\n`;
             titleResponse += `🏆 가장 효과적인 상위 5개 제목을 선정했습니다!\n\n`;
-            
+
             titlesWithScores.forEach((item, index) => {
               const stars = '⭐'.repeat(Math.round(item.score));
               titleResponse += `${index + 1}. ${item.title}\n`;
               titleResponse += `   ${stars} ${item.score.toFixed(1)}점\n\n`;
             });
-            
+
             const avgScore = titlesWithScores.reduce((sum, t) => sum + t.score, 0) / titlesWithScores.length;
             titleResponse += `📊 평균 점수: ${avgScore.toFixed(1)}/5.0\n\n`;
             titleResponse += `💡 마음에 드는 제목을 선택하시거나,\n"더 흥미롭게", "더 전문적으로" 등 스타일을 요청하시면\n다시 만들어드릴게요!`;
@@ -1024,21 +1024,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const morphemeAnalysis = await analyzeMorphemes(editedContent, project.keyword, project.customMorphemes || undefined);
           
           // Create detailed response with analysis
-          let responseMessage = `✅ **콘텐츠 수정 완료**\n\n`;
-          responseMessage += `**📊 요청 분석:**\n`;
+          let responseMessage = `✅ 콘텐츠 수정 완료\n\n`;
+          responseMessage += `📊 요청 분석:\n`;
           responseMessage += `• 수정 의도: ${result.analysis.intent}\n`;
           responseMessage += `• 수정 대상: ${result.analysis.target}\n`;
           responseMessage += `• 적용 전략: ${result.analysis.persuasionStrategy}\n\n`;
-          
-          responseMessage += `**🏆 최적 버전 선택 (${result.allVersions.length}개 버전 중):**\n`;
+
+          responseMessage += `🏆 최적 버전 선택 (${result.allVersions.length}개 버전 중):\n`;
           responseMessage += `• 품질 점수: ${result.allVersions[0]?.score.toFixed(1)}/10\n`;
-          
+
           if (result.allVersions[0]?.strengths.length > 0) {
             responseMessage += `• 강점: ${result.allVersions[0].strengths.slice(0, 2).join(', ')}\n`;
           }
-          
+
           if (!morphemeAnalysis.isOptimized) {
-            responseMessage += `\n⚠️ **SEO 최적화 상태:**\n${morphemeAnalysis.issues.slice(0, 3).join('\n')}`;
+            responseMessage += `\n⚠️ SEO 최적화 상태:\n${morphemeAnalysis.issues.slice(0, 3).join('\n')}`;
           } else {
             responseMessage += `\n✅ SEO 최적화 조건 충족`;
           }
