@@ -17,6 +17,7 @@ import AdminPage from "@/pages/admin-dashboard";
 import LandingPage from "@/pages/LandingPage";
 
 import { useAuth } from "@/hooks/useAuth";
+import { PostHogProvider, usePostHogIdentify } from "@/components/PostHogProvider";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -72,10 +73,12 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <PostHogProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </PostHogProvider>
     </QueryClientProvider>
   );
 }

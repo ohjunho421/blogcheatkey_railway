@@ -2,11 +2,12 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, DollarSign, Activity, BarChart3 } from "lucide-react";
+import { Users, DollarSign, Activity, BarChart3, TrendingUp } from "lucide-react";
 import type { User } from "@shared/schema";
 import { UserManagementTab } from "@/components/admin/UserManagementTab";
 import { PaymentManagementTab } from "@/components/admin/PaymentManagementTab";
 import { ActivityLogTab } from "@/components/admin/ActivityLogTab";
+import { AnalyticsTab } from "@/components/admin/AnalyticsTab";
 
 export default function AdminDashboard() {
   const queryClient = useQueryClient();
@@ -17,22 +18,25 @@ export default function AdminDashboard() {
   });
 
   // Get payment records
-  const { data: payments } = useQuery({
+  const { data: payments } = useQuery<any[]>({
     queryKey: ["/api/admin/payments"],
   });
 
   // Get activity logs
-  const { data: activities } = useQuery({
+  const { data: activities } = useQuery<any[]>({
     queryKey: ["/api/admin/activities"],
   });
 
   // Calculate statistics
+  const paymentsArray = Array.isArray(payments) ? payments : [];
+  const activitiesArray = Array.isArray(activities) ? activities : [];
+  
   const stats = {
     totalUsers: users?.length || 0,
     activeSubscriptions: users?.filter(u => 
       u.subscriptionExpiresAt && new Date(u.subscriptionExpiresAt) > new Date()
     ).length || 0,
-    pendingPayments: payments?.filter((p: any) => p.paymentStatus === 'pending').length || 0,
+    pendingPayments: paymentsArray.filter((p: any) => p.paymentStatus === 'pending').length || 0,
     totalTokensUsed: users?.reduce((sum, u) => sum + (u.totalTokensUsed || 0), 0) || 0,
   };
 
@@ -88,23 +92,31 @@ export default function AdminDashboard() {
         </div>
 
         {/* Main Tabs */}
-        <Tabs defaultValue="users" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs defaultValue="analytics" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              사용자 분석
+            </TabsTrigger>
             <TabsTrigger value="users">사용자 관리</TabsTrigger>
             <TabsTrigger value="payments">결제 관리</TabsTrigger>
             <TabsTrigger value="activity">활동 로그</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="analytics">
+            <AnalyticsTab />
+          </TabsContent>
 
           <TabsContent value="users">
             <UserManagementTab users={users || []} />
           </TabsContent>
 
           <TabsContent value="payments">
-            <PaymentManagementTab payments={payments || []} />
+            <PaymentManagementTab payments={paymentsArray} />
           </TabsContent>
 
           <TabsContent value="activity">
-            <ActivityLogTab activities={activities || []} />
+            <ActivityLogTab activities={activitiesArray} />
           </TabsContent>
         </Tabs>
       </div>
