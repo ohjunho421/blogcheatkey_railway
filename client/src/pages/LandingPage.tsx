@@ -47,35 +47,57 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" itemScope itemType="https://schema.org/WebPage">
+      {/* Skip to main content for accessibility */}
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary text-primary-foreground px-4 py-2 rounded-md z-[100]">
+        메인 콘텐츠로 건너뛰기
+      </a>
+      
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-background/80 backdrop-blur-md border-b border-border/50">
+      <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-background/80 backdrop-blur-md border-b border-border/50" role="banner">
         <div className="container px-4 mx-auto">
           <div className="flex items-center justify-between h-16 md:h-20">
-            <a href="/" className="flex items-center gap-2">
+            <a href="/" className="flex items-center gap-2" aria-label="블로그치트키 홈으로 이동">
               <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
                 블로그치트키
               </span>
             </a>
             
-            <nav className="hidden md:flex items-center gap-8">
+            <nav className="hidden md:flex items-center gap-8" role="navigation" aria-label="메인 네비게이션">
+              <button 
+                onClick={() => scrollToSection("pain-points")} 
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="자영업자 고민 섹션으로 이동"
+              >
+                자영업자 고민
+              </button>
               <button 
                 onClick={() => scrollToSection("features")} 
                 className="text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="기능 섹션으로 이동"
               >
                 기능
               </button>
               <button 
                 onClick={() => scrollToSection("pricing")} 
                 className="text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="요금제 섹션으로 이동"
               >
                 요금제
+              </button>
+              <button 
+                onClick={() => scrollToSection("faq")} 
+                className="text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="자주 묻는 질문 섹션으로 이동"
+              >
+                FAQ
               </button>
               <Button 
                 onClick={() => navigate("/login")}
                 className="bg-primary hover:bg-primary/90 shadow-lg transition-all duration-300 hover:scale-105"
+                aria-label="무료로 시작하기 - 로그인 페이지로 이동"
               >
-                <Zap className="w-4 h-4 mr-2" />
+                <Zap className="w-4 h-4 mr-2" aria-hidden="true" />
                 무료로 시작하기
               </Button>
             </nav>
@@ -83,11 +105,14 @@ export default function LandingPage() {
             <button 
               className="md:hidden p-2"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-menu"
+              aria-label={mobileMenuOpen ? "메뉴 닫기" : "메뉴 열기"}
             >
               {mobileMenuOpen ? (
-                <X className="w-6 h-6 text-foreground" />
+                <X className="w-6 h-6 text-foreground" aria-hidden="true" />
               ) : (
-                <Menu className="w-6 h-6 text-foreground" />
+                <Menu className="w-6 h-6 text-foreground" aria-hidden="true" />
               )}
             </button>
           </div>
@@ -95,8 +120,14 @@ export default function LandingPage() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-background border-t border-border/50">
+          <nav id="mobile-menu" className="md:hidden bg-background border-t border-border/50" role="navigation" aria-label="모바일 네비게이션">
             <div className="container px-4 py-4 flex flex-col gap-4">
+              <button 
+                onClick={() => scrollToSection("pain-points")} 
+                className="text-left text-muted-foreground hover:text-foreground transition-colors py-2"
+              >
+                자영업자 고민
+              </button>
               <button 
                 onClick={() => scrollToSection("features")} 
                 className="text-left text-muted-foreground hover:text-foreground transition-colors py-2"
@@ -109,21 +140,27 @@ export default function LandingPage() {
               >
                 요금제
               </button>
+              <button 
+                onClick={() => scrollToSection("faq")} 
+                className="text-left text-muted-foreground hover:text-foreground transition-colors py-2"
+              >
+                FAQ
+              </button>
               <Button 
                 onClick={() => navigate("/login")}
                 className="w-full bg-primary hover:bg-primary/90"
               >
-                <Zap className="w-4 h-4 mr-2" />
+                <Zap className="w-4 h-4 mr-2" aria-hidden="true" />
                 무료로 시작하기
               </Button>
             </div>
-          </div>
+          </nav>
         )}
       </header>
 
-      <main>
+      <main id="main-content" role="main">
         {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-background via-muted/30 to-background">
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-background via-muted/30 to-background" aria-labelledby="hero-heading">
           {/* Background Effects */}
           <div className="absolute inset-0 overflow-hidden">
             <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse" />
@@ -149,18 +186,19 @@ export default function LandingPage() {
                 <span className="text-sm font-medium">자영업자를 위한 AI 블로그 마케팅 솔루션</span>
               </motion.div>
 
-              {/* Headline */}
+              {/* Headline - H1 for SEO */}
               <motion.h1
+                id="hero-heading"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.8 }}
                 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6"
               >
-                <span className="text-foreground">본업에 집중하세요</span>
+                <span className="text-foreground">자영업자를 위한 AI 블로그 자동 생성</span>
                 <br />
-                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">블로그 글은 AI가</span>
+                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">본업에 집중하세요</span>
                 <br />
-                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">대신 써드립니다</span>
+                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">블로그 글은 AI가 대신</span>
               </motion.h1>
 
               {/* Subheadline */}
@@ -228,7 +266,7 @@ export default function LandingPage() {
         </section>
 
         {/* Pain Points Section - 자영업자의 현실 */}
-        <section id="pain-points" className="py-24 bg-gradient-to-b from-background to-muted/30">
+        <section id="pain-points" className="py-24 bg-gradient-to-b from-background to-muted/30" aria-labelledby="pain-points-heading">
           <div className="container px-4 mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -237,8 +275,8 @@ export default function LandingPage() {
               transition={{ duration: 0.6 }}
               className="text-center mb-16"
             >
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                <span className="text-foreground">혹시 이런 고민 있으신가요?</span>
+              <h2 id="pain-points-heading" className="text-3xl md:text-4xl font-bold mb-4">
+                <span className="text-foreground">자영업자 블로그 마케팅, 이런 고민 있으신가요?</span>
               </h2>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                 "블로그 상위노출이 중요하다는 건 알겠는데..."
@@ -396,7 +434,7 @@ export default function LandingPage() {
         </section>
 
         {/* Features Section */}
-        <section id="features" className="py-24 bg-muted/30">
+        <section id="features" className="py-24 bg-muted/30" aria-labelledby="features-heading">
           <div className="container px-4 mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -405,8 +443,8 @@ export default function LandingPage() {
               transition={{ duration: 0.6 }}
               className="text-center mb-16"
             >
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">✨ 주요 기능</span>
+              <h2 id="features-heading" className="text-3xl md:text-4xl font-bold mb-4">
+                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">AI 블로그 자동 생성 주요 기능</span>
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                 블로그치트키가 제공하는 강력한 AI 기반 SEO 최적화 도구들을 만나보세요
@@ -555,7 +593,7 @@ export default function LandingPage() {
         </section>
 
         {/* Pricing Section */}
-        <section id="pricing" className="py-24 bg-muted/30">
+        <section id="pricing" className="py-24 bg-muted/30" aria-labelledby="pricing-heading">
           <div className="container px-4 mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -564,8 +602,8 @@ export default function LandingPage() {
               transition={{ duration: 0.6 }}
               className="text-center mb-16"
             >
-              <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">💳 요금제</span>
+              <h2 id="pricing-heading" className="text-3xl md:text-4xl font-bold mb-4">
+                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">블로그치트키 요금제 - 대행업체보다 저렴하게</span>
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                 대행업체 월 수십만원 vs 블로그치트키 월 2-5만원
@@ -660,10 +698,76 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+
+        {/* FAQ Section - SEO 최적화를 위한 자주 묻는 질문 */}
+        <section id="faq" className="py-24 bg-background" aria-labelledby="faq-heading" itemScope itemType="https://schema.org/FAQPage">
+          <div className="container px-4 mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-16"
+            >
+              <h2 id="faq-heading" className="text-3xl md:text-4xl font-bold mb-4">
+                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">자주 묻는 질문</span>
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                블로그치트키에 대해 궁금한 점을 확인하세요
+              </p>
+            </motion.div>
+
+            <div className="max-w-3xl mx-auto space-y-4">
+              {[
+                {
+                  question: "블로그치트키는 어떤 서비스인가요?",
+                  answer: "블로그치트키는 자영업자를 위한 AI 기반 SEO 최적화 블로그 콘텐츠 자동 생성 서비스입니다. 키워드 하나만 입력하면 네이버 상위노출 조건을 완벽히 충족하는 고품질 블로그 글이 3분 만에 완성됩니다."
+                },
+                {
+                  question: "SEO를 몰라도 사용할 수 있나요?",
+                  answer: "네, 전혀 문제없습니다. 블로그치트키가 형태소 빈도(15-17회), 글자수(1,700-2,000자), 키워드 최적화 등 모든 SEO 조건을 자동으로 맞춰줍니다. 사용자는 키워드만 입력하면 됩니다."
+                },
+                {
+                  question: "대행업체와 비교했을 때 장점은 무엇인가요?",
+                  answer: "대행업체는 월 수십만원의 비용이 들고 사기 위험이 있지만, 블로그치트키는 월 2-5만원으로 직접 생성하고 확인할 수 있어 투명하고 경제적입니다. 또한 내 전문성과 차별화 요소를 직접 담을 수 있습니다."
+                },
+                {
+                  question: "어떤 AI 모델을 사용하나요?",
+                  answer: "Claude Sonnet 4.5(메인 콘텐츠 생성), Gemini 2.5 Pro(키워드 분석, 챗봇 편집), Perplexity Sonar(실시간 연구 데이터 수집) 등 최첨단 AI 모델을 통합 활용합니다."
+                },
+                {
+                  question: "베이직과 프리미엄 플랜의 차이는 무엇인가요?",
+                  answer: "베이직(월 20,000원)은 콘텐츠 생성, SEO 최적화, 키워드 분석, 세션 저장, 모바일 포맷팅을 제공합니다. 프리미엄(월 50,000원)은 베이직의 모든 기능에 AI 챗봇 편집, SSR 평가 기반 제목 추천, 톤앤매너 조정, 실시간 SEO 재검증 기능이 추가됩니다."
+                }
+              ].map((faq, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1, duration: 0.5 }}
+                  className="p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/20 transition-all duration-300"
+                  itemScope
+                  itemProp="mainEntity"
+                  itemType="https://schema.org/Question"
+                >
+                  <h3 className="text-lg font-semibold text-foreground mb-3" itemProp="name">
+                    {faq.question}
+                  </h3>
+                  <div itemScope itemProp="acceptedAnswer" itemType="https://schema.org/Answer">
+                    <p className="text-muted-foreground leading-relaxed" itemProp="text">
+                      {faq.answer}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
       </main>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-b from-muted/50 to-background border-t border-border/50">
+      <footer className="bg-gradient-to-b from-muted/50 to-background border-t border-border/50" role="contentinfo">
         {/* CTA Section */}
         <div className="container px-4 py-20 mx-auto">
           <motion.div
@@ -674,7 +778,7 @@ export default function LandingPage() {
             className="max-w-3xl mx-auto text-center"
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
-              이러지도 저러지도 못하셨다면
+              블로그 마케팅, 이러지도 저러지도 못하셨다면
             </h2>
             <p className="text-lg text-muted-foreground mb-4">
               SEO 공부할 시간도 없고, 대행업체 맡기기도 불안하셨죠?
