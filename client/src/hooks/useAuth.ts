@@ -206,8 +206,8 @@ export function useLogout() {
     onSuccess: () => {
       queryClient.setQueryData(["/api/auth/user"], null);
       queryClient.clear();
-      // 로그인 페이지로 이동
-      window.location.href = "/login";
+      // 랜딩 페이지로 이동
+      window.location.href = "/";
     },
   });
 }
