@@ -317,20 +317,8 @@ export function setupAuth(app: Express) {
     );
   }
 
-  app.post('/api/auth/logout', (req, res) => {
-    req.logout(() => {
-      res.json({ success: true });
-    });
-  });
-
-  // Get current user
-  app.get('/api/auth/user', (req, res) => {
-    if (req.isAuthenticated()) {
-      res.json(req.user);
-    } else {
-      res.status(401).json({ error: 'Not authenticated' });
-    }
-  });
+  // NOTE: /api/auth/logout and /api/auth/user are defined in routes.ts
+  // to handle both passport OAuth and manual session login properly
 }
 
 // Middleware to protect routes
