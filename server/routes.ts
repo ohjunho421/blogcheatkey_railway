@@ -82,6 +82,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "이메일 또는 비밀번호가 잘못되었습니다" });
       }
 
+      // 기존 passport 세션 정리 (다른 사용자로 로그인된 경우 충돌 방지)
+      if ((req.session as any).passport) {
+        delete (req.session as any).passport;
+        console.log("Cleared existing passport session");
+      }
+      
       // 세션에 사용자 정보 저장
       (req.session as any).userId = user.id;
       console.log("Session set:", req.session);
@@ -123,7 +129,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Session ID from request:", req.sessionID);
       console.log("Session object:", JSON.stringify(req.session, null, 2));
       
+      // 우선순위: 1. session.userId (manual login), 2. passport.user (OAuth login)
       let userId = (req.session as any)?.userId;
+      
+      // passport OAuth 로그인 사용자 확인 (session.userId가 없는 경우)
+      if (!userId && (req.session as any)?.passport?.user) {
+        userId = (req.session as any).passport.user;
+        console.log("Using passport user ID:", userId);
+      }
       
       // 쿠키 세션이 없으면 Authorization 헤더 확인
       if (!userId && req.headers.authorization) {
@@ -249,11 +262,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Logout endpoint
   app.post("/api/auth/logout", async (req, res) => {
     try {
+      // Clear passport session first
+      if ((req as any).logout) {
+        (req as any).logout(() => {
+          console.log("Passport logout completed");
+        });
+      }
+      
+      // Then destroy the entire session
       req.session?.destroy((err) => {
         if (err) {
           console.error("Session destroy error:", err);
           return res.status(500).json({ message: "로그아웃 처리 중 오류가 발생했습니다" });
         }
+        // Clear cookie on client side
+        res.clearCookie('connect.sid');
         res.json({ message: "로그아웃되었습니다" });
       });
     } catch (error) {

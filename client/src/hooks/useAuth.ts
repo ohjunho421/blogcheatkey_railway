@@ -111,17 +111,27 @@ export function useLogin() {
       });
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
       
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // localStorage에 세션 정보 저장 (signup과 동일하게)
+      if (data.sessionId) {
+        console.log("Login: 서버에서 받은 세션 ID:", data.sessionId);
+        localStorage.setItem('sessionId', data.sessionId);
+        localStorage.setItem('user', JSON.stringify(data));
+        console.log("Login: localStorage에 세션 저장 완료");
+      }
+      
       // 로그아웃 상태 해제
       setLoggedOut(false);
       // 인증 에러 상태 초기화
       setAuthError(false);
-      // 올바른 쿼리 키로 캐시 무효화
+      // 캐시 완전히 초기화 후 다시 가져오기
+      queryClient.removeQueries({ queryKey: ["/api/auth/user"] });
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
     },
   });
@@ -169,34 +179,35 @@ export function useLogout() {
   
   return useMutation({
     mutationFn: async () => {
-      // 임시 로그아웃 구현 - 전역 상태 변경
+      // 서버에 로그아웃 요청
+      try {
+        const response = await fetch("/api/auth/logout", {
+          method: "POST",
+          credentials: "include",
+        });
+        
+        if (!response.ok) {
+          console.error("Logout API error:", response.status);
+        }
+      } catch (error) {
+        console.error("Logout API call failed:", error);
+      }
+      
+      // 로그아웃 상태 설정
       setLoggedOut(true);
       // 인증 에러 상태도 초기화
       setAuthError(false);
       // 세션 정보 제거
       localStorage.removeItem('sessionId');
       localStorage.removeItem('user');
+      
       return { success: true };
-      
-      // 원래 로그아웃 API 호출 (나중에 활성화)
-      /*
-      const response = await fetch("/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return response.json();
-      */
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/auth/user"], null);
+      queryClient.setQueryData(["/api/auth/user"], null);
       queryClient.clear();
-      // 로그인 페이지로 이동 후 새로고침
-      window.location.href = "/login";
+      // 랜딩 페이지로 이동
+      window.location.href = "/";
     },
   });
 }

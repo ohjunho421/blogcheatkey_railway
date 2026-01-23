@@ -197,13 +197,32 @@ export function setupAuth(app: Express) {
     proxy: isProduction // Railway의 프록시 신뢰
   }));
 
+  // Workaround for passport 0.6+ compatibility with connect-pg-simple
+  // https://github.com/jaredhanson/passport/issues/904
+  app.use((req: any, res: any, next: any) => {
+    if (req.session && !req.session.regenerate) {
+      req.session.regenerate = (cb: any) => {
+        cb();
+      };
+    }
+    if (req.session && !req.session.save) {
+      req.session.save = (cb: any) => {
+        cb();
+      };
+    }
+    next();
+  });
+
   // Initialize Passport
   app.use(passport.initialize());
   app.use(passport.session());
 
   // Google OAuth routes
   app.get('/api/auth/google', 
-    passport.authenticate('google', { scope: ['profile', 'email'] })
+    passport.authenticate('google', { 
+      scope: ['profile', 'email'],
+      prompt: 'select_account'  // 항상 계정 선택 화면 표시
+    })
   );
 
   app.get('/api/auth/google/callback',
@@ -317,26 +336,21 @@ export function setupAuth(app: Express) {
     );
   }
 
-  app.post('/api/auth/logout', (req, res) => {
-    req.logout(() => {
-      res.json({ success: true });
-    });
-  });
-
-  // Get current user
-  app.get('/api/auth/user', (req, res) => {
-    if (req.isAuthenticated()) {
-      res.json(req.user);
-    } else {
-      res.status(401).json({ error: 'Not authenticated' });
-    }
-  });
+  // NOTE: /api/auth/logout and /api/auth/user are defined in routes.ts
+  // to handle both passport OAuth and manual session login properly
 }
 
-// Middleware to protect routes
+// Middleware to protect routes - supports both passport OAuth and manual session login
 export function requireAuth(req: any, res: any, next: any) {
+  // Check passport OAuth login
   if (req.isAuthenticated()) {
     return next();
   }
+  
+  // Check manual session login (email/password)
+  if (req.session?.userId) {
+    return next();
+  }
+  
   res.status(401).json({ error: 'Authentication required' });
 }
