@@ -195,6 +195,45 @@ export default function PrivacyPolicy() {
             </p>
           </section>
 
+          <section>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              11. 결제 상품의 환불(취소) 규정
+            </h2>
+            <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+              회사는 이용자의 환불 요청 시 다음과 같은 기준에 따라 환불을 처리합니다:
+            </p>
+            <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg space-y-3">
+              <div>
+                <h3 className="font-medium text-gray-900 dark:text-white mb-2">
+                  환불 기준
+                </h3>
+                <ul className="ml-4 space-y-2 text-gray-700 dark:text-gray-300">
+                  <li>• 구독 서비스의 환불은 남은 구독기간을 일할 계산하여 환불해 드립니다.</li>
+                  <li>• 환불 금액 = 결제 금액 × (남은 구독일수 / 전체 구독일수)</li>
+                  <li>• 환불 요청은 고객센터(010-5001-2143) 또는 이메일(wnsghcoswp@gmail.com)로 접수해 주세요.</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900 dark:text-white mb-2">
+                  환불 처리 기간
+                </h3>
+                <ul className="ml-4 space-y-2 text-gray-700 dark:text-gray-300">
+                  <li>• 환불 요청 접수 후 영업일 기준 3~5일 이내에 처리됩니다.</li>
+                  <li>• 결제 수단에 따라 환불 완료까지 추가 시간이 소요될 수 있습니다.</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900 dark:text-white mb-2">
+                  환불 제외 사항
+                </h3>
+                <ul className="ml-4 space-y-2 text-gray-700 dark:text-gray-300">
+                  <li>• 이미 사용한 서비스(생성된 콘텐츠 등)에 대해서는 환불이 제한될 수 있습니다.</li>
+                  <li>• 프로모션 또는 할인 적용 상품의 경우 별도의 환불 정책이 적용될 수 있습니다.</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
           <div className="text-center pt-8 border-t border-gray-200 dark:border-gray-700">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               본 방침은 2025년 1월 16일부터 시행됩니다.

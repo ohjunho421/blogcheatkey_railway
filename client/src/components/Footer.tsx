@@ -38,6 +38,10 @@ export default function Footer() {
                 <Phone className="h-4 w-4" />
                 <span>연락처: 010-5001-2143</span>
               </div>
+              <div className="flex items-start gap-2">
+                <Building2 className="h-4 w-4 mt-0.5" />
+                <span>사업장주소: 의정부시 안말로 85번길 27-1</span>
+              </div>
             </div>
           </div>
 

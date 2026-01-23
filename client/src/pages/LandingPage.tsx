@@ -811,6 +811,7 @@ export default function LandingPage() {
                     <p><span className="font-medium text-foreground">사업자번호:</span> 456-05-03530</p>
                     <p><span className="font-medium text-foreground">대표자:</span> 오준호</p>
                     <p><span className="font-medium text-foreground">연락처:</span> 010-5001-2143</p>
+                    <p><span className="font-medium text-foreground">사업장주소:</span> 의정부시 안말로 85번길 27-1</p>
                   </div>
                 </div>
                 <div>
@@ -834,9 +835,14 @@ export default function LandingPage() {
         {/* Copyright */}
         <div className="border-t border-border/50">
           <div className="container px-4 py-6 mx-auto">
-            <p className="text-center text-sm text-muted-foreground">
-              © 2026 블로그치트키. All rights reserved.
-            </p>
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4">
+              <p className="text-sm text-muted-foreground">
+                © 2026 블로그치트키. All rights reserved.
+              </p>
+              <a href="/privacy-policy" className="text-sm text-muted-foreground hover:text-foreground underline transition-colors">
+                개인정보처리방침
+              </a>
+            </div>
           </div>
         </div>
       </footer>
