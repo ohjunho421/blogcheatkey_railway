@@ -14,7 +14,7 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || '' 
 });
 
-const MODEL = "gemini-2.0-flash-exp";
+const MODEL = "gemini-2.5-pro";
 
 interface EvaluatedTitle {
   title: string;

@@ -34,7 +34,7 @@ export async function analyzeKeyword(keyword: string): Promise<KeywordAnalysis> 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const response = await ai.models.generateContent({
-        model: "gemini-3-pro-preview",
+        model: "gemini-2.5-pro",
         config: {
           systemInstruction: "당신은 SEO 전문가이자 블로그 작성 전문가입니다. 사용자의 검색 의도를 정확히 파악하고, 실용적이고 도움이 되는 블로그 구조를 제안해주세요.",
         },
@@ -140,7 +140,7 @@ JSON으로 응답:
   let requestAnalysis;
   try {
     const analysisResponse = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+      model: "gemini-2.5-pro",
       config: {
         systemInstruction: "사용자의 요청을 정확히 분석하여 수정 의도를 파악하는 전문가입니다.",
         responseMimeType: "application/json"
@@ -202,7 +202,7 @@ ${customMorphemesArray.length > 0 ? `6. 추가 형태소들 각각 최소 1회�
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+      model: "gemini-2.5-pro",
       config: {
         systemInstruction: `당신은 SEO 최적화 블로그 수정 전문가입니다. 기존 블로그를 부분적으로 수정하는 것이 주 업무입니다.
 
@@ -269,7 +269,7 @@ ${content}
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+      model: "gemini-2.5-pro",
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -360,7 +360,7 @@ ${content}
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+      model: "gemini-2.5-pro",
       config: {
         systemInstruction: "당신은 해당 분야의 전문가이면서도 매력적이고 자연스러운 블로그 어투로 글을 쓰는 전문가입니다. ~합니다, ~때문이죠, ~입니다, ~신가요? 같은 일반적인 블로그 톤을 사용하세요. 서론은 독자의 호기심을 자극하고 공감대를 형성하며 전문성을 어필하여 끝까지 읽고 싶게 만드세요. 결론은 핵심 내용을 요약하고 독자가 행동하고 싶게 만들며 전문가 상담을 자연스럽게 유도하세요.",
       },

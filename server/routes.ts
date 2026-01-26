@@ -123,25 +123,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get current user
   app.get("/api/auth/user", async (req, res) => {
     try {
-      console.log("=== AUTH USER DEBUG START ===");
-      console.log("Request headers cookie:", req.headers.cookie);
-      console.log("Authorization header:", req.headers.authorization);
-      console.log("Session ID from request:", req.sessionID);
-      console.log("Session object:", JSON.stringify(req.session, null, 2));
-      
       // 우선순위: 1. session.userId (manual login), 2. passport.user (OAuth login)
       let userId = (req.session as any)?.userId;
       
       // passport OAuth 로그인 사용자 확인 (session.userId가 없는 경우)
       if (!userId && (req.session as any)?.passport?.user) {
         userId = (req.session as any).passport.user;
-        console.log("Using passport user ID:", userId);
       }
       
       // 쿠키 세션이 없으면 Authorization 헤더 확인
       if (!userId && req.headers.authorization) {
         const token = req.headers.authorization.replace('Bearer ', '');
-        console.log("Using Authorization token:", token);
         
         // 세션 스토어에서 토큰으로 세션 검색
         try {
@@ -149,11 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (sessionStore && sessionStore.get) {
             await new Promise<void>((resolve, reject) => {
               sessionStore.get(token, (err: any, session: any) => {
-                if (err) {
-                  console.error("Session store get error:", err);
-                  resolve();
-                } else if (session && session.userId) {
-                  console.log("Found session from token:", session);
+                if (!err && session && session.userId) {
                   userId = session.userId;
                 }
                 resolve();
@@ -161,15 +149,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
         } catch (error) {
-          console.error("Session lookup error:", error);
+          // Silent fail for session lookup
         }
-        
       }
       
-      console.log("Final userId:", userId);
-      
       if (!userId) {
-        console.log("No userId found, returning 401");
         return res.status(401).json({ error: "Not authenticated" });
       }
 

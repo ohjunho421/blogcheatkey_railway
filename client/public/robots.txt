@@ -1,0 +1,34 @@
+# Robots.txt for blogcheatkey.com
+# AI 검색 및 검색엔진 크롤링 최적화
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /.env
+
+# AI 크롤러 허용
+User-agent: GPTBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+# 사이트맵 위치
+Sitemap: https://blogcheatkey.com/sitemap.xml
+Sitemap: https://www.blogcheatkey.com/sitemap.xml
+
+# LLMs.txt 위치
+# https://blogcheatkey.com/llms.txt
