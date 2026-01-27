@@ -6,7 +6,7 @@ import { Sparkles, Crown, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import PaymentModal from "@/components/PaymentModal";
 
-const MAX_FREE_GENERATIONS = 5;
+const MAX_FREE_GENERATIONS = 3;
 
 export function FreeTrialStatus() {
   const { user, isAuthenticated } = useAuth();

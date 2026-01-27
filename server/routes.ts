@@ -580,14 +580,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
         
-        // 신규 사용자 - 5회 무료 체험 제한 체크
+        // 신규 사용자 - 3회 무료 체험 제한 체크
         const freeCount = user.freeGenerationCount || 0;
-        if (freeCount >= 5) {
+        if (freeCount >= 3) {
           return res.status(403).json({ 
             error: "무료 체험 횟수를 모두 사용하셨습니다",
             code: "FREE_LIMIT_EXCEEDED",
             freeCount: freeCount,
-            maxFreeCount: 5,
+            maxFreeCount: 3,
             message: "계속 사용하시려면 구독이 필요합니다"
           });
         }
@@ -942,6 +942,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const project = await storage.getBlogProject(id);
       if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
+      }
+
+      // 챗봇 사용 권한 체크 (프리미엄 전용)
+      const userId = project.userId;
+      if (userId) {
+        const user = await storage.getUser(userId);
+        if (user && !user.isAdmin && !user.canUseChatbot) {
+          return res.status(403).json({ 
+            error: "AI 챗봇은 프리미엄 플랜 전용 기능입니다",
+            code: "CHATBOT_NOT_ALLOWED",
+            message: "프리미엄 플랜으로 업그레이드하시면 AI 챗봇을 이용하실 수 있습니다"
+          });
+        }
       }
 
       // Save user message

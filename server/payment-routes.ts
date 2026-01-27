@@ -82,7 +82,7 @@ router.post('/portone/verify', requireAuth, async (req, res) => {
           subscriptionTier: planType,
           subscriptionExpiresAt: expiresAt,
           canGenerateContent: true,
-          canGenerateImages: true,
+          canGenerateImages: isPremium, // 프리미엄만 이미지 생성 가능
           canUseChatbot: isPremium, // 프리미엄만 챗봇 사용 가능
         } as any);
         

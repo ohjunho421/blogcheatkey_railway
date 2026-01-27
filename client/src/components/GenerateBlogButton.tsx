@@ -3,8 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowRight, RefreshCw, Sparkles } from "lucide-react";
+import { ArrowRight, RefreshCw, Sparkles, Lock } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import PaymentModal from "@/components/PaymentModal";
+
+const MAX_FREE_GENERATIONS = 3;
 
 interface GenerateBlogButtonProps {
   project: any;
@@ -13,8 +17,20 @@ interface GenerateBlogButtonProps {
 
 export function GenerateBlogButton({ project, onRefresh }: GenerateBlogButtonProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState("");
+  
+  // 사용 가능 여부 체크
+  const isAdmin = user?.isAdmin;
+  const hasActiveSubscription = user?.subscriptionExpiresAt && 
+    new Date(user.subscriptionExpiresAt) > new Date();
+  const hadPreviousSubscription = user?.subscriptionExpiresAt !== null && user?.subscriptionExpiresAt !== undefined;
+  const freeCount = user?.freeGenerationCount || 0;
+  const isFreeLimitReached = freeCount >= MAX_FREE_GENERATIONS;
+  
+  // 사용 가능 조건: 관리자 OR 활성 구독자 OR (이전 구독 없음 AND 무료 횟수 남음)
+  const canGenerate = isAdmin || hasActiveSubscription || (!hadPreviousSubscription && !isFreeLimitReached);
 
   const steps = [
     { label: "키워드 분석 검토", duration: 5 },
@@ -96,26 +112,59 @@ export function GenerateBlogButton({ project, onRefresh }: GenerateBlogButtonPro
     generateContent.mutate(project.id);
   };
 
+  // 비활성화 사유 메시지
+  const getDisabledReason = () => {
+    if (hadPreviousSubscription && !hasActiveSubscription) {
+      return "구독이 만료되었습니다. 갱신 후 이용해주세요.";
+    }
+    if (isFreeLimitReached) {
+      return `무료 체험 ${MAX_FREE_GENERATIONS}회를 모두 사용했습니다. 구독 후 이용해주세요.`;
+    }
+    return "";
+  };
+
   return (
     <div className="space-y-4">
-      <Button 
-        onClick={handleGenerate}
-        disabled={generateContent.isPending}
-        size="lg"
-        className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 w-full"
-      >
-        {generateContent.isPending ? (
-          <>
-            <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-            블로그 생성 중...
-          </>
-        ) : (
-          <>
-            <Sparkles className="h-5 w-5 mr-2" />
-            블로그 생성 시작
-          </>
-        )}
-      </Button>
+      {canGenerate ? (
+        <Button 
+          onClick={handleGenerate}
+          disabled={generateContent.isPending}
+          size="lg"
+          className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 w-full"
+        >
+          {generateContent.isPending ? (
+            <>
+              <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+              블로그 생성 중...
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-5 w-5 mr-2" />
+              블로그 생성 시작
+            </>
+          )}
+        </Button>
+      ) : (
+        <div className="space-y-3">
+          <Button 
+            disabled
+            size="lg"
+            className="bg-gray-400 text-white px-8 py-3 w-full cursor-not-allowed"
+          >
+            <Lock className="h-5 w-5 mr-2" />
+            블로그 생성 (구독 필요)
+          </Button>
+          <p className="text-sm text-red-500 text-center">{getDisabledReason()}</p>
+          <PaymentModal>
+            <Button 
+              size="lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 w-full"
+            >
+              🔓 구독하고 무제한 이용하기
+            </Button>
+          </PaymentModal>
+        </div>
+      )}
       
       {generateContent.isPending && (
         <div className="space-y-3 p-4 border rounded-lg bg-blue-50 dark:bg-blue-950/30">
