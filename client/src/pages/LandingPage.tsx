@@ -705,7 +705,7 @@ export default function LandingPage() {
         </section>
 
         {/* FAQ Section - SEO 최적화를 위한 자주 묻는 질문 */}
-        <section id="faq" className="py-24 bg-background" aria-labelledby="faq-heading" itemScope itemType="https://schema.org/FAQPage">
+        <section id="faq" className="py-24 bg-background" aria-labelledby="faq-heading">
           <div className="container px-4 mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -752,15 +752,12 @@ export default function LandingPage() {
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1, duration: 0.5 }}
                   className="p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/20 transition-all duration-300"
-                  itemScope
-                  itemProp="mainEntity"
-                  itemType="https://schema.org/Question"
                 >
-                  <h3 className="text-lg font-semibold text-foreground mb-3" itemProp="name">
+                  <h3 className="text-lg font-semibold text-foreground mb-3">
                     {faq.question}
                   </h3>
-                  <div itemScope itemProp="acceptedAnswer" itemType="https://schema.org/Answer">
-                    <p className="text-muted-foreground leading-relaxed" itemProp="text">
+                  <div>
+                    <p className="text-muted-foreground leading-relaxed">
                       {faq.answer}
                     </p>
                   </div>
