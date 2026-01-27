@@ -4,6 +4,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import { formatForMobile } from './mobileFormatter';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -98,11 +99,25 @@ ${text}`;
       ? response.content[0].text.trim() 
       : text;
 
+    // AI 응답 검증: 줄바꿈이 전혀 없거나 원본과 동일하면 규칙 기반 포맷터 사용
+    const hasLineBreaks = formattedText.includes('\n');
+    const isUnchanged = formattedText.replace(/\s+/g, '') === text.replace(/\s+/g, '');
+    
+    if (!hasLineBreaks && text.length > 50) {
+      console.warn('AI 응답에 줄바꿈 없음, 규칙 기반 포맷터로 fallback');
+      return formatForMobile(text);
+    }
+    
+    if (isUnchanged && text.length > 100) {
+      console.warn('AI 응답이 원본과 동일, 규칙 기반 포맷터로 fallback');
+      return formatForMobile(text);
+    }
+
     return formattedText;
   } catch (error) {
-    console.error('AI 포맷팅 실패, 기본 포맷터 사용:', error);
-    // AI 실패 시 원본 반환
-    return text;
+    console.error('AI 포맷팅 실패, 규칙 기반 포맷터 사용:', error);
+    // AI 실패 시 규칙 기반 포맷터로 fallback
+    return formatForMobile(text);
   }
 }
 
