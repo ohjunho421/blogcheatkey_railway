@@ -43,7 +43,7 @@ export default function Home() {
         title: "로그아웃",
         description: "성공적으로 로그아웃되었습니다.",
       });
-      navigate("/login");
+      // useLogout에서 이미 랜딩페이지(/)로 리다이렉트 처리됨
     } catch (error) {
       toast({
         title: "오류",
