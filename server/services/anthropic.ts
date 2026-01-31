@@ -26,10 +26,17 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY_ENV_VAR || "default_key",
 });
 
+// 소제목별 구조화된 연구자료 타입
+interface StructuredResearch {
+  subtitle: string;
+  content: string;
+  keyPoints: string[];
+}
+
 export async function writeOptimizedBlogPost(
   keyword: string,
   subtitles: string[],
-  researchData: { content: string; citations: string[] },
+  researchData: { content: string; citations: string[]; structuredBySubtitle?: StructuredResearch[] },
   businessInfo: BusinessInfo,
   seoSuggestions?: string[],
   referenceLinks?: ReferenceBlogLink[],
@@ -295,10 +302,30 @@ ${userConcerns ? `• 사용자 고민: ${userConcerns}` : ''}
 - 검색 의도에 맞는 톤과 깊이로 작성하세요 (정보 찾기 vs 비교 vs 문제 해결)
 ` : ''}
 
-연구자료: ${researchData?.content || '관련 자료가 없습니다. 일반적인 지식을 바탕으로 작성해주세요.'}
+${researchData?.structuredBySubtitle && researchData.structuredBySubtitle.length > 0 ? `
+📚📚📚 소제목별 연구자료 (각 소제목에 해당하는 자료만 사용하세요!) 📚📚📚
+
+🚨🚨🚨 중요: 각 소제목을 작성할 때 해당 소제목의 연구자료만 사용하세요! 🚨🚨🚨
+- 소제목 1의 내용을 소제목 2에서 반복하지 마세요
+- 각 소제목별로 고유한 정보만 사용하세요
+- 같은 통계나 사실을 여러 소제목에서 반복 금지!
+
+${researchData.structuredBySubtitle.map((research, i) => `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+【소제목 ${i + 1}】 ${research.subtitle}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📌 이 소제목에서만 사용할 연구자료:
+${research.content}
+
+🔑 핵심 포인트 (이 소제목에서만 언급):
+${research.keyPoints.map(point => `• ${point}`).join('\n')}
+`).join('\n')}
+` : `연구자료: ${researchData?.content || '관련 자료가 없습니다. 일반적인 지식을 바탕으로 작성해주세요.'}`}
 
 📚 자료 활용 가이드: 
 ⚠️ 중요: 퍼플렉시티에서 수집한 연구 자료에 포함된 내용만 사용하세요
+- 🚨 각 소제목별로 배정된 연구자료만 해당 소제목에서 사용하세요
+- 🚨 같은 정보/통계를 여러 소제목에서 반복하지 마세요
 - 연구 자료에 실제로 언급된 기관명과 통계만 정확히 인용
 - 연구 자료에 없는 내용은 절대 창작하지 마세요 (가짜 통계, 없는 기관명 등)
 - 기관명 언급은 좋지만 연구 자료에 실제 존재하는 것만 사용
@@ -464,9 +491,35 @@ ${referenceGuidance}
 📝 본론 작성 가이드:
 • 각 소제목당 225-275자 분량 (4개 소제목 × 250자 = 1000자 목표)
 • 각 소제목마다 키워드와 구성 단어를 자연스럽게 포함
-• 연구 자료와 업체 전문성을 바탕으로 구체적인 정보 제공
+• 🚨 각 소제목에 배정된 연구자료만 해당 소제목에서 사용 (다른 소제목 자료 사용 금지!)
 • 각 소제목 후 줄바꿈 2회, 문단간 줄바꿈 1회
 
+${researchData?.structuredBySubtitle && researchData.structuredBySubtitle.length > 0 ? `
+🔴🔴🔴 본론 작성 시 반드시 지켜야 할 규칙 🔴🔴🔴
+- 각 소제목을 작성할 때 위에서 제공한 해당 소제목의 연구자료만 사용하세요
+- 다른 소제목의 연구자료를 섞어 쓰지 마세요
+- 같은 통계/사실을 여러 소제목에서 반복하면 안 됩니다
+
+추천소제목 1: ${subtitles[0] || '기본 개념'}
+→ 위의 【소제목 1】 연구자료만 활용
+- 해당 주제에 대한 핵심 정보 전달
+- 독자가 바로 이해할 수 있는 명확한 설명
+
+추천소제목 2: ${subtitles[1] || '시작 방법'}
+→ 위의 【소제목 2】 연구자료만 활용
+- 구체적이고 실행 가능한 방법 제시
+- 단계별 접근법이나 핵심 포인트 설명
+
+추천소제목 3: ${subtitles[2] || '활용 팁'}
+→ 위의 【소제목 3】 연구자료만 활용
+- 효과적인 활용 방법이나 노하우 공유
+- 독자가 바로 적용할 수 있는 실용적 팁
+
+추천소제목 4: ${subtitles[3] || '주의사항'}
+→ 위의 【소제목 4】 연구자료만 활용
+- 흔한 실수나 주의해야 할 점 안내
+- 문제 상황과 해결 방법 제시
+` : `
 추천소제목 1: ${subtitles[0] || '기본 개념'}
 - 해당 주제에 대한 핵심 정보 전달
 - 독자가 바로 이해할 수 있는 명확한 설명
@@ -486,6 +539,7 @@ ${referenceGuidance}
 - 흔한 실수나 주의해야 할 점 안내
 - 문제 상황과 해결 방법 제시
 - 안전하고 효과적인 방법 강조
+`}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📖 3부: 결론 작성 (200-300자)

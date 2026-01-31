@@ -5,6 +5,12 @@ User-agent: *
 Allow: /
 Disallow: /api/
 Disallow: /admin
+Disallow: /signup
+Disallow: /login
+Disallow: /app
+Disallow: /project/
+Disallow: /subscribe
+Disallow: /history
 Disallow: /.env
 
 # AI 크롤러 허용

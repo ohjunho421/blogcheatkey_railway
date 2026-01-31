@@ -47,6 +47,31 @@ export default function Login() {
     }
   }, [isAuthenticated, navigate]);
 
+  // SEO: 로그인 페이지는 검색엔진에 노출되지 않도록 noindex 설정
+  React.useEffect(() => {
+    // noindex 메타 태그 추가
+    let metaRobots = document.querySelector('meta[name="robots"]') as HTMLMetaElement;
+    const originalContent = metaRobots?.content;
+    
+    if (metaRobots) {
+      metaRobots.content = 'noindex, nofollow';
+    } else {
+      metaRobots = document.createElement('meta');
+      metaRobots.name = 'robots';
+      metaRobots.content = 'noindex, nofollow';
+      document.head.appendChild(metaRobots);
+    }
+    
+    // 컴포넌트 언마운트 시 원래 상태로 복원
+    return () => {
+      if (metaRobots && originalContent !== undefined) {
+        metaRobots.content = originalContent;
+      } else if (metaRobots && !originalContent) {
+        metaRobots.remove();
+      }
+    };
+  }, []);
+
   const onSubmit = async (data: LoginForm) => {
     try {
       // 로그인 시도시 로그아웃 상태 및 에러 상태 해제

@@ -246,26 +246,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Logout endpoint
   app.post("/api/auth/logout", async (req, res) => {
     try {
-      // Clear passport session first
+      // 먼저 응답 상태 설정 (세션 파괴 전에 응답 준비)
+      const cookieOptions = {
+        path: '/',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' as const : 'lax' as const,
+      };
+      
+      // Clear passport session first (비동기 콜백을 Promise로 래핑)
       if ((req as any).logout) {
-        (req as any).logout(() => {
-          console.log("Passport logout completed");
+        await new Promise<void>((resolve) => {
+          (req as any).logout((err: any) => {
+            if (err) {
+              console.error("Passport logout error:", err);
+            }
+            console.log("Passport logout completed");
+            resolve();
+          });
         });
       }
       
-      // Then destroy the entire session
-      req.session?.destroy((err) => {
-        if (err) {
-          console.error("Session destroy error:", err);
-          return res.status(500).json({ message: "로그아웃 처리 중 오류가 발생했습니다" });
-        }
-        // Clear cookie on client side
-        res.clearCookie('connect.sid');
-        res.json({ message: "로그아웃되었습니다" });
-      });
+      // Then destroy the entire session (Promise로 래핑하여 안전하게 처리)
+      if (req.session) {
+        await new Promise<void>((resolve) => {
+          req.session.destroy((err) => {
+            if (err) {
+              console.error("Session destroy error:", err);
+            }
+            resolve();
+          });
+        });
+      }
+      
+      // 세션 파괴 성공 여부와 관계없이 쿠키 삭제 및 응답
+      res.clearCookie('connect.sid', cookieOptions);
+      res.json({ message: "로그아웃되었습니다" });
     } catch (error) {
       console.error("Logout error:", error);
-      res.status(500).json({ message: "로그아웃 처리 중 오류가 발생했습니다" });
+      // 에러가 발생해도 클라이언트가 로그아웃 상태로 전환할 수 있도록 성공 응답
+      res.clearCookie('connect.sid');
+      res.json({ message: "로그아웃되었습니다" });
     }
   });
   

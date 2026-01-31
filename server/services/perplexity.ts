@@ -175,23 +175,37 @@ async function makePerplexityRequest(messages: any[], maxRetries = 3): Promise<P
   throw new Error("All Perplexity API attempts failed");
 }
 
+export interface StructuredResearch {
+  subtitle: string;
+  content: string;
+  keyPoints: string[];
+}
+
 export async function searchResearch(keyword: string, subtitles: string[]): Promise<{
   content: string;
   citations: string[];
   citationsWithTitles?: Array<{url: string, title: string}>;
+  structuredBySubtitle?: StructuredResearch[];
 }> {
   // subtitles가 배열인지 확인하고 안전하게 처리
   const subtitlesList = Array.isArray(subtitles) ? subtitles : [];
   const searchQuery = `"${keyword}" ${subtitlesList.join(" ")} academic research paper journal study statistics government report news article`;
 
+  // 소제목별로 구조화된 연구자료 요청
   const messages = [
     {
       role: "system",
-      content: "You are a research specialist focused on finding academic papers, news articles, and statistical data. Prioritize scholarly publications, government statistics, industry reports, and established news sources. Exclude social media, personal blogs, and unofficial content. Include YouTube only for educational or official channels."
+      content: `You are a research specialist focused on finding academic papers, news articles, and statistical data. 
+Prioritize scholarly publications, government statistics, industry reports, and established news sources. 
+Exclude social media, personal blogs, and unofficial content. Include YouTube only for educational or official channels.
+
+IMPORTANT: You MUST structure your response by the given subtitles. Each subtitle should have its own dedicated research section with UNIQUE information. Do NOT repeat the same information across different subtitles.`
     },
     {
       role: "user",
-      content: `Research "${keyword}" with focus on: ${subtitlesList.join(", ")}
+      content: `Research "${keyword}" and organize findings by these specific subtitles:
+
+${subtitlesList.map((s, i) => `【소제목 ${i + 1}】 ${s}`).join('\n')}
 
 Priority sources:
 1. Academic papers and scholarly journals (.edu, research institutions)
@@ -199,14 +213,63 @@ Priority sources:
 3. News articles from established media organizations
 4. Industry research reports and white papers
 5. Statistical databases and official surveys
-6. YouTube educational content from official channels only
 
-Find specific data points, statistics, research findings, and expert analysis with credible citations.`
+🚨 CRITICAL INSTRUCTIONS:
+- Structure your response EXACTLY by the subtitles above
+- Each subtitle section must contain UNIQUE, NON-OVERLAPPING information
+- Do NOT repeat statistics, facts, or examples across different subtitle sections
+- For each subtitle, find specific data points that are ONLY relevant to that particular topic
+- Use format: 【소제목 1】 [subtitle name] followed by its unique research content
+
+Example format:
+【소제목 1】 [First subtitle]
+- Unique fact/statistic specific to this topic
+- Research finding only relevant here
+- Expert opinion on this specific aspect
+
+【소제목 2】 [Second subtitle]  
+- Different fact/statistic (NOT repeated from above)
+- New research finding for this topic
+- Different expert perspective
+
+Continue this pattern for all subtitles.`
     }
   ];
 
   const data = await makePerplexityRequest(messages);
   const citations = data.citations || [];
+  const rawContent = data.choices[0].message.content;
+  
+  // 소제목별로 연구자료 파싱
+  const structuredBySubtitle: StructuredResearch[] = [];
+  
+  for (let i = 0; i < subtitlesList.length; i++) {
+    const subtitle = subtitlesList[i];
+    const currentMarker = `【소제목 ${i + 1}】`;
+    const nextMarker = i < subtitlesList.length - 1 ? `【소제목 ${i + 2}】` : null;
+    
+    let sectionContent = '';
+    const startIdx = rawContent.indexOf(currentMarker);
+    
+    if (startIdx !== -1) {
+      const contentStart = startIdx + currentMarker.length;
+      const endIdx = nextMarker ? rawContent.indexOf(nextMarker) : rawContent.length;
+      sectionContent = rawContent.slice(contentStart, endIdx !== -1 ? endIdx : undefined).trim();
+    }
+    
+    // 핵심 포인트 추출 (- 또는 • 로 시작하는 라인)
+    const keyPoints = sectionContent
+      .split('\n')
+      .filter(line => line.trim().match(/^[-•\*]\s/))
+      .map(line => line.replace(/^[-•\*]\s+/, '').trim())
+      .filter(point => point.length > 10);
+    
+    structuredBySubtitle.push({
+      subtitle,
+      content: sectionContent || `${subtitle}에 대한 연구자료를 찾지 못했습니다.`,
+      keyPoints: keyPoints.length > 0 ? keyPoints : [`${subtitle} 관련 정보`]
+    });
+  }
   
   // Fetch titles for citations in parallel (max 10 to avoid overwhelming)
   console.log(`📚 Fetching titles for ${citations.length} citations...`);
@@ -219,11 +282,13 @@ Find specific data points, statistics, research findings, and expert analysis wi
   );
   
   console.log(`✅ Fetched ${citationsWithTitles.length} titles`);
+  console.log(`📋 Structured research for ${structuredBySubtitle.length} subtitles`);
   
   return {
-    content: data.choices[0].message.content,
+    content: rawContent,
     citations,
-    citationsWithTitles
+    citationsWithTitles,
+    structuredBySubtitle
   };
 }
 
