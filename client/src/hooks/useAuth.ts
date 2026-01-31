@@ -179,35 +179,34 @@ export function useLogout() {
   
   return useMutation({
     mutationFn: async () => {
-      // 서버에 로그아웃 요청
+      // 1. 먼저 클라이언트 상태 정리
+      setLoggedOut(true);
+      setAuthError(false);
+      localStorage.removeItem('sessionId');
+      localStorage.removeItem('user');
+      
+      // 2. 캐시 정리
+      queryClient.setQueryData(["/api/auth/user"], null);
+      queryClient.clear();
+      
+      // 3. 서버에 로그아웃 요청 (실패해도 무시)
       try {
-        const response = await fetch("/api/auth/logout", {
+        await fetch("/api/auth/logout", {
           method: "POST",
           credentials: "include",
         });
-        
-        if (!response.ok) {
-          console.error("Logout API error:", response.status);
-        }
       } catch (error) {
-        console.error("Logout API call failed:", error);
+        // 서버 요청 실패해도 클라이언트는 이미 로그아웃 상태
+        console.log("Logout API call skipped or failed");
       }
-      
-      // 로그아웃 상태 설정
-      setLoggedOut(true);
-      // 인증 에러 상태도 초기화
-      setAuthError(false);
-      // 세션 정보 제거
-      localStorage.removeItem('sessionId');
-      localStorage.removeItem('user');
       
       return { success: true };
     },
     onSuccess: () => {
-      queryClient.setQueryData(["/api/auth/user"], null);
-      queryClient.clear();
-      // 랜딩 페이지로 이동
-      window.location.href = "/";
+      // 약간의 딜레이 후 리다이렉트 (상태 정리 완료 보장)
+      setTimeout(() => {
+        window.location.replace("/");
+      }, 100);
     },
   });
 }

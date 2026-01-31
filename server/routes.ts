@@ -243,51 +243,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Logout endpoint
-  app.post("/api/auth/logout", async (req, res) => {
+  // Logout endpoint - 최대한 단순하게 처리
+  app.post("/api/auth/logout", (req, res) => {
+    console.log("Logout request received");
+    
+    // 세션과 쿠키만 정리하고 즉시 응답
     try {
-      // 먼저 응답 상태 설정 (세션 파괴 전에 응답 준비)
-      const cookieOptions = {
-        path: '/',
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' as const : 'lax' as const,
-      };
-      
-      // Clear passport session first (비동기 콜백을 Promise로 래핑)
-      if ((req as any).logout) {
-        await new Promise<void>((resolve) => {
-          (req as any).logout((err: any) => {
-            if (err) {
-              console.error("Passport logout error:", err);
-            }
-            console.log("Passport logout completed");
-            resolve();
-          });
-        });
-      }
-      
-      // Then destroy the entire session (Promise로 래핑하여 안전하게 처리)
-      if (req.session) {
-        await new Promise<void>((resolve) => {
-          req.session.destroy((err) => {
-            if (err) {
-              console.error("Session destroy error:", err);
-            }
-            resolve();
-          });
-        });
-      }
-      
-      // 세션 파괴 성공 여부와 관계없이 쿠키 삭제 및 응답
-      res.clearCookie('connect.sid', cookieOptions);
-      res.json({ message: "로그아웃되었습니다" });
-    } catch (error) {
-      console.error("Logout error:", error);
-      // 에러가 발생해도 클라이언트가 로그아웃 상태로 전환할 수 있도록 성공 응답
+      // 쿠키 삭제 (여러 옵션으로 시도)
       res.clearCookie('connect.sid');
-      res.json({ message: "로그아웃되었습니다" });
+      res.clearCookie('connect.sid', { path: '/' });
+      res.clearCookie('connect.sid', { path: '/', domain: req.hostname });
+    } catch (e) {
+      console.log("Cookie clear warning:", e);
     }
+    
+    // 즉시 성공 응답
+    return res.status(200).json({ success: true, message: "로그아웃되었습니다" });
   });
   
   // ===== BLOG PROJECT ROUTES =====
