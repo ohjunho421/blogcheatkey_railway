@@ -230,15 +230,34 @@ export default function Home() {
                   // 세션 로드 API 호출 후 프로젝트로 이동
                   fetch(`/api/sessions/${sessionId}/load`, {
                     method: 'POST',
-                    credentials: 'include'
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ createNew: true })
                   })
                     .then(res => res.json())
                     .then(data => {
-                      if (data.projectId) {
-                        navigate(`/project/${data.projectId}`);
+                      if (data.project?.id) {
+                        navigate(`/project/${data.project.id}`);
+                        toast({
+                          title: "세션 불러오기 완료",
+                          description: "저장된 세션을 불러왔습니다.",
+                        });
+                      } else if (data.error) {
+                        toast({
+                          title: "오류",
+                          description: data.error,
+                          variant: "destructive",
+                        });
                       }
                     })
-                    .catch(console.error);
+                    .catch(err => {
+                      console.error(err);
+                      toast({
+                        title: "오류",
+                        description: "세션을 불러오는데 실패했습니다.",
+                        variant: "destructive",
+                      });
+                    });
                 }}
               />
             )}
