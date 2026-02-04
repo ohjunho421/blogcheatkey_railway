@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { pool } from "./db";
 
 const app = express();
 app.use(express.json());
@@ -48,6 +49,14 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // DB 마이그레이션: phone 컬럼 추가 (없는 경우에만)
+  try {
+    await (pool as any).query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT`);
+    log('DB migration: phone column checked');
+  } catch (err: any) {
+    console.error('DB migration error (non-fatal):', err.message);
+  }
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

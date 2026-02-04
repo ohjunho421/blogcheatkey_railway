@@ -135,6 +135,7 @@ export default function PaymentModal({ children }: PaymentModalProps) {
         payMethod: 'CARD',
         customer: {
           email: user?.email || '',
+          phoneNumber: user?.phone || '01000000000',
           fullName: user?.name || '구매자',
         },
       });

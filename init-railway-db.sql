@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT UNIQUE,
   password TEXT,
   name TEXT,
+  phone TEXT,
   profile_image TEXT,
   google_id TEXT UNIQUE,
   kakao_id TEXT UNIQUE,

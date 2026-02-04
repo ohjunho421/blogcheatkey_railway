@@ -14,6 +14,7 @@ import NotFound from "@/pages/not-found";
 import PricingPage from "@/pages/PricingPage";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import AdminPage from "@/pages/admin-dashboard";
+import Profile from "@/pages/profile";
 import LandingPage from "@/pages/LandingPage";
 
 import { useAuth } from "@/hooks/useAuth";
@@ -58,6 +59,7 @@ function Router() {
           <Route path="/pricing" component={PricingPage} />
           <Route path="/subscribe" component={Subscribe} />
           <Route path="/history" component={History} />
+          <Route path="/profile" component={Profile} />
           <Route path="/admin" component={AdminPage} />
         </>
       ) : (

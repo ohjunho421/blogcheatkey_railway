@@ -34,6 +34,7 @@ export interface User {
   id: number;
   email: string;
   name: string;
+  phone?: string;
   profileImage?: string;
   isAdmin?: boolean;
   subscriptionTier?: string;
@@ -141,7 +142,7 @@ export function useSignup() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (data: { email: string; password: string; name: string }) => {
+    mutationFn: async (data: { email: string; password: string; name: string; phone?: string }) => {
       const response = await fetch("/api/auth/signup", {
         method: "POST",
         body: JSON.stringify(data),

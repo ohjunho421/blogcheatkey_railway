@@ -105,6 +105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             id: user.id,
             email: user.email,
             name: user.name,
+            phone: user.phone,
             isAdmin: user.isAdmin,
             subscriptionTier: user.subscriptionTier,
             canGenerateContent: user.canGenerateContent,
@@ -166,6 +167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: user.id,
         email: user.email,
         name: user.name,
+        phone: user.phone,
         isAdmin: user.isAdmin,
         subscriptionTier: user.subscriptionTier,
         canGenerateContent: user.canGenerateContent,
@@ -181,8 +183,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Signup endpoint
   app.post("/api/auth/signup", async (req, res) => {
     try {
-      const { email, password, name } = req.body;
-      
+      const { email, password, name, phone } = req.body;
+
       // 입력 검증
       if (!email || !password || !name) {
         return res.status(400).json({ message: "모든 필드를 입력해주세요" });
@@ -206,6 +208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         email,
         password: hashedPassword,
         name: isSuper ? "슈퍼 관리자" : name,
+        phone: phone || null,
         isAdmin: isSuper,
         subscriptionTier: isSuper ? "premium" : "free",
         canGenerateContent: true,
@@ -261,8 +264,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.status(200).json({ success: true, message: "로그아웃되었습니다" });
   });
   
+  // Update user profile (name, phone)
+  app.put("/api/user/profile", async (req, res) => {
+    try {
+      const userId = await getAuthenticatedUserId(req);
+      if (!userId) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+
+      const { name, phone } = req.body;
+      const updates: any = {};
+      if (name !== undefined) updates.name = name;
+      if (phone !== undefined) updates.phone = phone;
+
+      const user = await storage.updateUser(userId, updates);
+      res.json({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        phone: user.phone,
+        isAdmin: user.isAdmin,
+        subscriptionTier: user.subscriptionTier,
+        canGenerateContent: user.canGenerateContent,
+        canGenerateImages: user.canGenerateImages,
+        canUseChatbot: user.canUseChatbot,
+      });
+    } catch (error) {
+      console.error("Profile update error:", error);
+      res.status(500).json({ error: "프로필 업데이트 중 오류가 발생했습니다" });
+    }
+  });
+
   // ===== BLOG PROJECT ROUTES =====
-  
+
   // Create new blog project
   app.post("/api/projects", async (req, res) => {
     try {

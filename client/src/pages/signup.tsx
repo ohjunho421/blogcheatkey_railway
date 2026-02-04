@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 const signupSchema = z.object({
   name: z.string().min(1, "이름을 입력해주세요"),
   email: z.string().email("올바른 이메일을 입력해주세요"),
+  phone: z.string().min(10, "올바른 휴대폰 번호를 입력해주세요"),
   password: z.string().min(6, "비밀번호는 최소 6자 이상이어야 합니다"),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -36,6 +37,7 @@ export default function Signup() {
     defaultValues: {
       name: "",
       email: "",
+      phone: "",
       password: "",
       confirmPassword: "",
     },
@@ -78,6 +80,7 @@ export default function Signup() {
       await signupMutation.mutateAsync({
         name: data.name,
         email: data.email,
+        phone: data.phone,
         password: data.password,
       });
       toast({
@@ -137,6 +140,24 @@ export default function Signup() {
                       <Input
                         type="email"
                         placeholder="your@email.com"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>휴대폰 번호</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="tel"
+                        placeholder="01012345678"
                         {...field}
                       />
                     </FormControl>

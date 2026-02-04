@@ -9,6 +9,7 @@ export const users = pgTable("users", {
   password: text("password"), // null for social login users
   name: text("name"),
   profileImage: text("profile_image"),
+  phone: text("phone"),
   // Social login fields
   googleId: text("google_id").unique(),
   kakaoId: text("kakao_id").unique(),
@@ -157,6 +158,7 @@ export const emailSignupSchema = z.object({
   email: z.string().email("올바른 이메일을 입력해주세요"),
   password: z.string().min(6, "비밀번호는 최소 6자 이상이어야 합니다"),
   name: z.string().min(1, "이름을 입력해주세요"),
+  phone: z.string().min(10, "올바른 휴대폰 번호를 입력해주세요").optional(),
 });
 
 export const emailLoginSchema = z.object({
