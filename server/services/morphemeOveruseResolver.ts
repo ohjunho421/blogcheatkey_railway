@@ -158,7 +158,14 @@ async function adjustOverusedMorphemes(
 ❌ 절대 금지:
 - 형태소 제한 미준수 (가장 중요)
 - 글자수 1700자 미만 또는 2000자 초과
-- 키워드 완전형 5회 미만`;
+- 키워드 완전형 5회 미만
+- 깨진 단어 사용 (예: "크오일", "브레이제", "브레이기", "주기수", "교체수")
+- 존재하지 않는 한국어 단어 조합
+
+⚠️ 자연스러운 한국어 규칙:
+- 형태소를 조정할 때 단어를 쪼개거나 잘라서 깨진 단어를 만들지 마세요
+- 반드시 완전한 단어 단위로만 수정하세요
+- 수정 후 글 전체를 읽어보고 의미가 통하지 않는 단어가 없는지 확인하세요`;
 
   const overuseInfo = overusedComponents.map(comp => 
     `"${comp.component}": 현재 ${comp.currentCount}회 → 목표 ${comp.targetCount}회 (${comp.excessCount}회 줄이기 필요)`

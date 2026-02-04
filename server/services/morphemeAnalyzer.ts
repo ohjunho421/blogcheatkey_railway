@@ -178,45 +178,55 @@ JSON 배열로만 응답 (예: ["형태소1", "형태소2", "형태소3"])`;
 
 // 폴백: 개선된 패턴 기반 분해 (AI 실패 시)
 function fallbackPatternDecomposer(text: string): string[] {
-  
+
   // 일반적인 한국어 복합어 패턴 사전 (2글자 이상 형태소만)
+  // 긴 패턴이 먼저 매칭되도록 정렬 (긴 것 우선!)
   const commonPatterns = [
     // 자동차 관련 - 복합어를 2글자 이상 형태소로 분해
-    { pattern: /냉각수부동액/, parts: ['냉각', '부동'] }, // "수", "액" 제외
+    { pattern: /냉각수부동액/, parts: ['냉각', '부동'] },
+    { pattern: /브레이크오일교체주기/, parts: ['브레이크', '오일', '교체', '주기'] },
+    { pattern: /브레이크오일교체/, parts: ['브레이크', '오일', '교체'] },
+    { pattern: /브레이크오일/, parts: ['브레이크', '오일'] },
+    { pattern: /엔진오일교체주기/, parts: ['엔진', '오일', '교체', '주기'] },
     { pattern: /엔진오일교체/, parts: ['엔진', '오일', '교체'] },
+    { pattern: /미션오일교체주기/, parts: ['미션', '오일', '교체', '주기'] },
     { pattern: /미션오일교체/, parts: ['미션', '오일', '교체'] },
     { pattern: /타이어교체비용/, parts: ['타이어', '교체', '비용'] },
-    { pattern: /벤츠엔진경고등/, parts: ['벤츠', '엔진', '경고'] }, // "등" 제외
-    { pattern: /엔진경고등/, parts: ['엔진', '경고'] }, // "등" 제외
-    { pattern: /냉각수/, parts: ['냉각'] }, // "수" 제외
-    { pattern: /부동액/, parts: ['부동'] }, // "액" 제외
-    { pattern: /경고등/, parts: ['경고'] }, // "등" 제외
+    { pattern: /벤츠엔진경고등/, parts: ['벤츠', '엔진', '경고'] },
+    { pattern: /엔진경고등/, parts: ['엔진', '경고'] },
     { pattern: /브레이크패드/, parts: ['브레이크', '패드'] },
+    { pattern: /브레이크액/, parts: ['브레이크'] },
+    { pattern: /브레이크/, parts: ['브레이크'] },
     { pattern: /에어컨필터/, parts: ['에어컨', '필터'] },
     { pattern: /오일교체/, parts: ['오일', '교체'] },
     { pattern: /타이어교체/, parts: ['타이어', '교체'] },
+    { pattern: /냉각수/, parts: ['냉각'] },
+    { pattern: /부동액/, parts: ['부동'] },
+    { pattern: /경고등/, parts: ['경고'] },
+    { pattern: /제동액/, parts: ['제동'] },
+    { pattern: /교체주기/, parts: ['교체', '주기'] },
     { pattern: /첨가제/, parts: ['첨가제'] },
-    
+
     // 교육 관련
     { pattern: /영어학원/, parts: ['영어', '학원'] },
     { pattern: /수학학원/, parts: ['수학', '학원'] },
     { pattern: /코딩교육/, parts: ['코딩', '교육'] },
     { pattern: /온라인강의/, parts: ['온라인', '강의'] },
-    
+
     // 기술 관련
     { pattern: /인공지능/, parts: ['인공지능'] },
     { pattern: /머신러닝/, parts: ['머신', '러닝'] },
     { pattern: /딥러닝/, parts: ['딥', '러닝'] },
     { pattern: /빅데이터/, parts: ['빅', '데이터'] },
   ];
-  
+
   const result: string[] = [];
   let pos = 0;
-  
+
   while (pos < text.length) {
     const remaining = text.substring(pos);
     let matched = false;
-    
+
     // 1. 패턴 매칭 시도
     for (const { pattern, parts } of commonPatterns) {
       const match = remaining.match(pattern);
@@ -227,9 +237,9 @@ function fallbackPatternDecomposer(text: string): string[] {
         break;
       }
     }
-    
+
     if (matched) continue;
-    
+
     // 2. 영어+숫자 추출
     const engMatch = remaining.match(/^[a-zA-Z0-9]+/);
     if (engMatch) {
@@ -237,36 +247,28 @@ function fallbackPatternDecomposer(text: string): string[] {
       pos += engMatch[0].length;
       continue;
     }
-    
-    // 3. 한글 2-3글자 단위 분할 (개선)
+
+    // 3. 한글 처리 - 의미 단위로 분할 (무작위 분할 방지)
     const korMatch = remaining.match(/^[가-힣]+/);
     if (korMatch) {
       const korText = korMatch[0];
-      
-      // 3-1. 길이에 따른 스마트 분할
-      if (korText.length <= 2) {
+
+      // 4글자 이하는 하나의 의미 단위로 유지 (무작위 분할 방지)
+      if (korText.length <= 4) {
         result.push(korText);
         pos += korText.length;
-      } else if (korText.length === 3) {
-        // 3글자: 그대로 또는 2+1 분할
-        result.push(korText.substring(0, 2));
-        pos += 2;
-      } else if (korText.length === 4) {
-        // 4글자: 2+2 분할
-        result.push(korText.substring(0, 2));
-        pos += 2;
       } else {
-        // 5글자 이상: 2-3글자씩
-        const segmentLength = Math.min(3, korText.length);
-        result.push(korText.substring(0, segmentLength));
-        pos += segmentLength;
+        // 5글자 이상: 의미 단위를 모르면 전체를 유지
+        // (AI 분해에 위임하는 것이 더 안전)
+        result.push(korText);
+        pos += korText.length;
       }
       continue;
     }
-    
+
     pos++;
   }
-  
+
   return result.filter(word => word.length >= 1);
 }
 
@@ -857,10 +859,14 @@ export async function analyzeMorphemes(content: string, keyword: string, customM
   const customMorphemeCheck = checkCustomMorphemes(content, customMorphemes);
   const isCustomMorphemesOptimized = customMorphemeCheck.missing.length === 0;
   
+  // 🆕 깨진 단어 감지
+  const brokenWordCheck = detectBrokenKoreanWords(content, keyword);
+  const hasBrokenWords = brokenWordCheck.hasBrokenWords;
+
   // 형태소 빈도 검사 결과 반영
   const hasOverusedMorphemes = frequencyCheck.overused.length > 0;
-  const isOptimized = isLengthOptimized && isKeywordOptimized && !hasOverusedMorphemes;
-  
+  const isOptimized = isLengthOptimized && isKeywordOptimized && !hasOverusedMorphemes && !hasBrokenWords;
+
   // Generate issues and suggestions
   const issues: string[] = [];
   const suggestions: string[] = [];
@@ -909,6 +915,14 @@ export async function analyzeMorphemes(content: string, keyword: string, customM
     suggestions.push(`과다 사용된 형태소들을 동의어나 유의어로 교체해주세요`);
   }
 
+  // 🆕 깨진 단어 검사 결과 추가
+  if (hasBrokenWords) {
+    for (const bw of brokenWordCheck.brokenWords) {
+      issues.push(`깨진 단어 감지: "${bw.word}" → ${bw.suggestion}`);
+    }
+    suggestions.push(`깨진 단어를 완전한 한국어 단어로 수정해주세요. 형태소 빈도를 맞추더라도 단어가 깨지면 안 됩니다.`);
+  }
+
   return {
     isOptimized,
     isKeywordOptimized,
@@ -939,15 +953,144 @@ export async function analyzeMorphemes(content: string, keyword: string, customM
   }
 }
 
+/**
+ * 🆕 깨진 한국어 단어 감지 함수
+ * AI가 형태소 빈도를 맞추려고 단어를 억지로 쪼개거나 합쳐서
+ * 의미 없는 단어를 만들었는지 검사합니다.
+ *
+ * 예: "크오일", "브레이제", "브레이기", "주기수", "교체수" 등
+ */
+export function detectBrokenKoreanWords(content: string, keyword: string): {
+  hasBrokenWords: boolean;
+  brokenWords: Array<{ word: string; context: string; suggestion: string }>;
+} {
+  const brokenWords: Array<{ word: string; context: string; suggestion: string }> = [];
+
+  // 키워드에서 형태소 추출 (동기적 - 패턴 기반만 사용)
+  const keywordParts = fallbackPatternDecomposer(keyword);
+
+  // 1. 키워드 파편 패턴 감지
+  // 키워드의 중간 부분이 단어 시작으로 나타나는 경우 감지
+  // 예: "브레이크오일" → "크오일"이 단독으로 나타나면 문제
+  const keywordNoSpaces = keyword.replace(/\s+/g, '').replace(/,\s*/g, '');
+
+  for (let i = 1; i < keywordNoSpaces.length - 1; i++) {
+    // 키워드 중간에서 시작하는 파편 (2글자 이상)
+    const fragment = keywordNoSpaces.substring(i, Math.min(i + 4, keywordNoSpaces.length));
+    if (fragment.length >= 2 && /^[가-힣]+$/.test(fragment)) {
+      // 이 파편이 원래 키워드의 정상적인 형태소가 아닌 경우
+      const isValidMorpheme = keywordParts.some(part => part === fragment || part.startsWith(fragment) || fragment.startsWith(part));
+      if (!isValidMorpheme) {
+        // 본문에서 이 파편이 단어 시작 부분에 나타나는지 확인
+        // 정규식: 파편이 공백/줄바꿈/문장부호 뒤에 바로 나타나는 경우
+        const fragmentRegex = new RegExp(`(?:^|[\\s.,!?;:\\n])${fragment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g');
+        let match;
+        while ((match = fragmentRegex.exec(content)) !== null) {
+          const startIdx = Math.max(0, match.index - 10);
+          const endIdx = Math.min(content.length, match.index + fragment.length + 10);
+          const context = content.substring(startIdx, endIdx).trim();
+
+          brokenWords.push({
+            word: fragment,
+            context: context,
+            suggestion: `"${fragment}"은(는) "${keywordNoSpaces}"의 잘린 파편입니다. 완전한 단어로 수정하세요.`
+          });
+        }
+      }
+    }
+  }
+
+  // 2. 알려진 깨진 단어 패턴 감지 (일반적으로 AI가 자주 만드는 잘못된 패턴)
+  const knownBrokenPatterns = [
+    // 단어 끝에 의미 없는 접미사 붙이기
+    { pattern: /(?:^|[\s.,!?;:\n])([가-힣]{2,3})(수|기|제)\s/g, check: (full: string, stem: string, suffix: string) => {
+      // "냉각수", "첨가제", "정비기" 등은 정상
+      const validWords = ['냉각수', '부동액', '첨가제', '소화기', '경고등', '제동액', '정비기',
+        '냉각기', '교체기', '변속기', '발전기', '세탁기', '건조기', '청소기', '자동기'];
+      return !validWords.includes(full);
+    }},
+  ];
+
+  // 3. 반복 글자 패턴 감지 (예: "주기기", "교체체")
+  const repeatedCharRegex = /([가-힣])(\1)/g;
+  let repeatedMatch;
+  while ((repeatedMatch = repeatedCharRegex.exec(content)) !== null) {
+    const startIdx = Math.max(0, repeatedMatch.index - 5);
+    const endIdx = Math.min(content.length, repeatedMatch.index + 10);
+    const surroundingText = content.substring(startIdx, endIdx).trim();
+
+    // 정상적인 반복 글자 제외 (예: "따따", "뚜뚜" 의성어 등)
+    const normalRepeats = ['따따', '뚜뚜', '쪼쪼', '싹싹', '쏙쏙', '꼼꼼', '빠빠'];
+    const repeated = repeatedMatch[0];
+    if (!normalRepeats.some(n => surroundingText.includes(n))) {
+      // 주변 텍스트에서 전체 단어 추출
+      const wordMatch = surroundingText.match(/[가-힣]+/);
+      if (wordMatch && wordMatch[0].length >= 3) {
+        const fullWord = wordMatch[0];
+        // 정상적인 단어 제외
+        const normalWords = ['꼼꼼히', '꼼꼼하', '빠빠이', '가끔', '때때로'];
+        if (!normalWords.some(n => fullWord.includes(n))) {
+          brokenWords.push({
+            word: fullWord,
+            context: surroundingText,
+            suggestion: `"${fullWord}"에 반복 글자 "${repeated}"가 포함되어 있습니다. 자연스러운 단어인지 확인하세요.`
+          });
+        }
+      }
+    }
+  }
+
+  // 4. "브레이" + 비정상 조합 감지 (가장 흔한 패턴)
+  const brakeFragments = /(?:브레이제|브레이수|브레이기|크오일|레이크오|레이크계)/g;
+  let brakeMatch;
+  while ((brakeMatch = brakeFragments.exec(content)) !== null) {
+    const startIdx = Math.max(0, brakeMatch.index - 5);
+    const endIdx = Math.min(content.length, brakeMatch.index + brakeMatch[0].length + 5);
+    brokenWords.push({
+      word: brakeMatch[0],
+      context: content.substring(startIdx, endIdx).trim(),
+      suggestion: `"${brakeMatch[0]}"은(는) 잘못된 단어입니다. "브레이크", "브레이크오일" 등 완전한 단어를 사용하세요.`
+    });
+  }
+
+  // 중복 제거
+  const uniqueBrokenWords = brokenWords.filter((item, index, self) =>
+    index === self.findIndex(t => t.word === item.word && t.context === item.context)
+  );
+
+  if (uniqueBrokenWords.length > 0) {
+    console.log(`🚨 깨진 한국어 단어 ${uniqueBrokenWords.length}개 감지:`);
+    uniqueBrokenWords.forEach(bw => {
+      console.log(`   ❌ "${bw.word}" - ${bw.suggestion}`);
+    });
+  }
+
+  return {
+    hasBrokenWords: uniqueBrokenWords.length > 0,
+    brokenWords: uniqueBrokenWords
+  };
+}
+
 // Enhanced SEO analysis combining morpheme analysis with basic metrics
 export async function enhancedSEOAnalysis(content: string, keyword: string) {
   const morphemeAnalysis = await analyzeMorphemes(content, keyword);
-  
+
+  // 🆕 깨진 단어 감지 추가
+  const brokenWordCheck = detectBrokenKoreanWords(content, keyword);
+
+  // 깨진 단어가 있으면 issues에 추가
+  if (brokenWordCheck.hasBrokenWords) {
+    for (const bw of brokenWordCheck.brokenWords) {
+      morphemeAnalysis.issues.push(`깨진 단어 감지: "${bw.word}" - ${bw.suggestion}`);
+    }
+    morphemeAnalysis.suggestions.push('깨진 단어를 완전한 한국어 단어로 수정해주세요');
+  }
+
   return {
     keywordFrequency: morphemeAnalysis.keywordMorphemeCount,
     characterCount: morphemeAnalysis.characterCount,
     morphemeCount: morphemeAnalysis.keywordMorphemeCount,
-    isOptimized: morphemeAnalysis.isOptimized,
+    isOptimized: morphemeAnalysis.isOptimized && !brokenWordCheck.hasBrokenWords,
     issues: morphemeAnalysis.issues,
     suggestions: morphemeAnalysis.suggestions,
     targetCharacterRange: morphemeAnalysis.targetCharacterRange

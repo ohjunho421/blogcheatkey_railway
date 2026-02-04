@@ -101,6 +101,31 @@ export async function generateStrictMorphemeContent(
         `💡 같은 단어가 한 문단에 2번 이상 나오면 동의어로 교체!`,
         ``,
         `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+        `🚨 자연스러운 한국어 작성 규칙 (매우 중요!)`,
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
+        ``,
+        `형태소를 삽입할 때 단어가 잘리거나 의미 없는 조합이 되면 안 됩니다!`,
+        ``,
+        `❌ 잘못된 예시 (절대 금지!):`,
+        `   • "브레이크오일" → "크오일" (앞글자 잘림)`,
+        `   • "브레이크" → "브레이제" (뒷글자 변형)`,
+        `   • "제동액" → "브레이기" (의미 없는 단어)`,
+        `   • "브레이크계통" → "크오일계통" (잘린 단어+계통)`,
+        `   • "교체주기" → "주기기", "교체기" (중복 글자)`,
+        `   • "제동액 관리" → "브레이수 관리" (존재하지 않는 단어)`,
+        ``,
+        `✅ 올바른 예시:`,
+        `   • "브레이크오일", "제동액", "브레이크 시스템"`,
+        `   • "교체 주기", "관리 시점", "정비 시기"`,
+        `   • "오일 교체", "브레이크 점검"`,
+        ``,
+        `🔍 자가 검증 방법:`,
+        `   1. 작성한 모든 단어를 읽어보고 한국어 사전에 있는 단어인지 확인`,
+        `   2. "크오일", "브레이제", "주기수", "교체수" 같은 단어가 있으면 즉시 수정`,
+        `   3. 형태소 빈도를 맞추기 위해 단어를 억지로 쪼개거나 합치지 마세요`,
+        `   4. 반드시 완전한 단어 단위로 자연스럽게 사용하세요`,
+        ``,
+        `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
         `✅ 글 구조`,
         `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
         ``,
@@ -179,6 +204,17 @@ export async function generateStrictMorphemeContent(
           solutions.push(`🚨 절대 규칙: 어떤 단어든 20회 절대 초과 금지! 20회 이상은 반드시 동의어로 분산!`);
         }
         
+        // 🆕 깨진 단어 문제 피드백 추가
+        if (previousAnalysis.brokenWords && previousAnalysis.brokenWords.length > 0) {
+          problems.push(`깨진 단어 ${previousAnalysis.brokenWords.length}개 감지됨`);
+          solutions.push(`🚨 깨진 단어를 완전한 한국어 단어로 수정하세요!`);
+          for (const brokenIssue of previousAnalysis.brokenWords) {
+            solutions.push(`   ❌ ${brokenIssue}`);
+          }
+          solutions.push(`   ✅ 반드시 "브레이크", "오일", "교체", "주기" 등 완전한 단어만 사용!`);
+          solutions.push(`   ✅ "크오일", "브레이제", "브레이기" 같은 단어 절대 금지!`);
+        }
+
         // 🆕 통합 수정 지침
         if (problems.length > 0) {
           seoSuggestions.push(`\n❌ 발견된 ${problems.length}개 문제:\n${problems.map((p, i) => `  ${i+1}. ${p}`).join('\n')}`);
@@ -274,6 +310,10 @@ export async function generateStrictMorphemeContent(
       });
       
       // 다음 시도를 위해 현재 분석 결과 저장
+      // 🆕 깨진 단어 감지 결과도 포함
+      const brokenWordIssues = analysis.issues
+        .filter(issue => issue.includes('깨진 단어'));
+
       previousAnalysis = {
         characterCount: analysis.characterCount,
         keywordMorphemeCount: analysis.keywordMorphemeCount,
@@ -290,9 +330,10 @@ export async function generateStrictMorphemeContent(
             const word = issue.split(' ')[0].replace(/"/g, '');
             return { word, count: 0 };
           })
-          .slice(0, 5)
+          .slice(0, 5),
+        brokenWords: brokenWordIssues
       };
-      
+
       // SEO 최적화 조건 검증 (단순화)
       // analysis.isOptimized는 이미 글자수, 키워드 빈도, 구성요소 빈도, 과다사용을 모두 체크함
       const isCharacterCountValid = analysis.characterCount >= 1700 && analysis.characterCount <= 2000;
@@ -337,10 +378,14 @@ export async function generateStrictMorphemeContent(
         console.log(`다음 시도는 부분 수정만 수행합니다 (재생성 X)\n`);
         
         // 다음 시도를 위한 정보 저장
+        const retryBrokenWordIssues = analysis.issues
+          .filter(issue => issue.includes('깨진 단어'));
+
         previousAnalysis = {
           characterCount: analysis.characterCount,
           keywordMorphemeCount: analysis.keywordMorphemeCount,
           isOptimized: analysis.isOptimized,
+          brokenWords: retryBrokenWordIssues,
           overusedWords: analysis.issues
             .filter(issue => issue.includes('초과 사용') || issue.includes('과다 사용'))
             .map(issue => {
