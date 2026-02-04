@@ -813,7 +813,7 @@ export default function LandingPage() {
                     <p><span className="font-medium text-foreground">사업자번호:</span> 456-05-03530</p>
                     <p><span className="font-medium text-foreground">대표자:</span> 오준호</p>
                     <p><span className="font-medium text-foreground">연락처:</span> 010-5001-2143</p>
-                    <p><span className="font-medium text-foreground">사업장주소:</span> 의정부시 안말로 85번길 27-1</p>
+                    <p><span className="font-medium text-foreground">사업장주소:</span> 경기도 의정부시 안말로 85번길 27-1</p>
                   </div>
                 </div>
                 <div>
