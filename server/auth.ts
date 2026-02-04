@@ -182,6 +182,9 @@ export function setupAuth(app: Express) {
     store: new pgStore({
       conString: process.env.DATABASE_URL,
       createTableIfMissing: true,
+      errorLog: (err: Error) => {
+        console.error('Session store error:', err.message);
+      },
     }),
     secret: process.env.SESSION_SECRET!,
     resave: false,

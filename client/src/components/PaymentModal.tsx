@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Check, CreditCard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface PaymentModalProps {
   children: React.ReactNode;
@@ -53,6 +54,7 @@ export default function PaymentModal({ children }: PaymentModalProps) {
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleSubscription = async (plan: SubscriptionPlan) => {
     setIsProcessing(true);
@@ -132,9 +134,8 @@ export default function PaymentModal({ children }: PaymentModalProps) {
         currency: 'KRW',
         payMethod: 'CARD',
         customer: {
-          email: 'customer@example.com',
-          phoneNumber: '010-0000-0000',
-          fullName: '구매자',
+          email: user?.email || '',
+          fullName: user?.name || '구매자',
         },
       });
 

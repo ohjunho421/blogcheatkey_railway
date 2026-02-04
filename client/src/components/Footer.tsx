@@ -40,7 +40,7 @@ export default function Footer() {
               </div>
               <div className="flex items-start gap-2">
                 <Building2 className="h-4 w-4 mt-0.5" />
-                <span>사업장주소: 의정부시 안말로 85번길 27-1</span>
+                <span>사업장주소: 경기도 의정부시 안말로 85번길 27-1</span>
               </div>
             </div>
           </div>
