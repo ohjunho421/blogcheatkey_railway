@@ -1,4 +1,11 @@
 import { analyzeMorphemes } from './morphemeAnalyzer';
+import Anthropic from '@anthropic-ai/sdk';
+
+// Claude Opus 4.6 - 부분 최적화에 사용 (깨진 단어 방지를 위해 Gemini 대신 사용)
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY_ENV_VAR || "default_key",
+});
+const OPTIMIZER_MODEL = 'claude-opus-4-6';
 
 interface OptimizationIssue {
   type: 'character_count' | 'keyword_count' | 'overused_word' | 'structure';
@@ -848,11 +855,6 @@ async function fixAllIssuesAtOnce(
   issues: OptimizationIssue[],
   keyword: string
 ): Promise<string> {
-  const { GoogleGenAI } = await import('@google/genai');
-  const ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || ''
-  });
-
   // 키워드 형태소 추출
   const { extractKeywordComponents } = await import('./morphemeAnalyzer');
   const keywordMorphemes = await extractKeywordComponents(keyword);
@@ -949,26 +951,30 @@ ${content}
 - "수정된 글:", "다음과 같이" 등 서술 표현 금지`;
 
   try {
-    console.log(`  🤖 Gemini API 호출 중... (통합 수정)`);
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-pro',
-      contents: [{
-        role: 'user',
-        parts: [{ text: prompt }]
-      }]
+    console.log(`  🤖 Claude Opus 4.6 API 호출 중... (통합 수정)`);
+    const message = await anthropic.messages.create({
+      model: OPTIMIZER_MODEL,
+      max_tokens: 4000,
+      messages: [{ role: 'user', content: prompt }]
     });
-    
-    const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    
-    if (!optimized || optimized.length < 100) {
-      console.log(`  ⚠️ Gemini 응답이 비정상적, 원본 유지`);
+
+    const responseContent = message.content[0];
+    if (responseContent.type !== 'text') {
+      console.log(`  ⚠️ Claude 응답이 비정상적, 원본 유지`);
       return content;
     }
-    
-    console.log(`  ✓ 통합 수정 완료: ${issues.length}개 문제 (구체적 가이드 적용)`);
+
+    const optimized = responseContent.text.trim();
+
+    if (!optimized || optimized.length < 100) {
+      console.log(`  ⚠️ Claude 응답이 비정상적, 원본 유지`);
+      return content;
+    }
+
+    console.log(`  ✓ 통합 수정 완료: ${issues.length}개 문제 (Claude Opus 4.6)`);
     return optimized;
   } catch (error) {
-    console.error(`  ❌ Gemini API 오류:`, error);
+    console.error(`  ❌ Claude API 오류:`, error);
     return content; // 오류 시 원본 반환
   }
 }
@@ -981,11 +987,6 @@ async function fixCharacterCount(
   issue: OptimizationIssue,
   keyword: string
 ): Promise<string> {
-  const { GoogleGenAI } = await import('@google/genai');
-  const ai = new GoogleGenAI({ 
-    apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || '' 
-  });
-  
   const isDeficit = issue.current < issue.target;
   const amount = Math.abs(issue.target - issue.current);
   const currentKeywordCount = (content.match(new RegExp(keyword, 'g')) || []).length;
@@ -1073,26 +1074,30 @@ ${content}
 ✏️ 출력: 수정된 블로그 글 본문만 (설명문 금지)`;
   
   try {
-    console.log(`  🤖 Gemini API 호출 중... (글자수 조정)`);
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-pro',
-      contents: [{
-        role: 'user',
-        parts: [{ text: prompt }]
-      }]
+    console.log(`  🤖 Claude Opus 4.6 API 호출 중... (글자수 조정)`);
+    const message = await anthropic.messages.create({
+      model: OPTIMIZER_MODEL,
+      max_tokens: 4000,
+      messages: [{ role: 'user', content: prompt }]
     });
-    
-    const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    
-    if (!optimized || optimized.length < 100) {
-      console.log(`  ⚠️ Gemini 응답이 비정상적, 원본 유지`);
+
+    const responseContent = message.content[0];
+    if (responseContent.type !== 'text') {
+      console.log(`  ⚠️ Claude 응답이 비정상적, 원본 유지`);
       return content;
     }
-    
+
+    const optimized = responseContent.text.trim();
+
+    if (!optimized || optimized.length < 100) {
+      console.log(`  ⚠️ Claude 응답이 비정상적, 원본 유지`);
+      return content;
+    }
+
     console.log(`  ✓ 글자수 조정 완료: ${issue.current}자 → ${optimized.replace(/\s/g, '').length}자`);
     return optimized;
   } catch (error) {
-    console.error(`  ❌ Gemini API 오류 (글자수 조정):`, error);
+    console.error(`  ❌ Claude API 오류 (글자수 조정):`, error);
     return content;
   }
 }
@@ -1109,11 +1114,6 @@ async function fixKeywordCount(
   issue: OptimizationIssue,
   keyword: string
 ): Promise<string> {
-  const { GoogleGenAI } = await import('@google/genai');
-  const ai = new GoogleGenAI({ 
-    apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || '' 
-  });
-  
   // 형태소 추가인지 완전한 키워드 추가인지 구분
   const targetWord = issue.word || keyword;
   const isMorpheme = !!issue.word;
@@ -1216,31 +1216,35 @@ ${content}
    - 모든 단어가 실제 한국어 단어인가? (깨진 단어 없는지 확인!)`;
   
   try {
-    console.log(`  🤖 Gemini API 호출 중... (키워드 조정)`);
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-pro',
-      contents: [{
-        role: 'user',
-        parts: [{ text: prompt }]
-      }]
+    console.log(`  🤖 Claude Opus 4.6 API 호출 중... (키워드 조정)`);
+    const message = await anthropic.messages.create({
+      model: OPTIMIZER_MODEL,
+      max_tokens: 4000,
+      messages: [{ role: 'user', content: prompt }]
     });
-    
-    const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    
-    if (!optimized || optimized.length < 100) {
-      console.log(`  ⚠️ Gemini 응답이 비정상적, 원본 유지`);
+
+    const responseContent = message.content[0];
+    if (responseContent.type !== 'text') {
+      console.log(`  ⚠️ Claude 응답이 비정상적, 원본 유지`);
       return content;
     }
-    
+
+    const optimized = responseContent.text.trim();
+
+    if (!optimized || optimized.length < 100) {
+      console.log(`  ⚠️ Claude 응답이 비정상적, 원본 유지`);
+      return content;
+    }
+
     const newCharCount = optimized.replace(/\s/g, '').length;
     const charDiff = newCharCount - currentCharCount;
-    
+
     console.log(`  ✓ 키워드 조정: ${issue.current}회 → 목표 ${issue.target}회`);
     console.log(`  ✓ 글자수 변화: ${currentCharCount} → ${newCharCount} (${charDiff > 0 ? '+' : ''}${charDiff}자)`);
-    
+
     return optimized;
   } catch (error) {
-    console.error(`  ❌ Gemini API 오류 (키워드 조정):`, error);
+    console.error(`  ❌ Claude API 오류 (키워드 조정):`, error);
     return content;
   }
 }
@@ -1253,11 +1257,6 @@ async function fixOverusedWord(
   word: string,
   keyword?: string
 ): Promise<string> {
-  const { GoogleGenAI } = await import('@google/genai');
-  const ai = new GoogleGenAI({ 
-    apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || '' 
-  });
-  
   // 단어별 동의어 사전
   const synonymMap: Record<string, string[]> = {
     '자동차': ['차량', '승용차', '이 차', '해당 차종', '운전하는 차'],
@@ -1343,26 +1342,30 @@ ${content}
 ✏️ 출력: 수정된 블로그 글 본문만 (설명문 금지)`;  
   
   try {
-    console.log(`  🤖 Gemini API 호출 중... (과다 사용 단어 치환)`);
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-pro',
-      contents: [{
-        role: 'user',
-        parts: [{ text: prompt }]
-      }]
+    console.log(`  🤖 Claude Opus 4.6 API 호출 중... (과다 사용 단어 치환)`);
+    const message = await anthropic.messages.create({
+      model: OPTIMIZER_MODEL,
+      max_tokens: 4000,
+      messages: [{ role: 'user', content: prompt }]
     });
-    
-    const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    
-    if (!optimized || optimized.length < 100) {
-      console.log(`  ⚠️ Gemini 응답이 비정상적, 원본 유지`);
+
+    const responseContent = message.content[0];
+    if (responseContent.type !== 'text') {
+      console.log(`  ⚠️ Claude 응답이 비정상적, 원본 유지`);
       return content;
     }
-    
+
+    const optimized = responseContent.text.trim();
+
+    if (!optimized || optimized.length < 100) {
+      console.log(`  ⚠️ Claude 응답이 비정상적, 원본 유지`);
+      return content;
+    }
+
     console.log(`  ✓ 과다 사용 단어 치환 완료: "${word}" (${replaceCount}회 치환)`);
     return optimized;
   } catch (error) {
-    console.error(`  ❌ Gemini API 오류 (과다 사용 단어 치환):`, error);
+    console.error(`  ❌ Claude API 오류 (과다 사용 단어 치환):`, error);
     return content;
   }
 }
@@ -1378,11 +1381,6 @@ async function fixStructure(
   issue: OptimizationIssue,
   keyword: string
 ): Promise<string> {
-  const { GoogleGenAI } = await import('@google/genai');
-  const ai = new GoogleGenAI({ 
-    apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || '' 
-  });
-  
   const currentCharCount = content.replace(/\s/g, '').length;
   const structureType = issue.structureType;
   
@@ -1472,30 +1470,34 @@ ${content}
 4. 글자수 ${currentCharCount - 30}~${currentCharCount + 30}자 범위 유지`;
 
   try {
-    console.log(`  🤖 Gemini API 호출 중... (설득력 구조 수정)`);
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-pro',
-      contents: [{
-        role: 'user',
-        parts: [{ text: prompt }]
-      }]
+    console.log(`  🤖 Claude Opus 4.6 API 호출 중... (설득력 구조 수정)`);
+    const message = await anthropic.messages.create({
+      model: OPTIMIZER_MODEL,
+      max_tokens: 4000,
+      messages: [{ role: 'user', content: prompt }]
     });
-    
-    const optimized = response.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    
-    if (!optimized || optimized.length < 100) {
-      console.log(`  ⚠️ Gemini 응답이 비정상적, 원본 유지`);
+
+    const responseContent = message.content[0];
+    if (responseContent.type !== 'text') {
+      console.log(`  ⚠️ Claude 응답이 비정상적, 원본 유지`);
       return content;
     }
-    
+
+    const optimized = responseContent.text.trim();
+
+    if (!optimized || optimized.length < 100) {
+      console.log(`  ⚠️ Claude 응답이 비정상적, 원본 유지`);
+      return content;
+    }
+
     const newCharCount = optimized.replace(/\s/g, '').length;
-    
+
     console.log(`  ✓ 설득력 구조 수정 완료: ${issue.description}`);
     console.log(`  ✓ 글자수 변화: ${currentCharCount} → ${newCharCount} (${newCharCount - currentCharCount > 0 ? '+' : ''}${newCharCount - currentCharCount}자)`);
     
     return optimized;
   } catch (error) {
-    console.error(`  ❌ Gemini API 오류 (설득력 구조 수정):`, error);
+    console.error(`  ❌ Claude API 오류 (설득력 구조 수정):`, error);
     return content;
   }
 }
