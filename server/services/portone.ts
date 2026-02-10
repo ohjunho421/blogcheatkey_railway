@@ -52,17 +52,22 @@ export async function verifyPayment(verificationData: PaymentVerificationV2) {
   }
 
   try {
+    const url = `${PORTONE_V2_API_BASE}/payments/${encodeURIComponent(verificationData.paymentId)}`;
+    console.log('[PortOne V2] Verifying payment:', {
+      url,
+      paymentId: verificationData.paymentId,
+      secretPrefix: PORTONE_API_SECRET?.substring(0, 10) + '...',
+    });
+
     // 포트원 V2 API로 결제 정보 조회
-    const response = await axios.get(
-      `${PORTONE_V2_API_BASE}/payments/${encodeURIComponent(verificationData.paymentId)}`,
-      {
-        headers: {
-          'Authorization': `PortOne ${PORTONE_API_SECRET}`,
-        },
+    const response = await axios.get(url, {
+      headers: {
+        'Authorization': `PortOne ${PORTONE_API_SECRET}`,
       },
-    );
+    });
 
     const payment = response.data;
+    console.log('[PortOne V2] Payment data:', JSON.stringify(payment, null, 2));
 
     // 결제 상태 확인 (V2는 대문자: PAID, VIRTUAL_ACCOUNT_ISSUED 등)
     if (payment.status !== 'PAID') {
@@ -83,9 +88,10 @@ export async function verifyPayment(verificationData: PaymentVerificationV2) {
       },
     };
   } catch (error) {
-    console.error('Payment verification error:', error);
+    console.error('[PortOne V2] Payment verification error:', error instanceof Error ? error.message : error);
     if (axios.isAxiosError(error) && error.response) {
-      console.error('PortOne API response:', error.response.data);
+      console.error('[PortOne V2] API response status:', error.response.status);
+      console.error('[PortOne V2] API response data:', JSON.stringify(error.response.data, null, 2));
     }
     return {
       success: false,
