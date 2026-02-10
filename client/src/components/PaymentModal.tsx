@@ -140,7 +140,7 @@ export default function PaymentModal({ children }: PaymentModalProps) {
         },
       });
 
-      if (paymentResponse.code) {
+      if (paymentResponse.code !== undefined) {
         // 결제 실패
         toast({
           title: '결제 실패',
@@ -148,15 +148,15 @@ export default function PaymentModal({ children }: PaymentModalProps) {
           variant: 'destructive',
         });
       } else {
-        // 결제 성공 - 서버에서 검증
+        // 결제 성공 - 서버에서 검증 (V2 SDK는 paymentId 반환)
         const verifyResponse = await fetch('/api/payments/portone/verify', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
+          credentials: 'include',
           body: JSON.stringify({
-            imp_uid: (paymentResponse as any).imp_uid,
-            merchant_uid: merchant_uid,
+            paymentId: merchant_uid,
           }),
         });
 
@@ -166,7 +166,6 @@ export default function PaymentModal({ children }: PaymentModalProps) {
             description: `${plan.name} 플랜이 성공적으로 구매되었습니다!`,
           });
           setIsOpen(false);
-          // 페이지 새로고침 또는 상태 업데이트
           window.location.reload();
         } else {
           toast({

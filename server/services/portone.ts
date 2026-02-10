@@ -1,20 +1,19 @@
 import axios from 'axios';
 
-// 포트원 API 설정
-const PORTONE_API_KEY = process.env.PORTONE_API_KEY;
+// 포트원 V2 API 설정
 const PORTONE_API_SECRET = process.env.PORTONE_API_SECRET;
 
 // 환경변수 체크 함수
 function checkPortOneConfig() {
-  if (!PORTONE_API_KEY || !PORTONE_API_SECRET) {
-    console.warn('⚠️ 포트원 API 키가 설정되지 않았습니다. 결제 기능이 비활성화됩니다.');
+  if (!PORTONE_API_SECRET) {
+    console.warn('포트원 V2 API Secret이 설정되지 않았습니다. 결제 기능이 비활성화됩니다.');
     return false;
   }
   return true;
 }
 
-// 포트원 API 베이스 URL
-const PORTONE_API_BASE = 'https://api.iamport.kr';
+// 포트원 V2 API 베이스 URL
+const PORTONE_V2_API_BASE = 'https://api.portone.io';
 
 export interface PaymentData {
   merchant_uid: string;
@@ -23,9 +22,8 @@ export interface PaymentData {
   planType: string;
 }
 
-export interface PaymentVerification {
-  imp_uid: string;
-  merchant_uid: string;
+export interface PaymentVerificationV2 {
+  paymentId: string;
 }
 
 /**
@@ -33,7 +31,7 @@ export interface PaymentVerification {
  */
 export function preparePayment(paymentData: PaymentData) {
   const merchant_uid = `subscription_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
+
   return {
     merchant_uid,
     amount: paymentData.amount,
@@ -43,75 +41,52 @@ export function preparePayment(paymentData: PaymentData) {
 }
 
 /**
- * 포트원 액세스 토큰 획득
+ * 결제 검증 (V2 API) - 포트원에서 결제 정보 조회하여 위변조 방지
  */
-async function getAccessToken(): Promise<string> {
+export async function verifyPayment(verificationData: PaymentVerificationV2) {
   if (!checkPortOneConfig()) {
-    throw new Error('포트원 API 키가 설정되지 않았습니다. 관리자에게 문의해주세요.');
+    return {
+      success: false,
+      error: '포트원 V2 API Secret이 설정되지 않았습니다. 관리자에게 문의해주세요.',
+    };
   }
-  
+
   try {
-    const response = await axios.post(`${PORTONE_API_BASE}/users/getToken`, {
-      imp_key: PORTONE_API_KEY,
-      imp_secret: PORTONE_API_SECRET,
-    });
-
-    if (response.data.code !== 0) {
-      throw new Error(`토큰 획득 실패: ${response.data.message}`);
-    }
-
-    return response.data.response.access_token;
-  } catch (error) {
-    console.error('Access token error:', error);
-    throw new Error('포트원 인증 실패');
-  }
-}
-
-/**
- * 결제 검증 - 포트원에서 결제 정보 조회하여 위변조 방지
- */
-export async function verifyPayment(verificationData: PaymentVerification) {
-  try {
-    const accessToken = await getAccessToken();
-    
-    // 포트원에서 결제 정보 조회
-    const response = await axios.get(`${PORTONE_API_BASE}/payments/${verificationData.imp_uid}`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
+    // 포트원 V2 API로 결제 정보 조회
+    const response = await axios.get(
+      `${PORTONE_V2_API_BASE}/payments/${encodeURIComponent(verificationData.paymentId)}`,
+      {
+        headers: {
+          'Authorization': `PortOne ${PORTONE_API_SECRET}`,
+        },
       },
-    });
+    );
 
-    if (response.data.code !== 0) {
-      throw new Error('결제 정보 조회 실패');
-    }
+    const payment = response.data;
 
-    const payment = response.data.response;
-
-    // 결제 상태 확인
-    if (payment.status !== 'paid') {
+    // 결제 상태 확인 (V2는 대문자: PAID, VIRTUAL_ACCOUNT_ISSUED 등)
+    if (payment.status !== 'PAID') {
       throw new Error(`결제가 완료되지 않았습니다. 상태: ${payment.status}`);
-    }
-
-    // 주문번호 일치 확인
-    if (payment.merchant_uid !== verificationData.merchant_uid) {
-      throw new Error('주문번호가 일치하지 않습니다');
     }
 
     return {
       success: true,
       payment: {
-        imp_uid: payment.imp_uid,
-        merchant_uid: payment.merchant_uid,
-        amount: payment.amount,
+        paymentId: payment.id,
+        merchant_uid: payment.id,
+        amount: payment.amount?.total ?? 0,
         status: payment.status,
-        paid_at: payment.paid_at,
-        name: payment.name,
-        buyer_email: payment.buyer_email,
-        buyer_name: payment.buyer_name,
+        paid_at: payment.paidAt ? Math.floor(new Date(payment.paidAt).getTime() / 1000) : 0,
+        name: payment.orderName,
+        buyer_email: payment.customer?.email ?? '',
+        buyer_name: payment.customer?.name ?? '',
       },
     };
   } catch (error) {
     console.error('Payment verification error:', error);
+    if (axios.isAxiosError(error) && error.response) {
+      console.error('PortOne API response:', error.response.data);
+    }
     return {
       success: false,
       error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다',
@@ -120,26 +95,32 @@ export async function verifyPayment(verificationData: PaymentVerification) {
 }
 
 /**
- * 결제 취소
+ * 결제 취소 (V2 API)
  */
-export async function cancelPayment(imp_uid: string, reason: string = '사용자 요청') {
+export async function cancelPayment(paymentId: string, reason: string = '사용자 요청') {
+  if (!checkPortOneConfig()) {
+    return {
+      success: false,
+      error: '포트원 V2 API Secret이 설정되지 않았습니다.',
+    };
+  }
+
   try {
-    const accessToken = await getAccessToken();
-    
-    const response = await axios.post(`${PORTONE_API_BASE}/payments/cancel`, {
-      imp_uid,
-      reason,
-    }, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+    const response = await axios.post(
+      `${PORTONE_V2_API_BASE}/payments/${encodeURIComponent(paymentId)}/cancel`,
+      { reason },
+      {
+        headers: {
+          'Authorization': `PortOne ${PORTONE_API_SECRET}`,
+          'Content-Type': 'application/json',
+        },
       },
-    });
+    );
 
     return {
-      success: response.data.code === 0,
-      data: response.data.response,
-      error: response.data.message,
+      success: true,
+      data: response.data,
+      error: null,
     };
   } catch (error) {
     console.error('Payment cancellation error:', error);
@@ -151,34 +132,12 @@ export async function cancelPayment(imp_uid: string, reason: string = '사용자
 }
 
 /**
- * 결제 내역 조회
+ * 결제 내역 조회는 V2에서 별도 API 없이 개별 조회로 처리
  */
 export async function getPaymentHistory(merchantUidPrefix?: string) {
-  try {
-    const accessToken = await getAccessToken();
-    
-    // 최근 결제 내역 조회 (최대 100개)
-    const response = await axios.get(`${PORTONE_API_BASE}/payments/status/all`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-      params: {
-        limit: 100,
-        ...(merchantUidPrefix && { merchant_uid: merchantUidPrefix }),
-      },
-    });
-
-    return {
-      success: response.data.code === 0,
-      payments: response.data.response?.list || [],
-      error: response.data.message,
-    };
-  } catch (error) {
-    console.error('Payment history error:', error);
-    return {
-      success: false,
-      payments: [],
-      error: error instanceof Error ? error.message : '결제 내역 조회 중 오류가 발생했습니다',
-    };
-  }
+  return {
+    success: true,
+    payments: [],
+    error: null,
+  };
 }

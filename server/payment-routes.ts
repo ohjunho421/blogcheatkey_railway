@@ -5,7 +5,7 @@ import {
   cancelPayment,
   getPaymentHistory,
   type PaymentData,
-  type PaymentVerification,
+  type PaymentVerificationV2,
 } from './services/portone';
 import { requireAuth } from './auth';
 import { storage } from './storage';
@@ -48,17 +48,17 @@ router.post('/portone/prepare', requireAuth, async (req, res) => {
  */
 router.post('/portone/verify', requireAuth, async (req, res) => {
   try {
-    const verificationData: PaymentVerification = req.body;
-    
-    if (!verificationData.imp_uid || !verificationData.merchant_uid) {
+    const { paymentId } = req.body;
+
+    if (!paymentId) {
       return res.status(400).json({
         success: false,
-        error: '결제 고유번호와 주문번호는 필수입니다.',
+        error: 'paymentId는 필수입니다.',
       });
     }
 
-    const result = await verifyPayment(verificationData);
-    
+    const result = await verifyPayment({ paymentId });
+
     if (!result.success) {
       return res.status(400).json(result);
     }
@@ -68,28 +68,25 @@ router.post('/portone/verify', requireAuth, async (req, res) => {
     if (userId && result.payment) {
       try {
         // 결제일로부터 1개월 후를 만료일로 설정
-        const paymentDate = new Date(result.payment.paid_at * 1000); // Unix timestamp to Date
+        const paymentDate = new Date(result.payment.paid_at * 1000);
         const expiresAt = new Date(paymentDate);
-        expiresAt.setMonth(expiresAt.getMonth() + 1); // 1개월 추가
-        
-        // merchant_uid에서 planType 추출 (형식: blogcheatkey_planType_userId_timestamp)
-        // 또는 결제 금액으로 판단 (20000원 = basic, 50000원 = premium)
+        expiresAt.setMonth(expiresAt.getMonth() + 1);
+
         const amount = result.payment.amount;
         const planType = amount >= 50000 ? 'premium' : 'basic';
         const isPremium = planType === 'premium';
-        
+
         await storage.updateUser(userId, {
           subscriptionTier: planType,
           subscriptionExpiresAt: expiresAt,
           canGenerateContent: true,
-          canGenerateImages: isPremium, // 프리미엄만 이미지 생성 가능
-          canUseChatbot: isPremium, // 프리미엄만 챗봇 사용 가능
+          canGenerateImages: isPremium,
+          canUseChatbot: isPremium,
         } as any);
-        
+
         console.log(`User ${userId} subscription updated. Plan: ${planType}, Expires at: ${expiresAt.toISOString()}`);
       } catch (updateError) {
         console.error('Failed to update user subscription:', updateError);
-        // 구독 업데이트 실패해도 결제 자체는 성공으로 처리
       }
     }
 
@@ -109,16 +106,16 @@ router.post('/portone/verify', requireAuth, async (req, res) => {
  */
 router.post('/portone/cancel', requireAuth, async (req, res) => {
   try {
-    const { imp_uid, reason } = req.body;
-    
-    if (!imp_uid) {
+    const { paymentId, reason } = req.body;
+
+    if (!paymentId) {
       return res.status(400).json({
         success: false,
-        error: '결제 고유번호는 필수입니다.',
+        error: 'paymentId는 필수입니다.',
       });
     }
 
-    const result = await cancelPayment(imp_uid, reason || '사용자 요청');
+    const result = await cancelPayment(paymentId, reason || '사용자 요청');
     
     if (!result.success) {
       return res.status(400).json(result);
@@ -189,50 +186,27 @@ router.post('/portone/webhook', async (req, res) => {
       }
     }
     
-    const { imp_uid, merchant_uid, status } = req.body;
-    
-    console.log('PortOne webhook received:', { imp_uid, merchant_uid, status });
-    
-    // 웹훅 데이터로 결제 상태 재검증
-    if (imp_uid && merchant_uid) {
-      const verification = await verifyPayment({ imp_uid, merchant_uid });
-      
+    // V2 webhook은 data.paymentId 형태로 전달
+    const paymentId = req.body.data?.paymentId || req.body.paymentId;
+    const txId = req.body.data?.txId;
+
+    console.log('PortOne webhook received:', { paymentId, txId, body: req.body });
+
+    if (paymentId) {
+      const verification = await verifyPayment({ paymentId });
+
       if (verification.success && verification.payment) {
         console.log('Webhook verification successful:', verification.payment);
-        
-        // 결제 성공 시 처리
-        if (status === 'paid') {
-          // merchant_uid 형식: blogcheatkey_userId_timestamp
-          const parts = merchant_uid.split('_');
-          const userId = parts.length >= 2 ? parseInt(parts[1]) : null;
-          
-          if (userId && verification.payment) {
-            try {
-              // 결제일로부터 1개월 후를 만료일로 설정
-              const paymentDate = new Date(verification.payment.paid_at * 1000);
-              const expiresAt = new Date(paymentDate);
-              expiresAt.setMonth(expiresAt.getMonth() + 1);
-              
-              // 결제 금액으로 플랜 타입 판단 (20000원 = basic, 50000원 = premium)
-              const amount = verification.payment.amount;
-              const planType = amount >= 50000 ? 'premium' : 'basic';
-              const isPremium = planType === 'premium';
-              
-              await storage.updateUser(userId, {
-                subscriptionTier: planType,
-                subscriptionExpiresAt: expiresAt,
-                canGenerateContent: true,
-                canGenerateImages: true,
-                canUseChatbot: isPremium, // 프리미엄만 챗봇 사용 가능
-              } as any);
-              
-              console.log(`Webhook: User ${userId} subscription updated. Plan: ${planType}, Expires at: ${expiresAt.toISOString()}`);
-            } catch (updateError) {
-              console.error('Webhook: Failed to update user subscription:', updateError);
-            }
-          }
-          console.log('Payment completed via webhook:', merchant_uid);
-        }
+
+        const amount = verification.payment.amount;
+        const planType = amount >= 50000 ? 'premium' : 'basic';
+        const isPremium = planType === 'premium';
+
+        const paymentDate = new Date(verification.payment.paid_at * 1000);
+        const expiresAt = new Date(paymentDate);
+        expiresAt.setMonth(expiresAt.getMonth() + 1);
+
+        console.log(`Webhook: Payment completed. Plan: ${planType}, paymentId: ${paymentId}`);
       } else {
         console.error('Webhook verification failed:', verification.error);
       }

@@ -29,10 +29,8 @@ export function PortOnePaymentWidget({
       return;
     }
 
-    // PortOne SDK 로드 확인
     if (!(window as any).PortOne) {
-      console.error('PortOne SDK가 로드되지 않았습니다.');
-      return;
+      console.warn('PortOne V2 SDK가 아직 로드되지 않았습니다.');
     }
   }, [storeId]);
 
@@ -63,61 +61,59 @@ export function PortOnePaymentWidget({
 
       const { merchant_uid } = prepareData.data;
 
-      // PortOne 결제 요청
-      const IMP = (window as any).IMP;
-      if (!IMP) {
+      // PortOne V2 SDK 결제 요청
+      const PortOne = (window as any).PortOne;
+      if (!PortOne) {
         throw new Error('PortOne SDK를 찾을 수 없습니다.');
       }
 
-      IMP.init(storeId);
+      const channelKey = 'channel-key-60e08fc8-6f08-4e58-aa60-41f2a81e2e7a';
 
-      IMP.request_pay(
-        {
-          pg: 'kakaopay.TC0ONETIME', // PG사 (예: kakaopay, tosspay, inicis 등)
-          pay_method: 'card', // 결제 방법
-          merchant_uid, // 주문번호
-          name: orderName, // 상품명
-          amount, // 결제 금액
-          buyer_email: buyerEmail,
-          buyer_name: buyerName,
-          buyer_tel: buyerTel,
-          m_redirect_url: `${window.location.origin}/payment/complete`, // 모바일 리다이렉트
+      const paymentResponse = await PortOne.requestPayment({
+        storeId,
+        channelKey,
+        paymentId: merchant_uid,
+        orderName,
+        totalAmount: amount,
+        currency: 'KRW',
+        payMethod: 'CARD',
+        customer: {
+          email: buyerEmail || '',
+          phoneNumber: buyerTel || '01000000000',
+          fullName: buyerName || '구매자',
         },
-        async (response: any) => {
-          if (response.success) {
-            // 결제 성공 - 서버에서 검증
-            try {
-              const verifyResponse = await fetch('/api/payments/portone/verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({
-                  imp_uid: response.imp_uid,
-                  merchant_uid: response.merchant_uid,
-                }),
-              });
+      });
 
-              const verifyData = await verifyResponse.json();
+      if (paymentResponse.code !== undefined) {
+        const errorMsg = paymentResponse.message || '결제에 실패했습니다.';
+        alert(errorMsg);
+        onFail?.(new Error(errorMsg));
+      } else {
+        // 결제 성공 - 서버에서 V2 API로 검증
+        try {
+          const verifyResponse = await fetch('/api/payments/portone/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({
+              paymentId: merchant_uid,
+            }),
+          });
 
-              if (verifyData.success) {
-                alert('결제가 완료되었습니다!');
-                onSuccess?.(verifyData.payment);
-              } else {
-                throw new Error(verifyData.error || '결제 검증 실패');
-              }
-            } catch (error: any) {
-              console.error('Payment verification error:', error);
-              alert(`결제 검증 오류: ${error.message}`);
-              onFail?.(error);
-            }
+          const verifyData = await verifyResponse.json();
+
+          if (verifyData.success) {
+            alert('결제가 완료되었습니다!');
+            onSuccess?.(verifyData.payment);
           } else {
-            // 결제 실패
-            const errorMsg = response.error_msg || '결제에 실패했습니다.';
-            alert(errorMsg);
-            onFail?.(new Error(errorMsg));
+            throw new Error(verifyData.error || '결제 검증 실패');
           }
+        } catch (error: any) {
+          console.error('Payment verification error:', error);
+          alert(`결제 검증 오류: ${error.message}`);
+          onFail?.(error);
         }
-      );
+      }
     } catch (error: any) {
       console.error('Payment error:', error);
       alert(`결제 오류: ${error.message}`);
