@@ -48,7 +48,7 @@ router.post('/portone/prepare', requireAuth, async (req, res) => {
  */
 router.post('/portone/verify', requireAuth, async (req, res) => {
   try {
-    const { paymentId } = req.body;
+    const { paymentId, paymentToken, txId } = req.body;
 
     if (!paymentId) {
       return res.status(400).json({
@@ -57,7 +57,7 @@ router.post('/portone/verify', requireAuth, async (req, res) => {
       });
     }
 
-    const result = await verifyPayment({ paymentId });
+    const result = await verifyPayment({ paymentId, paymentToken, txId });
 
     if (!result.success) {
       // PENDING 상태면 202로 반환 (프론트에서 재시도 가능)

@@ -96,7 +96,11 @@ export function PortOnePaymentWidget({
         return;
       }
 
-      // 결제 성공 - 서버에서 V2 API로 검증 (비동기 PG 폴링 포함)
+      // 수동 승인 모드: SDK 응답에서 paymentToken 추출
+      const paymentToken = paymentResponse.paymentToken;
+      const txId = paymentResponse.txId;
+
+      // 결제 성공 - 서버에서 V2 API로 검증 (수동 승인 포함)
       const MAX_RETRIES = 20;
       const RETRY_INTERVAL = 3000;
 
@@ -106,7 +110,7 @@ export function PortOnePaymentWidget({
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ paymentId: merchant_uid }),
+            body: JSON.stringify({ paymentId: merchant_uid, paymentToken, txId }),
           });
 
           const verifyData = await verifyResponse.json();

@@ -157,8 +157,12 @@ export default function PaymentModal({ children }: PaymentModalProps) {
         return;
       }
 
-      // 결제 SDK 반환 성공 - 서버에서 결제 상태 확인
-      // 비동기 PG는 READY → PAID 전환에 시간이 걸릴 수 있어 폴링 수행
+      // 수동 승인 모드: SDK 응답에서 paymentToken 추출
+      const paymentToken = paymentResponse.paymentToken;
+      const txId = paymentResponse.txId;
+      console.log('[Payment] SDK response - paymentToken:', paymentToken ? 'present' : 'absent', 'txId:', txId);
+
+      // 결제 SDK 반환 성공 - 서버에서 결제 상태 확인 및 승인 처리
       const MAX_CLIENT_RETRIES = 20;
       const CLIENT_RETRY_INTERVAL = 3000;
 
@@ -167,7 +171,7 @@ export default function PaymentModal({ children }: PaymentModalProps) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ paymentId: merchant_uid }),
+          body: JSON.stringify({ paymentId: merchant_uid, paymentToken, txId }),
         });
 
         const verifyData = await verifyResponse.json();

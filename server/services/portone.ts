@@ -24,6 +24,8 @@ export interface PaymentData {
 
 export interface PaymentVerificationV2 {
   paymentId: string;
+  paymentToken?: string; // 수동 승인 모드에서 SDK 응답으로 받은 토큰
+  txId?: string;         // 결제 시도 건 ID
 }
 
 /**
@@ -60,12 +62,18 @@ async function fetchPayment(paymentId: string) {
  * 서버에서 confirm API를 호출해야 실제 승인(PAID)이 완료됨.
  * @see https://developers.portone.io/api/rest-v2/payment?v=v2
  */
-async function confirmPayment(paymentId: string) {
+async function confirmPayment(paymentId: string, paymentToken?: string) {
   const url = `${PORTONE_V2_API_BASE}/payments/${encodeURIComponent(paymentId)}/confirm`;
-  console.log(`[PortOne V2] Confirming payment: ${paymentId}`);
+  console.log(`[PortOne V2] Confirming payment: ${paymentId}, token: ${paymentToken ? 'present' : 'absent'}`);
+
+  const body: Record<string, unknown> = {};
+  if (paymentToken) {
+    body.paymentToken = paymentToken;
+  }
+
   const response = await axios.post(
     url,
-    {},
+    body,
     {
       headers: {
         'Authorization': `PortOne ${PORTONE_API_SECRET}`,
@@ -133,7 +141,7 @@ export async function verifyPayment(verificationData: PaymentVerificationV2) {
     // 2단계: READY 상태 → confirm API로 수동 승인 처리
     if (payment.status === 'READY') {
       try {
-        await confirmPayment(verificationData.paymentId);
+        await confirmPayment(verificationData.paymentId, verificationData.paymentToken);
         console.log('[PortOne V2] Confirm API called successfully');
       } catch (confirmError) {
         // confirm 실패 시 상세 로그
