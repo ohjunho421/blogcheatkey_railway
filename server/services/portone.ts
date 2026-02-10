@@ -56,11 +56,12 @@ async function fetchPayment(paymentId: string) {
 }
 
 /**
- * 포트원 V2 수동 승인 - READY 상태 결제를 PAID로 전환
+ * 포트원 V2 결제 승인 확인
  *
- * 채널이 수동 승인 모드로 설정된 경우, requestPayment() 후 결제가 READY 상태로 머무름.
- * 서버에서 confirm API를 호출해야 실제 승인(PAID)이 완료됨.
- * @see https://developers.portone.io/api/rest-v2/payment?v=v2
+ * 포트원 V2 인증결제에서는 PG사가 자동으로 결제를 승인합니다.
+ * confirm API는 paymentToken이 있는 경우에만 호출합니다.
+ * 웹훅에서 READY 상태를 받으면 아직 결제가 완료되지 않은 것이므로 무시합니다.
+ * @see https://developers.portone.io/opi/ko/integration/start/v2/checkout
  */
 async function confirmPayment(paymentId: string, paymentToken?: string) {
   const url = `${PORTONE_V2_API_BASE}/payments/${encodeURIComponent(paymentId)}/confirm`;
@@ -108,7 +109,8 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
  *
  * 플로우:
  * 1. 결제 단건 조회로 현재 상태 확인
- * 2. READY 상태면 confirm API 호출하여 수동 승인 처리
+ * 2. READY 상태 + paymentToken 있으면 → confirm API 호출 (클라이언트 verify)
+ *    READY 상태 + paymentToken 없으면 → PENDING 반환 (웹훅 등)
  * 3. confirm 후 재조회하여 PAID 상태 확인
  * 4. 이미 PAID면 바로 반환
  */
@@ -138,11 +140,23 @@ export async function verifyPayment(verificationData: PaymentVerificationV2) {
       };
     }
 
-    // 2단계: READY 상태 → confirm API로 수동 승인 처리
+    // 2단계: READY 상태 처리
     if (payment.status === 'READY') {
+      // paymentToken이 없으면 아직 결제가 진행 중 (웹훅에서 호출된 경우)
+      // PG사가 자동 승인하므로 confirm 호출 불필요 → PENDING 반환
+      if (!verificationData.paymentToken) {
+        console.log('[PortOne V2] READY status without paymentToken - returning PENDING (PG auto-approval pending)');
+        return {
+          success: false as const,
+          status: 'PENDING' as const,
+          error: '결제가 PG사에서 승인 처리 중입니다. 잠시 후 자동으로 완료됩니다.',
+        };
+      }
+
+      // paymentToken이 있는 경우에만 confirm API 호출 (클라이언트 verify 요청)
       try {
         await confirmPayment(verificationData.paymentId, verificationData.paymentToken);
-        console.log('[PortOne V2] Confirm API called successfully');
+        console.log('[PortOne V2] Confirm API called successfully with paymentToken');
       } catch (confirmError) {
         // confirm 실패 시 상세 로그
         if (axios.isAxiosError(confirmError) && confirmError.response) {

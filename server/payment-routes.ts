@@ -19,7 +19,7 @@ const router = Router();
 router.post('/portone/prepare', requireAuth, async (req, res) => {
   try {
     const paymentData: PaymentData = req.body;
-    
+
     if (!paymentData.name || !paymentData.amount) {
       return res.status(400).json({
         success: false,
@@ -28,7 +28,7 @@ router.post('/portone/prepare', requireAuth, async (req, res) => {
     }
 
     const preparedPayment = preparePayment(paymentData);
-    
+
     res.json({
       success: true,
       data: preparedPayment,
@@ -118,7 +118,7 @@ router.post('/portone/cancel', requireAuth, async (req, res) => {
     }
 
     const result = await cancelPayment(paymentId, reason || '사용자 요청');
-    
+
     if (!result.success) {
       return res.status(400).json(result);
     }
@@ -144,9 +144,9 @@ router.post('/portone/cancel', requireAuth, async (req, res) => {
 router.get('/portone/history', requireAuth, async (req, res) => {
   try {
     const { merchantUidPrefix } = req.query;
-    
+
     const result = await getPaymentHistory(merchantUidPrefix as string);
-    
+
     if (!result.success) {
       return res.status(400).json(result);
     }
@@ -187,19 +187,25 @@ router.post('/portone/webhook', async (req, res) => {
     }
 
     // 처리 대상 이벤트 판별
-    // - Transaction.Paid 또는 status=Paid → 결제 완료 확인
-    // - Transaction.Ready 또는 status=Ready → 수동 승인이 필요한 결제
     const isPaid = webhookType === 'Transaction.Paid' || webhookStatus === 'Paid';
     const isReady = webhookType === 'Transaction.Ready' || webhookStatus === 'Ready';
+    const isVirtualAccount = webhookType === 'Transaction.VirtualAccountIssued' || webhookStatus === 'VirtualAccountIssued';
 
-    if (!isPaid && !isReady) {
+    // READY 상태: 결제가 아직 완료되지 않음 (PG사 자동 승인 대기 중)
+    // 포트원 V2 인증결제에서는 confirm API 호출 불필요 - 로깅만 하고 종료
+    if (isReady) {
+      console.log(`[Webhook] READY event for paymentId: ${paymentId} - PG auto-approval pending, skipping`);
+      return res.json({ success: true });
+    }
+
+    if (!isPaid && !isVirtualAccount) {
       console.log(`[Webhook] type=${webhookType}, status=${webhookStatus} - skipping`);
       return res.json({ success: true });
     }
 
-    console.log(`[Webhook] Processing ${isPaid ? 'PAID' : 'READY'} event for paymentId: ${paymentId}`);
+    console.log(`[Webhook] Processing PAID event for paymentId: ${paymentId}`);
 
-    // verifyPayment가 READY 상태 시 자동으로 confirm API 호출함
+    // PAID 웹훅: 결제 조회 API로 결제 정보 확인 (confirm 호출 없이)
     const verification = await verifyPayment({ paymentId });
 
     if (!verification.success || !verification.payment) {
