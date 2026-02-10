@@ -87,7 +87,7 @@ export async function verifyPayment(verificationData: PaymentVerificationV2) {
   try {
     console.log('[PortOne V2] Verifying payment:', verificationData.paymentId);
 
-    const MAX_RETRIES = 5;
+    const MAX_RETRIES = 15;
     const RETRY_INTERVAL_MS = 2000;
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
