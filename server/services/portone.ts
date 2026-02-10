@@ -53,6 +53,30 @@ async function fetchPayment(paymentId: string) {
   return response.data;
 }
 
+/**
+ * 포트원 V2 수동 승인 - READY 상태 결제를 PAID로 전환
+ *
+ * 채널이 수동 승인 모드로 설정된 경우, requestPayment() 후 결제가 READY 상태로 머무름.
+ * 서버에서 confirm API를 호출해야 실제 승인(PAID)이 완료됨.
+ * @see https://developers.portone.io/api/rest-v2/payment?v=v2
+ */
+async function confirmPayment(paymentId: string) {
+  const url = `${PORTONE_V2_API_BASE}/payments/${encodeURIComponent(paymentId)}/confirm`;
+  console.log(`[PortOne V2] Confirming payment: ${paymentId}`);
+  const response = await axios.post(
+    url,
+    {},
+    {
+      headers: {
+        'Authorization': `PortOne ${PORTONE_API_SECRET}`,
+        'Content-Type': 'application/json',
+      },
+    },
+  );
+  console.log(`[PortOne V2] Confirm response:`, JSON.stringify(response.data));
+  return response.data;
+}
+
 function extractPaymentResult(payment: any) {
   return {
     success: true as const,
@@ -74,9 +98,11 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 /**
  * 결제 검증 (V2 API) - 포트원에서 결제 정보 조회하여 위변조 방지
  *
- * 공식 V2 플로우: requestPayment() 성공 후 단건조회하면 PAID 상태여야 함
- * 비동기 PG(INICIS_V2 등)는 READY → PAID 전환에 시간이 걸릴 수 있음
- * 서버에서 짧은 폴링(5초) 후에도 READY면 pending 반환 → 프론트에서 재시도
+ * 플로우:
+ * 1. 결제 단건 조회로 현재 상태 확인
+ * 2. READY 상태면 confirm API 호출하여 수동 승인 처리
+ * 3. confirm 후 재조회하여 PAID 상태 확인
+ * 4. 이미 PAID면 바로 반환
  */
 export async function verifyPayment(verificationData: PaymentVerificationV2) {
   if (!checkPortOneConfig()) {
@@ -89,35 +115,80 @@ export async function verifyPayment(verificationData: PaymentVerificationV2) {
   try {
     console.log('[PortOne V2] Verifying payment:', verificationData.paymentId);
 
-    const MAX_RETRIES = 3;
-    const RETRY_INTERVAL_MS = 2000;
+    // 1단계: 현재 결제 상태 조회
+    const payment = await fetchPayment(verificationData.paymentId);
+    console.log(`[PortOne V2] Current status: ${payment.status}`);
 
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-      const payment = await fetchPayment(verificationData.paymentId);
-      console.log(`[PortOne V2] Attempt ${attempt}/${MAX_RETRIES} - status: ${payment.status}`);
-
-      if (payment.status === 'PAID') {
-        return extractPaymentResult(payment);
-      }
-
-      if (payment.status === 'FAILED' || payment.status === 'CANCELLED') {
-        return {
-          success: false as const,
-          error: `결제가 완료되지 않았습니다. 상태: ${payment.status}`,
-        };
-      }
-
-      // READY 상태 - 비동기 PG 대기 중
-      if (attempt < MAX_RETRIES) {
-        await sleep(RETRY_INTERVAL_MS);
-      }
+    if (payment.status === 'PAID') {
+      return extractPaymentResult(payment);
     }
 
-    // READY 상태 지속 - 프론트엔드에서 재시도하도록 pending 반환
+    if (payment.status === 'FAILED' || payment.status === 'CANCELLED') {
+      return {
+        success: false as const,
+        error: `결제가 완료되지 않았습니다. 상태: ${payment.status}`,
+      };
+    }
+
+    // 2단계: READY 상태 → confirm API로 수동 승인 처리
+    if (payment.status === 'READY') {
+      try {
+        await confirmPayment(verificationData.paymentId);
+        console.log('[PortOne V2] Confirm API called successfully');
+      } catch (confirmError) {
+        // confirm 실패 시 상세 로그
+        if (axios.isAxiosError(confirmError) && confirmError.response) {
+          const errData = confirmError.response.data;
+          console.error('[PortOne V2] Confirm failed:', confirmError.response.status, JSON.stringify(errData));
+
+          // 이미 승인된 결제인 경우 (중복 confirm) - 정상 처리
+          if (confirmError.response.status === 409) {
+            console.log('[PortOne V2] Payment already confirmed (409), proceeding...');
+          } else {
+            return {
+              success: false as const,
+              error: `결제 승인 실패: ${errData?.message || confirmError.message}`,
+            };
+          }
+        } else {
+          throw confirmError;
+        }
+      }
+
+      // 3단계: confirm 후 폴링으로 PAID 전환 확인
+      const MAX_RETRIES = 5;
+      const RETRY_INTERVAL_MS = 1500;
+
+      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        await sleep(RETRY_INTERVAL_MS);
+        const updatedPayment = await fetchPayment(verificationData.paymentId);
+        console.log(`[PortOne V2] Post-confirm attempt ${attempt}/${MAX_RETRIES} - status: ${updatedPayment.status}`);
+
+        if (updatedPayment.status === 'PAID') {
+          return extractPaymentResult(updatedPayment);
+        }
+
+        if (updatedPayment.status === 'FAILED' || updatedPayment.status === 'CANCELLED') {
+          return {
+            success: false as const,
+            error: `결제 승인 후 실패. 상태: ${updatedPayment.status}`,
+          };
+        }
+      }
+
+      // confirm 호출 후에도 PAID 안 됨 - pending 반환
+      return {
+        success: false as const,
+        status: 'PENDING' as const,
+        error: '결제 승인 처리 중입니다. 잠시 후 다시 확인됩니다.',
+      };
+    }
+
+    // 기타 상태 (PAY_PENDING 등)
     return {
       success: false as const,
       status: 'PENDING' as const,
-      error: '결제 승인 대기 중입니다.',
+      error: `결제 처리 중입니다. 현재 상태: ${payment.status}`,
     };
   } catch (error) {
     console.error('[PortOne V2] Payment verification error:', error instanceof Error ? error.message : error);

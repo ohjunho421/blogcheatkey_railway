@@ -165,19 +165,20 @@ router.get('/portone/history', requireAuth, async (req, res) => {
  * 웹훅 엔드포인트 (PortOne V2에서 결제 상태 변경 시 호출)
  * POST /api/payments/portone/webhook
  *
- * V2 웹훅 형식:
- *   type: "Transaction.Paid" | "Transaction.Ready" | ...
- *   data: { paymentId: string, transactionId: string, ... }
+ * V2 웹훅 형식 (두 가지 페이로드 호환):
+ *   표준: { type: "Transaction.Paid", data: { paymentId, transactionId } }
+ *   간소: { tx_id, payment_id, status: "Ready" | "Paid" }
  *
- * noticeUrls로 전달한 경우 별도 설정 없이 수신
+ * READY 웹훅도 처리하여 수동 승인(confirm) 수행
  */
 router.post('/portone/webhook', async (req, res) => {
   try {
     const body = req.body;
     console.log('[Webhook] Received:', JSON.stringify(body));
 
-    // V2 웹훅 형식 파싱 (여러 형태 호환)
-    const webhookType = body.type;
+    // V2 웹훅 페이로드 파싱 - 두 가지 형식 호환
+    const webhookType = body.type; // 표준 형식: "Transaction.Paid"
+    const webhookStatus = body.status; // 간소 형식: "Ready", "Paid"
     const paymentId = body.data?.paymentId || body.payment_id || body.paymentId;
 
     if (!paymentId) {
@@ -185,16 +186,20 @@ router.post('/portone/webhook', async (req, res) => {
       return res.json({ success: true });
     }
 
-    // Transaction.Paid 또는 레거시 Paid 상태일 때만 처리
-    const isPaid = webhookType === 'Transaction.Paid' || body.status === 'Paid';
-    if (!isPaid) {
-      console.log(`[Webhook] type=${webhookType}, status=${body.status} - skipping`);
+    // 처리 대상 이벤트 판별
+    // - Transaction.Paid 또는 status=Paid → 결제 완료 확인
+    // - Transaction.Ready 또는 status=Ready → 수동 승인이 필요한 결제
+    const isPaid = webhookType === 'Transaction.Paid' || webhookStatus === 'Paid';
+    const isReady = webhookType === 'Transaction.Ready' || webhookStatus === 'Ready';
+
+    if (!isPaid && !isReady) {
+      console.log(`[Webhook] type=${webhookType}, status=${webhookStatus} - skipping`);
       return res.json({ success: true });
     }
 
-    console.log(`[Webhook] Processing PAID event for paymentId: ${paymentId}`);
+    console.log(`[Webhook] Processing ${isPaid ? 'PAID' : 'READY'} event for paymentId: ${paymentId}`);
 
-    // 포트원 V2 API에서 결제 상태 직접 확인
+    // verifyPayment가 READY 상태 시 자동으로 confirm API 호출함
     const verification = await verifyPayment({ paymentId });
 
     if (!verification.success || !verification.payment) {
