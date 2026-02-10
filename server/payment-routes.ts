@@ -60,7 +60,9 @@ router.post('/portone/verify', requireAuth, async (req, res) => {
     const result = await verifyPayment({ paymentId });
 
     if (!result.success) {
-      return res.status(400).json(result);
+      // PENDING 상태면 202로 반환 (프론트에서 재시도 가능)
+      const statusCode = (result as any).status === 'PENDING' ? 202 : 400;
+      return res.status(statusCode).json(result);
     }
 
     // 결제 성공 시 사용자 구독 정보 업데이트
@@ -160,81 +162,82 @@ router.get('/portone/history', requireAuth, async (req, res) => {
 });
 
 /**
- * 웹훅 엔드포인트 (PortOne에서 결제 상태 변경 시 호출)
+ * 웹훅 엔드포인트 (PortOne V2에서 결제 상태 변경 시 호출)
  * POST /api/payments/portone/webhook
+ *
+ * V2 웹훅 형식:
+ *   type: "Transaction.Paid" | "Transaction.Ready" | ...
+ *   data: { paymentId: string, transactionId: string, ... }
+ *
+ * noticeUrls로 전달한 경우 별도 설정 없이 수신
  */
 router.post('/portone/webhook', async (req, res) => {
   try {
-    // 웹훅 시크릿 검증
-    const webhookSecret = process.env.PORTONE_WEBHOOK_SECRET;
-    const signature = req.headers['x-iamport-signature'] as string;
-    
-    if (webhookSecret && signature) {
-      // PortOne V2 웹훅 검증
-      const crypto = require('crypto');
-      const expectedSignature = crypto
-        .createHmac('sha256', webhookSecret)
-        .update(JSON.stringify(req.body))
-        .digest('hex');
-      
-      if (signature !== expectedSignature) {
-        console.error('Webhook signature mismatch');
-        return res.status(401).json({ 
-          success: false, 
-          error: '웹훅 서명 검증 실패' 
-        });
-      }
+    const body = req.body;
+    console.log('[Webhook] Received:', JSON.stringify(body));
+
+    // V2 웹훅 형식 파싱 (여러 형태 호환)
+    const webhookType = body.type;
+    const paymentId = body.data?.paymentId || body.payment_id || body.paymentId;
+
+    if (!paymentId) {
+      console.log('[Webhook] No paymentId found, ignoring');
+      return res.json({ success: true });
     }
-    
-    // V2 webhook 형식: body에 tx_id, payment_id, status 가 직접 옴
-    const paymentId = req.body.payment_id || req.body.data?.paymentId || req.body.paymentId;
-    const webhookStatus = req.body.status;
 
-    console.log('PortOne webhook received:', { paymentId, webhookStatus, body: req.body });
+    // Transaction.Paid 또는 레거시 Paid 상태일 때만 처리
+    const isPaid = webhookType === 'Transaction.Paid' || body.status === 'Paid';
+    if (!isPaid) {
+      console.log(`[Webhook] type=${webhookType}, status=${body.status} - skipping`);
+      return res.json({ success: true });
+    }
 
-    // Paid 상태일 때만 검증 및 구독 업데이트
-    if (paymentId && webhookStatus === 'Paid') {
-      const verification = await verifyPayment({ paymentId });
+    console.log(`[Webhook] Processing PAID event for paymentId: ${paymentId}`);
 
-      if (verification.success && verification.payment) {
-        console.log('Webhook verification successful:', verification.payment);
+    // 포트원 V2 API에서 결제 상태 직접 확인
+    const verification = await verifyPayment({ paymentId });
 
-        const amount = verification.payment.amount;
-        const planType = amount >= 50000 ? 'premium' : 'basic';
-        const isPremium = planType === 'premium';
+    if (!verification.success || !verification.payment) {
+      console.error('[Webhook] Verification failed:', (verification as any).error);
+      return res.json({ success: true });
+    }
 
-        const paymentDate = new Date(verification.payment.paid_at * 1000);
-        const expiresAt = new Date(paymentDate);
-        expiresAt.setMonth(expiresAt.getMonth() + 1);
+    console.log('[Webhook] Payment verified:', verification.payment);
 
-        // paymentId에서 userId를 직접 알 수 없으므로 DB에서 이메일로 조회
-        if (verification.payment.buyer_email) {
-          try {
-            const user = await storage.getUserByEmail(verification.payment.buyer_email);
-            if (user) {
-              await storage.updateUser(user.id, {
-                subscriptionTier: planType,
-                subscriptionExpiresAt: expiresAt,
-                canGenerateContent: true,
-                canGenerateImages: isPremium,
-                canUseChatbot: isPremium,
-              } as any);
-              console.log(`Webhook: User ${user.id} subscription updated. Plan: ${planType}, Expires: ${expiresAt.toISOString()}`);
-            }
-          } catch (updateError) {
-            console.error('Webhook: Failed to update user subscription:', updateError);
-          }
+    const amount = verification.payment.amount;
+    const planType = amount >= 50000 ? 'premium' : 'basic';
+    const isPremium = planType === 'premium';
+
+    const paymentDate = new Date(verification.payment.paid_at * 1000);
+    const expiresAt = new Date(paymentDate);
+    expiresAt.setMonth(expiresAt.getMonth() + 1);
+
+    // 이메일로 사용자 조회하여 구독 업데이트
+    if (verification.payment.buyer_email) {
+      try {
+        const user = await storage.getUserByEmail(verification.payment.buyer_email);
+        if (user) {
+          await storage.updateUser(user.id, {
+            subscriptionTier: planType,
+            subscriptionExpiresAt: expiresAt,
+            canGenerateContent: true,
+            canGenerateImages: isPremium,
+            canUseChatbot: isPremium,
+          } as any);
+          console.log(`[Webhook] User ${user.id} subscription updated. Plan: ${planType}, Expires: ${expiresAt.toISOString()}`);
+        } else {
+          console.warn(`[Webhook] No user found for email: ${verification.payment.buyer_email}`);
         }
-      } else {
-        console.error('Webhook verification failed:', verification.error);
+      } catch (updateError) {
+        console.error('[Webhook] Failed to update user subscription:', updateError);
       }
     } else {
-      console.log(`Webhook: Skipping status=${webhookStatus} for paymentId=${paymentId}`);
+      console.warn('[Webhook] No buyer_email in payment data');
     }
 
     res.json({ success: true });
   } catch (error) {
-    console.error('Webhook processing error:', error);
+    console.error('[Webhook] Processing error:', error);
     res.status(500).json({
       success: false,
       error: '웹훅 처리 중 오류가 발생했습니다.',

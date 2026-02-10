@@ -69,6 +69,8 @@ export function PortOnePaymentWidget({
 
       const channelKey = 'channel-key-60e08fc8-6f08-4e58-aa60-41f2a81e2e7a';
 
+      const serverUrl = window.location.origin;
+
       const paymentResponse = await PortOne.requestPayment({
         storeId,
         channelKey,
@@ -77,6 +79,7 @@ export function PortOnePaymentWidget({
         totalAmount: amount,
         currency: 'KRW',
         payMethod: 'CARD',
+        noticeUrls: [`${serverUrl}/api/payments/portone/webhook`],
         customer: {
           email: buyerEmail || '',
           phoneNumber: buyerTel || '01000000000',
@@ -85,33 +88,47 @@ export function PortOnePaymentWidget({
       });
 
       if (paymentResponse.code !== undefined) {
-        const errorMsg = paymentResponse.message || '결제에 실패했습니다.';
-        alert(errorMsg);
-        onFail?.(new Error(errorMsg));
-      } else {
-        // 결제 성공 - 서버에서 V2 API로 검증
+        if (paymentResponse.code === 'FAILURE_TYPE_PG') {
+          const errorMsg = paymentResponse.message || '결제에 실패했습니다.';
+          alert(errorMsg);
+          onFail?.(new Error(errorMsg));
+        }
+        return;
+      }
+
+      // 결제 성공 - 서버에서 V2 API로 검증 (비동기 PG 폴링 포함)
+      const MAX_RETRIES = 20;
+      const RETRY_INTERVAL = 3000;
+
+      for (let retry = 0; retry < MAX_RETRIES; retry++) {
         try {
           const verifyResponse = await fetch('/api/payments/portone/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({
-              paymentId: merchant_uid,
-            }),
+            body: JSON.stringify({ paymentId: merchant_uid }),
           });
 
           const verifyData = await verifyResponse.json();
 
-          if (verifyData.success) {
+          if (verifyResponse.ok && verifyData.success) {
             alert('결제가 완료되었습니다!');
             onSuccess?.(verifyData.payment);
-          } else {
-            throw new Error(verifyData.error || '결제 검증 실패');
+            return;
           }
+
+          if (verifyResponse.status === 202) {
+            await new Promise(resolve => setTimeout(resolve, RETRY_INTERVAL));
+            continue;
+          }
+
+          throw new Error(verifyData.error || '결제 검증 실패');
         } catch (error: any) {
-          console.error('Payment verification error:', error);
-          alert(`결제 검증 오류: ${error.message}`);
-          onFail?.(error);
+          if (retry === MAX_RETRIES - 1) {
+            console.error('Payment verification error:', error);
+            alert('결제 승인 대기 중입니다. 잠시 후 새로고침 해주세요.');
+            onFail?.(error);
+          }
         }
       }
     } catch (error: any) {

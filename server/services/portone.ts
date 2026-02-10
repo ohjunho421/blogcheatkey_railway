@@ -73,13 +73,15 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
  * 결제 검증 (V2 API) - 포트원에서 결제 정보 조회하여 위변조 방지
- * INICIS_V2 등 비동기 PG는 READY 상태에서 PAID로 전환되기까지 시간이 걸림
- * 최대 10초간 폴링하여 PAID 상태를 확인
+ *
+ * 공식 V2 플로우: requestPayment() 성공 후 단건조회하면 PAID 상태여야 함
+ * 비동기 PG(INICIS_V2 등)는 READY → PAID 전환에 시간이 걸릴 수 있음
+ * 서버에서 짧은 폴링(5초) 후에도 READY면 pending 반환 → 프론트에서 재시도
  */
 export async function verifyPayment(verificationData: PaymentVerificationV2) {
   if (!checkPortOneConfig()) {
     return {
-      success: false,
+      success: false as const,
       error: '포트원 V2 API Secret이 설정되지 않았습니다. 관리자에게 문의해주세요.',
     };
   }
@@ -87,7 +89,7 @@ export async function verifyPayment(verificationData: PaymentVerificationV2) {
   try {
     console.log('[PortOne V2] Verifying payment:', verificationData.paymentId);
 
-    const MAX_RETRIES = 15;
+    const MAX_RETRIES = 3;
     const RETRY_INTERVAL_MS = 2000;
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -98,21 +100,24 @@ export async function verifyPayment(verificationData: PaymentVerificationV2) {
         return extractPaymentResult(payment);
       }
 
-      if (payment.status !== 'READY') {
+      if (payment.status === 'FAILED' || payment.status === 'CANCELLED') {
         return {
-          success: false,
+          success: false as const,
           error: `결제가 완료되지 않았습니다. 상태: ${payment.status}`,
         };
       }
 
+      // READY 상태 - 비동기 PG 대기 중
       if (attempt < MAX_RETRIES) {
         await sleep(RETRY_INTERVAL_MS);
       }
     }
 
+    // READY 상태 지속 - 프론트엔드에서 재시도하도록 pending 반환
     return {
-      success: false,
-      error: '결제 승인 대기 중입니다. 잠시 후 새로고침 해주세요.',
+      success: false as const,
+      status: 'PENDING' as const,
+      error: '결제 승인 대기 중입니다.',
     };
   } catch (error) {
     console.error('[PortOne V2] Payment verification error:', error instanceof Error ? error.message : error);
@@ -121,7 +126,7 @@ export async function verifyPayment(verificationData: PaymentVerificationV2) {
       console.error('[PortOne V2] API response data:', JSON.stringify(error.response.data, null, 2));
     }
     return {
-      success: false,
+      success: false as const,
       error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다',
     };
   }

@@ -125,6 +125,9 @@ export default function PaymentModal({ children }: PaymentModalProps) {
       // 모달이 완전히 닫힐 때까지 대기
       await new Promise(resolve => setTimeout(resolve, 300));
       
+      // 웹훅 URL 설정 - 비동기 PG 결제 완료 통보용
+      const serverUrl = window.location.origin;
+
       const paymentResponse = await PortOne.requestPayment({
         storeId: storeId,
         channelKey: channelKey,
@@ -133,6 +136,7 @@ export default function PaymentModal({ children }: PaymentModalProps) {
         totalAmount: amount,
         currency: 'KRW',
         payMethod: 'CARD',
+        noticeUrls: [`${serverUrl}/api/payments/portone/webhook`],
         customer: {
           email: user?.email || '',
           phoneNumber: user?.phone || '01000000000',
@@ -141,23 +145,29 @@ export default function PaymentModal({ children }: PaymentModalProps) {
       });
 
       if (paymentResponse.code !== undefined) {
-        // 결제 실패
-        toast({
-          title: '결제 실패',
-          description: paymentResponse.message || '결제 중 오류가 발생했습니다.',
-          variant: 'destructive',
-        });
-      } else {
-        // 결제 성공 - 서버에서 검증 (V2 SDK는 paymentId 반환)
+        // 결제 실패 또는 사용자 취소
+        if (paymentResponse.code === 'FAILURE_TYPE_PG') {
+          toast({
+            title: '결제 실패',
+            description: paymentResponse.message || '결제 중 오류가 발생했습니다.',
+            variant: 'destructive',
+          });
+        }
+        // 사용자가 결제창을 닫은 경우 (USER_CANCEL 등)는 조용히 처리
+        return;
+      }
+
+      // 결제 SDK 반환 성공 - 서버에서 결제 상태 확인
+      // 비동기 PG는 READY → PAID 전환에 시간이 걸릴 수 있어 폴링 수행
+      const MAX_CLIENT_RETRIES = 20;
+      const CLIENT_RETRY_INTERVAL = 3000;
+
+      for (let retry = 0; retry < MAX_CLIENT_RETRIES; retry++) {
         const verifyResponse = await fetch('/api/payments/portone/verify', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({
-            paymentId: merchant_uid,
-          }),
+          body: JSON.stringify({ paymentId: merchant_uid }),
         });
 
         const verifyData = await verifyResponse.json();
@@ -167,23 +177,36 @@ export default function PaymentModal({ children }: PaymentModalProps) {
             title: '결제 완료',
             description: `${plan.name} 플랜이 성공적으로 구매되었습니다!`,
           });
-          setIsOpen(false);
           window.location.reload();
-        } else if (verifyData.error?.includes('대기')) {
-          // 비동기 PG (INICIS_V2 등)는 승인까지 시간이 걸림
-          toast({
-            title: '결제 승인 처리 중',
-            description: '결제가 접수되었습니다. 승인 완료 후 자동으로 구독이 활성화됩니다. 잠시 후 새로고침 해주세요.',
-          });
-          setIsOpen(false);
-        } else {
-          toast({
-            title: '결제 검증 실패',
-            description: verifyData.error || '결제 검증 중 문제가 발생했습니다. 고객센터에 문의해주세요.',
-            variant: 'destructive',
-          });
+          return;
         }
+
+        // 202 = PENDING (비동기 PG 승인 대기 중)
+        if (verifyResponse.status === 202) {
+          if (retry === 0) {
+            toast({
+              title: '결제 승인 처리 중...',
+              description: `PG사에서 승인 처리 중입니다. 자동으로 확인합니다. (최대 ${Math.round(MAX_CLIENT_RETRIES * CLIENT_RETRY_INTERVAL / 1000)}초)`,
+            });
+          }
+          await new Promise(resolve => setTimeout(resolve, CLIENT_RETRY_INTERVAL));
+          continue;
+        }
+
+        // 400 등 실제 오류
+        toast({
+          title: '결제 검증 실패',
+          description: verifyData.error || '결제 검증 중 문제가 발생했습니다. 고객센터에 문의해주세요.',
+          variant: 'destructive',
+        });
+        return;
       }
+
+      // 폴링 시간 초과 - 웹훅으로 처리될 예정
+      toast({
+        title: '결제 승인 대기 중',
+        description: '결제가 접수되었습니다. PG사 승인이 완료되면 자동으로 구독이 활성화됩니다. 잠시 후 새로고침 해주세요.',
+      });
     } catch (error: any) {
       console.error('Payment error:', error);
       toast({
