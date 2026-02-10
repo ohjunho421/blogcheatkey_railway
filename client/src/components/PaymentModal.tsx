@@ -160,17 +160,26 @@ export default function PaymentModal({ children }: PaymentModalProps) {
           }),
         });
 
-        if (verifyResponse.ok) {
+        const verifyData = await verifyResponse.json();
+
+        if (verifyResponse.ok && verifyData.success) {
           toast({
             title: '결제 완료',
             description: `${plan.name} 플랜이 성공적으로 구매되었습니다!`,
           });
           setIsOpen(false);
           window.location.reload();
+        } else if (verifyData.error?.includes('대기')) {
+          // 비동기 PG (INICIS_V2 등)는 승인까지 시간이 걸림
+          toast({
+            title: '결제 승인 처리 중',
+            description: '결제가 접수되었습니다. 승인 완료 후 자동으로 구독이 활성화됩니다. 잠시 후 새로고침 해주세요.',
+          });
+          setIsOpen(false);
         } else {
           toast({
             title: '결제 검증 실패',
-            description: '결제는 완료되었지만 검증 중 문제가 발생했습니다. 고객센터에 문의해주세요.',
+            description: verifyData.error || '결제 검증 중 문제가 발생했습니다. 고객센터에 문의해주세요.',
             variant: 'destructive',
           });
         }

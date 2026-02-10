@@ -41,7 +41,40 @@ export function preparePayment(paymentData: PaymentData) {
 }
 
 /**
+ * 포트원 V2 API에서 결제 정보 단건 조회
+ */
+async function fetchPayment(paymentId: string) {
+  const url = `${PORTONE_V2_API_BASE}/payments/${encodeURIComponent(paymentId)}`;
+  const response = await axios.get(url, {
+    headers: {
+      'Authorization': `PortOne ${PORTONE_API_SECRET}`,
+    },
+  });
+  return response.data;
+}
+
+function extractPaymentResult(payment: any) {
+  return {
+    success: true as const,
+    payment: {
+      paymentId: payment.id,
+      merchant_uid: payment.id,
+      amount: payment.amount?.total ?? 0,
+      status: payment.status,
+      paid_at: payment.paidAt ? Math.floor(new Date(payment.paidAt).getTime() / 1000) : 0,
+      name: payment.orderName,
+      buyer_email: payment.customer?.email ?? '',
+      buyer_name: payment.customer?.name ?? '',
+    },
+  };
+}
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
  * 결제 검증 (V2 API) - 포트원에서 결제 정보 조회하여 위변조 방지
+ * INICIS_V2 등 비동기 PG는 READY 상태에서 PAID로 전환되기까지 시간이 걸림
+ * 최대 10초간 폴링하여 PAID 상태를 확인
  */
 export async function verifyPayment(verificationData: PaymentVerificationV2) {
   if (!checkPortOneConfig()) {
@@ -52,40 +85,34 @@ export async function verifyPayment(verificationData: PaymentVerificationV2) {
   }
 
   try {
-    const url = `${PORTONE_V2_API_BASE}/payments/${encodeURIComponent(verificationData.paymentId)}`;
-    console.log('[PortOne V2] Verifying payment:', {
-      url,
-      paymentId: verificationData.paymentId,
-      secretPrefix: PORTONE_API_SECRET?.substring(0, 10) + '...',
-    });
+    console.log('[PortOne V2] Verifying payment:', verificationData.paymentId);
 
-    // 포트원 V2 API로 결제 정보 조회
-    const response = await axios.get(url, {
-      headers: {
-        'Authorization': `PortOne ${PORTONE_API_SECRET}`,
-      },
-    });
+    const MAX_RETRIES = 5;
+    const RETRY_INTERVAL_MS = 2000;
 
-    const payment = response.data;
-    console.log('[PortOne V2] Payment data:', JSON.stringify(payment, null, 2));
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      const payment = await fetchPayment(verificationData.paymentId);
+      console.log(`[PortOne V2] Attempt ${attempt}/${MAX_RETRIES} - status: ${payment.status}`);
 
-    // 결제 상태 확인 (V2는 대문자: PAID, VIRTUAL_ACCOUNT_ISSUED 등)
-    if (payment.status !== 'PAID') {
-      throw new Error(`결제가 완료되지 않았습니다. 상태: ${payment.status}`);
+      if (payment.status === 'PAID') {
+        return extractPaymentResult(payment);
+      }
+
+      if (payment.status !== 'READY') {
+        return {
+          success: false,
+          error: `결제가 완료되지 않았습니다. 상태: ${payment.status}`,
+        };
+      }
+
+      if (attempt < MAX_RETRIES) {
+        await sleep(RETRY_INTERVAL_MS);
+      }
     }
 
     return {
-      success: true,
-      payment: {
-        paymentId: payment.id,
-        merchant_uid: payment.id,
-        amount: payment.amount?.total ?? 0,
-        status: payment.status,
-        paid_at: payment.paidAt ? Math.floor(new Date(payment.paidAt).getTime() / 1000) : 0,
-        name: payment.orderName,
-        buyer_email: payment.customer?.email ?? '',
-        buyer_name: payment.customer?.name ?? '',
-      },
+      success: false,
+      error: '결제 승인 대기 중입니다. 잠시 후 새로고침 해주세요.',
     };
   } catch (error) {
     console.error('[PortOne V2] Payment verification error:', error instanceof Error ? error.message : error);

@@ -186,13 +186,14 @@ router.post('/portone/webhook', async (req, res) => {
       }
     }
     
-    // V2 webhook은 data.paymentId 형태로 전달
-    const paymentId = req.body.data?.paymentId || req.body.paymentId;
-    const txId = req.body.data?.txId;
+    // V2 webhook 형식: body에 tx_id, payment_id, status 가 직접 옴
+    const paymentId = req.body.payment_id || req.body.data?.paymentId || req.body.paymentId;
+    const webhookStatus = req.body.status;
 
-    console.log('PortOne webhook received:', { paymentId, txId, body: req.body });
+    console.log('PortOne webhook received:', { paymentId, webhookStatus, body: req.body });
 
-    if (paymentId) {
+    // Paid 상태일 때만 검증 및 구독 업데이트
+    if (paymentId && webhookStatus === 'Paid') {
       const verification = await verifyPayment({ paymentId });
 
       if (verification.success && verification.payment) {
@@ -206,10 +207,29 @@ router.post('/portone/webhook', async (req, res) => {
         const expiresAt = new Date(paymentDate);
         expiresAt.setMonth(expiresAt.getMonth() + 1);
 
-        console.log(`Webhook: Payment completed. Plan: ${planType}, paymentId: ${paymentId}`);
+        // paymentId에서 userId를 직접 알 수 없으므로 DB에서 이메일로 조회
+        if (verification.payment.buyer_email) {
+          try {
+            const user = await storage.getUserByEmail(verification.payment.buyer_email);
+            if (user) {
+              await storage.updateUser(user.id, {
+                subscriptionTier: planType,
+                subscriptionExpiresAt: expiresAt,
+                canGenerateContent: true,
+                canGenerateImages: isPremium,
+                canUseChatbot: isPremium,
+              } as any);
+              console.log(`Webhook: User ${user.id} subscription updated. Plan: ${planType}, Expires: ${expiresAt.toISOString()}`);
+            }
+          } catch (updateError) {
+            console.error('Webhook: Failed to update user subscription:', updateError);
+          }
+        }
       } else {
         console.error('Webhook verification failed:', verification.error);
       }
+    } else {
+      console.log(`Webhook: Skipping status=${webhookStatus} for paymentId=${paymentId}`);
     }
 
     res.json({ success: true });
