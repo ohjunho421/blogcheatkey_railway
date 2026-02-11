@@ -21,12 +21,12 @@ import bcrypt from "bcryptjs";
 async function getAuthenticatedUserId(req: any): Promise<number | null> {
   // 실제 로그인한 사용자 ID 획득
   let userId = (req.session as any)?.userId;
-
+  
   // Authorization 헤더에서 세션 ID로 사용자 찾기
   if (!userId && req.headers.authorization) {
-    const sessionId = req.headers.authorization.includes('Bearer') ?
+    const sessionId = req.headers.authorization.includes('Bearer') ? 
       req.headers.authorization.replace('Bearer ', '') : null;
-
+    
     if (sessionId) {
       try {
         // 세션 스토어에서 해당 세션 ID로 실제 사용자 찾기
@@ -45,15 +45,15 @@ async function getAuthenticatedUserId(req: any): Promise<number | null> {
       }
     }
   }
-
+  
   return userId || null;
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-
+  
   // Setup authentication middleware
   setupAuth(app);
-
+  
   // Setup admin routes
   setupAdminRoutes(app, storage);
 
@@ -67,12 +67,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ===== AUTHENTICATION ROUTES =====
-
+  
   // Login endpoint
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { email, password } = req.body;
-
+      
       if (!email || !password) {
         return res.status(400).json({ message: "이메일과 비밀번호를 입력해주세요" });
       }
@@ -87,12 +87,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         delete (req.session as any).passport;
         console.log("Cleared existing passport session");
       }
-
+      
       // 세션에 사용자 정보 저장
       (req.session as any).userId = user.id;
       console.log("Session set:", req.session);
       console.log("Session ID:", req.sessionID);
-
+      
       // 세션 저장 강제 실행 및 응답
       req.session.save((err) => {
         if (err) {
@@ -126,16 +126,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // 우선순위: 1. session.userId (manual login), 2. passport.user (OAuth login)
       let userId = (req.session as any)?.userId;
-
+      
       // passport OAuth 로그인 사용자 확인 (session.userId가 없는 경우)
       if (!userId && (req.session as any)?.passport?.user) {
         userId = (req.session as any).passport.user;
       }
-
+      
       // 쿠키 세션이 없으면 Authorization 헤더 확인
       if (!userId && req.headers.authorization) {
         const token = req.headers.authorization.replace('Bearer ', '');
-
+        
         // 세션 스토어에서 토큰으로 세션 검색
         try {
           const sessionStore = req.sessionStore;
@@ -153,7 +153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Silent fail for session lookup
         }
       }
-
+      
       if (!userId) {
         return res.status(401).json({ error: "Not authenticated" });
       }
@@ -189,20 +189,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!email || !password || !name) {
         return res.status(400).json({ message: "모든 필드를 입력해주세요" });
       }
-
+      
       // 이메일 중복 확인
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
         return res.status(400).json({ message: "이미 등록된 이메일입니다" });
       }
-
+      
       // 비밀번호 해시화
       const hashedPassword = await bcrypt.hash(password, 10);
-
+      
       // 슈퍼유저 계정 확인 (환경변수에서 설정)
       const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || "";
       const isSuper = Boolean(superAdminEmail && email === superAdminEmail);
-
+      
       // 사용자 생성
       const user = await storage.createUser({
         email,
@@ -215,12 +215,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         canGenerateImages: isSuper,
         canUseChatbot: isSuper,
       });
-
+      
       // 세션에 사용자 정보 저장
       (req.session as any).userId = user.id;
       console.log("Signup - Session set:", req.session);
       console.log("Signup - Session ID:", req.sessionID);
-
+      
       // 세션 저장 완료 대기
       await new Promise<void>((resolve, reject) => {
         req.session.save((err) => {
@@ -233,7 +233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
       });
-
+      
       // 비밀번호 제외하고 응답 (세션 ID 포함)
       const { password: _, ...userWithoutPassword } = user;
       res.json({
@@ -249,7 +249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Logout endpoint - 최대한 단순하게 처리
   app.post("/api/auth/logout", (req, res) => {
     console.log("Logout request received");
-
+    
     // 세션과 쿠키만 정리하고 즉시 응답
     try {
       // 쿠키 삭제 (여러 옵션으로 시도)
@@ -259,11 +259,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (e) {
       console.log("Cookie clear warning:", e);
     }
-
+    
     // 즉시 성공 응답
     return res.status(200).json({ success: true, message: "로그아웃되었습니다" });
   });
-
+  
   // Update user profile (name, phone)
   app.put("/api/user/profile", async (req, res) => {
     try {
@@ -301,7 +301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/projects", async (req, res) => {
     try {
       const { keyword } = req.body;
-
+      
       if (!keyword || typeof keyword !== 'string' || keyword.trim().length === 0) {
         return res.status(400).json({ error: "키워드를 입력해주세요" });
       }
@@ -346,10 +346,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/projects/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-
+      
       // 실제 로그인한 사용자 ID 획득
       let userId = (req.session as any)?.userId;
-
+      
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
 
       if (!userId) {
@@ -357,7 +357,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const project = await storage.getBlogProject(id);
-
+      
       if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
       }
@@ -378,10 +378,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/projects/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-
+      
       // 실제 로그인한 사용자 ID 획득
       let userId = (req.session as any)?.userId;
-
+      
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
 
       if (!userId) {
@@ -407,19 +407,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ===== KEYWORD ANALYSIS =====
-
+  
   app.post("/api/projects/:id/analyze", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const project = await storage.getBlogProject(id);
-
+      
       if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
       }
 
       // Analyze keyword using Gemini
       const analysis = await analyzeKeyword(project.keyword);
-
+      
       const updatedProject = await storage.updateBlogProject(id, {
         keywordAnalysis: analysis,
         subtitles: analysis.suggestedSubtitles,
@@ -434,12 +434,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ===== RESEARCH DATA COLLECTION =====
-
+  
   app.post("/api/projects/:id/research", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const project = await storage.getBlogProject(id);
-
+      
       if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
       }
@@ -447,7 +447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Search research data using Perplexity
       const subtitles = project.subtitles as string[] || [];
       const researchData = await searchResearch(project.keyword, subtitles);
-
+      
       const updatedProject = await storage.updateBlogProject(id, {
         researchData,
         status: "business_info",
@@ -461,12 +461,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ===== BUSINESS INFO =====
-
+  
   app.post("/api/projects/:id/business-info", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const businessInfoData = businessInfoSchema.parse(req.body);
-
+      
       const project = await storage.getBlogProject(id);
       if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
@@ -485,12 +485,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ===== KEYWORD ANALYSIS UPDATE =====
-
+  
   app.put("/api/projects/:id/keyword-analysis", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { searchIntent, userConcerns } = req.body;
-
+      
       const project = await storage.getBlogProject(id);
       if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
@@ -515,16 +515,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ===== SUBTITLE MANAGEMENT =====
-
+  
   app.post("/api/projects/:id/subtitles", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { subtitles } = req.body;
-
+      
       if (!Array.isArray(subtitles)) {
         return res.status(400).json({ error: "소제목은 배열 형태여야 합니다" });
       }
-
+      
       const project = await storage.getBlogProject(id);
       if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
@@ -542,12 +542,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ===== CUSTOM MORPHEMES =====
-
+  
   app.post("/api/projects/:id/custom-morphemes", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { customMorphemes } = req.body;
-
+      
       const project = await storage.getBlogProject(id);
       if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
@@ -570,10 +570,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 타임아웃 연장: 콘텐츠 생성은 3회 시도로 최대 2-3분 소요 가능
       req.setTimeout(180000); // 3분 (180초)
       res.setTimeout(180000);
-
+      
       const id = parseInt(req.params.id);
       const project = await storage.getBlogProject(id);
-
+      
       if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
       }
@@ -592,27 +592,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 슈퍼관리자 또는 유료 구독자는 무제한
       const isAdmin = user.isAdmin;
       const hasActiveSubscription = user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt) > new Date();
-      const hasAdminOverride = user.adminOverridePlan && (
-        !user.adminOverrideExpiresAt || new Date(user.adminOverrideExpiresAt) > new Date()
-      );
       const hadPreviousSubscription = user.subscriptionExpiresAt !== null; // 이전에 구독한 적이 있는지
 
-      if (!isAdmin && !hasActiveSubscription && !hasAdminOverride) {
+      if (!isAdmin && !hasActiveSubscription) {
         // 이전에 구독했던 사용자 - 구독 만료 시 무료 체험 없이 바로 결제 필요
         if (hadPreviousSubscription) {
           const expiredAt = new Date(user.subscriptionExpiresAt!);
-          return res.status(403).json({
+          return res.status(403).json({ 
             error: "구독이 만료되었습니다",
             code: "SUBSCRIPTION_EXPIRED",
             expiredAt: expiredAt.toISOString(),
             message: "계속 사용하시려면 구독을 갱신해주세요"
           });
         }
-
+        
         // 신규 사용자 - 3회 무료 체험 제한 체크
         const freeCount = user.freeGenerationCount || 0;
         if (freeCount >= 3) {
-          return res.status(403).json({
+          return res.status(403).json({ 
             error: "무료 체험 횟수를 모두 사용하셨습니다",
             code: "FREE_LIMIT_EXCEEDED",
             freeCount: freeCount,
@@ -629,7 +626,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Generate blog content using Anthropic
       const strictMorphemeGenerator = await import('./services/strictMorphemeGenerator');
-
+      
       const generationResult = await strictMorphemeGenerator.generateStrictMorphemeContent(
         project.keyword,
         project.subtitles as string[],
@@ -640,17 +637,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (project.keywordAnalysis as any)?.searchIntent,
         (project.keywordAnalysis as any)?.userConcerns
       );
-
+      
       const finalContent = generationResult.content;
       const seoAnalysis = generationResult.analysis;
-
+      
       console.log(`Content generation completed in ${generationResult.attempts} attempts. Success: ${generationResult.success}`);
 
       // ✅ 3번 시도 후 조건 미달성이어도 현재 상태 그대로 저장
       // 사용자에게 경고와 함께 콘텐츠 전달
       let projectStatus = "completed";
       let warningMessage = null;
-
+      
       if (!generationResult.success) {
         console.log(`⚠️ SEO 최적화 조건 미달성, 현재 상태 그대로 저장`);
         projectStatus = "completed_with_warnings";
@@ -717,14 +714,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 글 완성 시 자동으로 세션 저장
       try {
         const chatHistory = await storage.getChatMessages(id);
-        const sessionName = `${updatedProject.keyword} - ${new Date().toLocaleString('ko-KR', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
+        const sessionName = `${updatedProject.keyword} - ${new Date().toLocaleString('ko-KR', { 
+          year: 'numeric', 
+          month: '2-digit', 
+          day: '2-digit', 
+          hour: '2-digit', 
+          minute: '2-digit' 
         })}`;
-
+        
         await storage.createProjectSession({
           userId: updatedProject.userId!,
           projectId: id,
@@ -770,16 +767,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 타임아웃 연장: 재생성도 3회 시도로 최대 2-3분 소요 가능
       req.setTimeout(180000); // 3분
       res.setTimeout(180000);
-
+      
       const id = parseInt(req.params.id);
       const project = await storage.getBlogProject(id);
-
+      
       if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
       }
 
       const { regenerateWithStrictMorphemes } = await import('./services/strictMorphemeGenerator.js');
-
+      
       const regenerationResult = await regenerateWithStrictMorphemes(
         project.generatedContent || '',
         project.keyword,
@@ -790,16 +787,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (project.keywordAnalysis as any)?.searchIntent,
         (project.keywordAnalysis as any)?.userConcerns
       );
-
+      
       const finalContent = regenerationResult.content;
       const seoAnalysis = regenerationResult.analysis;
-
+      
       console.log(`Content regeneration completed in ${regenerationResult.attempts} attempts. Success: ${regenerationResult.success}`);
 
       // ✅ 3번 시도 후 조건 미달성이어도 현재 상태 그대로 저장
       let projectStatus = "completed";
       let warningMessage = null;
-
+      
       if (!regenerationResult.success) {
         console.log(`⚠️ SEO 최적화 조건 미달성, 현재 상태 그대로 저장`);
         projectStatus = "completed_with_warnings";
@@ -821,14 +818,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 재생성 시에도 자동으로 세션 저장
       try {
         const chatHistory = await storage.getChatMessages(id);
-        const sessionName = `${updatedProject.keyword} - ${new Date().toLocaleString('ko-KR', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit'
+        const sessionName = `${updatedProject.keyword} - ${new Date().toLocaleString('ko-KR', { 
+          year: 'numeric', 
+          month: '2-digit', 
+          day: '2-digit', 
+          hour: '2-digit', 
+          minute: '2-digit' 
         })}`;
-
+        
         await storage.createProjectSession({
           userId: updatedProject.userId!,
           projectId: id,
@@ -873,10 +870,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       req.setTimeout(120000); // 2분
       res.setTimeout(120000);
-
+      
       const id = parseInt(req.params.id);
       const project = await storage.getBlogProject(id);
-
+      
       if (!project) {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
       }
@@ -887,22 +884,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { optimizeIncrementally } = await import('./services/incrementalOptimizer');
       const { analyzeMorphemes } = await import('./services/morphemeAnalyzer');
-
+      
       console.log(`🔄 부분 최적화 시작: 프로젝트 ${id}`);
-
+      
       const optimizationResult = await optimizeIncrementally(
         project.generatedContent,
         project.keyword,
         project.customMorphemes as string | undefined
       );
-
+      
       // 최적화 후 분석
       const seoAnalysis = await analyzeMorphemes(
         optimizationResult.content,
         project.keyword,
         project.customMorphemes as string | undefined
       );
-
+      
       console.log(`✅ 부분 최적화 완료: ${optimizationResult.success ? '성공' : '일부 미달'}`);
 
       const updatedProject = await storage.updateBlogProject(id, {
@@ -928,17 +925,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const { format } = req.body; // 'normal' or 'mobile'
-
+      
       const project = await storage.getBlogProject(id);
       if (!project || !project.generatedContent) {
         return res.status(404).json({ error: "생성된 콘텐츠를 찾을 수 없습니다" });
       }
 
       let content = project.generatedContent;
-
+      
       if (format === 'mobile') {
         const useSmart = req.query.smart === 'true';
-
+        
         if (useSmart) {
           // AI 기반 스마트 포맷팅: 문맥과 의미를 이해한 자연스러운 줄바꿈
           content = await formatForMobileSmartBatch(project.generatedContent);
@@ -957,13 +954,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // ===== CHAT FUNCTIONALITY =====
-
+  
   // Send chat message (content editing or title generation)
   app.post("/api/projects/:id/chat", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { message } = req.body;
-
+      
       if (!message || typeof message !== 'string') {
         return res.status(400).json({ error: "메시지를 입력해주세요" });
       }
@@ -978,7 +975,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (userId) {
         const user = await storage.getUser(userId);
         if (user && !user.isAdmin && !user.canUseChatbot) {
-          return res.status(403).json({
+          return res.status(403).json({ 
             error: "AI 챗봇은 프리미엄 플랜 전용 기능입니다",
             code: "CHATBOT_NOT_ALLOWED",
             message: "프리미엄 플랜으로 업그레이드하시면 AI 챗봇을 이용하실 수 있습니다"
@@ -1004,8 +1001,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           content: "이미지 생성은 이제 외부 도구를 사용해주세요!\n\n📸 **Google Whisk**: https://labs.google/fx/tools/whisk\n📊 **Napkin AI**: https://www.napkin.ai/\n\n콘텐츠 수정이나 제목 제안이 필요하시면 말씀해주세요.",
         });
 
-        res.json({
-          success: true,
+        res.json({ 
+          success: true, 
           type: 'external_tool_guide'
         });
       } else {
@@ -1017,10 +1014,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           // Use enhanced chatbot with multi-version generation and evaluation
           const { enhancedEditContent, analyzeUserRequest, generateContentBasedTitle } = await import("./services/enhancedChatbot.js");
-
+          
           // First analyze user request to detect intent
           const quickAnalysis = await analyzeUserRequest(message, project.generatedContent, project.keyword);
-
+          
           // Check if this is a title request
           if (quickAnalysis.intent === 'title_suggestion') {
             // Generate SSR-based titles
@@ -1029,7 +1026,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               project.keyword,
               quickAnalysis
             );
-
+            
             let titleResponse = `📝 SSR 평가 기반 Top 5 제목 추천\n\n`;
             titleResponse += `✨ 25가지 스타일로 제목 생성 후 클릭 유도력 평가\n`;
             titleResponse += `🏆 가장 효과적인 상위 5개 제목을 선정했습니다!\n\n`;
@@ -1043,21 +1040,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const avgScore = titlesWithScores.reduce((sum, t) => sum + t.score, 0) / titlesWithScores.length;
             titleResponse += `📊 평균 점수: ${avgScore.toFixed(1)}/5.0\n\n`;
             titleResponse += `💡 마음에 드는 제목을 선택하시거나,\n"더 흥미롭게", "더 전문적으로" 등 스타일을 요청하시면\n다시 만들어드릴게요!`;
-
+            
             await storage.createChatMessage({
               projectId: id,
               role: "assistant",
               content: titleResponse,
             });
-
-            return res.json({
-              success: true,
+            
+            return res.json({ 
+              success: true, 
               type: 'title',
               titles: titlesWithScores,
               message: titleResponse
             });
           }
-
+          
           // Regular content editing
           const result = await enhancedEditContent(
             project.generatedContent,
@@ -1067,11 +1064,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
 
           const editedContent = result.bestVersion;
-
+          
           // Analyze morphemes to ensure SEO conditions are met
           const { analyzeMorphemes } = await import("./services/morphemeAnalyzer.js");
           const morphemeAnalysis = await analyzeMorphemes(editedContent, project.keyword, project.customMorphemes || undefined);
-
+          
           // Create detailed response with analysis
           let responseMessage = `✅ 콘텐츠 수정 완료\n\n`;
           responseMessage += `📊 요청 분석:\n`;
@@ -1106,9 +1103,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             seoMetrics: seoAnalysis,
           });
 
-          res.json({
-            success: true,
-            type: 'edit',
+          res.json({ 
+            success: true, 
+            type: 'edit', 
             project: updatedProject,
             analysis: result.analysis,
             versions: result.allVersions.map(v => ({
@@ -1119,7 +1116,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         } catch (enhancedError) {
           console.error("Enhanced chatbot error, falling back:", enhancedError);
-
+          
           // Fallback to basic editing
           const { editContent } = await import("./services/gemini.js");
           const editedContent = await editContent(
@@ -1164,15 +1161,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // ===== PROJECT SESSION MANAGEMENT =====
-
+  
   // Save project as session
   app.post("/api/projects/:id/sessions", async (req, res) => {
     try {
       const projectId = parseInt(req.params.id);
       const { sessionName, sessionDescription } = req.body;
-
+      
       console.log(`[세션 저장] 시작 - 프로젝트 ID: ${projectId}`);
-
+      
       const userId = await getAuthenticatedUserId(req);
       if (!userId) {
         console.log("[세션 저장] 실패 - 인증 필요");
@@ -1217,14 +1214,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[세션 저장] 세션 데이터 준비 완료`);
 
       const session = await storage.createProjectSession(sessionData as any);
-
+      
       console.log(`[세션 저장] 성공 - 세션 ID: ${session.id}`);
 
       res.json({ success: true, session });
     } catch (error) {
       console.error("[세션 저장] 에러 상세:", error);
       console.error("[세션 저장] 에러 스택:", (error as Error).stack);
-      res.status(500).json({
+      res.status(500).json({ 
         error: "세션 저장에 실패했습니다",
         details: process.env.NODE_ENV === 'development' ? (error as Error).message : undefined
       });
@@ -1252,7 +1249,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sessionId = parseInt(req.params.sessionId);
       const { createNew } = req.body; // Whether to create new project or update existing
-
+      
       const userId = await getAuthenticatedUserId(req);
       if (!userId) {
         return res.status(401).json({ error: "인증이 필요합니다" });
@@ -1327,7 +1324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/sessions/:sessionId", async (req, res) => {
     try {
       const sessionId = parseInt(req.params.sessionId);
-
+      
       const userId = await getAuthenticatedUserId(req);
       if (!userId) {
         return res.status(401).json({ error: "인증이 필요합니다" });
@@ -1352,13 +1349,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ===== BUSINESS INFO ROUTES =====
-
+  
   // Get user business info
   app.get("/api/user/business-info", async (req, res) => {
     try {
       // 실제 로그인한 사용자 ID 획득
       let userId = (req.session as any)?.userId;
-
+      
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
 
       if (!userId) {
@@ -1378,7 +1375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // 실제 로그인한 사용자 ID 획득
       let userId = (req.session as any)?.userId;
-
+      
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
 
       if (!userId) {
@@ -1398,7 +1395,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // 실제 로그인한 사용자 ID 획득
       let userId = (req.session as any)?.userId;
-
+      
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
 
       if (!userId) {
@@ -1406,12 +1403,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const businessInfoData = businessInfoSchema.parse(req.body);
-
+      
       const businessInfo = await storage.createUserBusinessInfo({
         ...businessInfoData,
         userId,
       });
-
+      
       res.json(businessInfo);
     } catch (error) {
       console.error("Create business info error:", error);
@@ -1423,10 +1420,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/user/business-info/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-
+      
       // 실제 로그인한 사용자 ID 획득
       let userId = (req.session as any)?.userId;
-
+      
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
 
       if (!userId) {
@@ -1455,10 +1452,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/user/business-info/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-
+      
       // 실제 로그인한 사용자 ID 획득
       let userId = (req.session as any)?.userId;
-
+      
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
 
       if (!userId) {
@@ -1483,21 +1480,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ===== ADMIN ROUTES =====
-
+  
   // 슈퍼 관리자 권한 확인
   const requireSuperAdmin = async (req: any, res: any, next: any) => {
     const userId = await getAuthenticatedUserId(req);
-
+    
     if (!userId) {
       return res.status(401).json({ error: "인증이 필요합니다" });
     }
-
+    
     const user = await storage.getUserById(userId);
     const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || "";
-
+    
     if (!user || !superAdminEmail || user.email !== superAdminEmail) {
-      return res.status(403).json({
-        error: "슈퍼 관리자만 접근할 수 있습니다"
+      return res.status(403).json({ 
+        error: "슈퍼 관리자만 접근할 수 있습니다" 
       });
     }
     next();
@@ -1519,7 +1516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.id);
       const permissions = updateUserPermissionsSchema.parse(req.body);
-
+      
       const updatedUser = await storage.updateUserPermissions(userId, permissions);
       res.json(updatedUser);
     } catch (error) {
@@ -1532,17 +1529,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/make-admin", async (req, res) => {
     try {
       const { email, adminSecret } = req.body;
-
+      
       // Simple secret check for initial admin setup
       if (adminSecret !== "blogcheatkey-admin-2025") {
         return res.status(403).json({ error: "잘못된 관리자 비밀번호입니다" });
       }
-
+      
       const updatedUser = await storage.makeUserAdmin(email);
       if (!updatedUser) {
         return res.status(404).json({ error: "해당 이메일의 사용자를 찾을 수 없습니다" });
       }
-
+      
       res.json({ message: "관리자 권한이 부여되었습니다", user: updatedUser });
     } catch (error) {
       console.error("Make admin error:", error);
@@ -1551,7 +1548,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ===== COMPLETED PROJECTS (HISTORY) =====
-
+  
   // Get completed projects for history page
   app.get("/api/completed-projects", async (req, res) => {
     try {
@@ -1574,7 +1571,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // 실제 로그인한 사용자 ID 획득
       let userId = (req.session as any)?.userId;
-
+      
       // Authorization 헤더에서 사용자 ID 획득 (localStorage 인증)
 
       if (!userId) {
