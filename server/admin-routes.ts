@@ -6,7 +6,7 @@ import { eq, desc, sql, gte, and } from "drizzle-orm";
 import axios from "axios";
 
 export function setupAdminRoutes(app: Express, storage: IStorage) {
-  
+
   // Get all users
   app.get("/api/admin/users", async (req, res) => {
     try {
@@ -47,12 +47,12 @@ export function setupAdminRoutes(app: Express, storage: IStorage) {
         canGenerateImages: planType === 'premium',
       };
 
-      await storage.updateUserPermissions(userId, permissions);
+      await storage.updateUserPermissions(userId, permissions as any);
 
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         message: `${duration}일간 ${planType} 플랜 권한이 부여되었습니다.`,
-        expiresAt: endDate 
+        expiresAt: endDate
       });
     } catch (error) {
       console.error("Grant subscription error:", error);
@@ -73,12 +73,130 @@ export function setupAdminRoutes(app: Express, storage: IStorage) {
         canGenerateImages: false,
       };
 
-      await storage.updateUserPermissions(userId, permissions);
+      await storage.updateUserPermissions(userId, permissions as any);
 
       res.json({ success: true, message: "구독 권한이 해제되었습니다" });
     } catch (error) {
       console.error("Revoke subscription error:", error);
       res.status(500).json({ error: "구독 권한 해제에 실패했습니다" });
+    }
+  });
+
+  // Override user plan (admin grants plan regardless of payment)
+  app.post("/api/admin/users/:id/override-plan", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { planType, duration, note } = req.body;
+      // planType: 'basic' | 'premium'
+      // duration: number (days), 0 or null = unlimited
+      // note: string (optional admin memo)
+
+      if (!planType || !['basic', 'premium'].includes(planType)) {
+        return res.status(400).json({ error: "유효한 플랜을 선택해주세요 (basic/premium)" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "사용자를 찾을 수 없습니다" });
+      }
+
+      const isPremium = planType === 'premium';
+      let overrideExpiresAt: Date | null = null;
+
+      if (duration && duration > 0) {
+        overrideExpiresAt = new Date();
+        overrideExpiresAt.setDate(overrideExpiresAt.getDate() + duration);
+      }
+
+      // Set override fields and also apply actual permissions
+      const updateData: any = {
+        adminOverridePlan: planType,
+        adminOverrideExpiresAt: overrideExpiresAt,
+        adminOverrideNote: note || null,
+        subscriptionTier: planType,
+        subscriptionExpiresAt: overrideExpiresAt || new Date('2099-12-31'), // unlimited = far future
+        canGenerateContent: true,
+        canUseChatbot: true,
+        canGenerateImages: isPremium,
+      };
+
+      await storage.updateUserPermissions(userId, updateData);
+
+      res.json({
+        success: true,
+        message: `${planType} 플랜 오버라이드가 적용되었습니다.${duration ? ` (${duration}일간)` : ' (무기한)'}`,
+        overrideExpiresAt,
+      });
+    } catch (error) {
+      console.error("Override plan error:", error);
+      res.status(500).json({ error: "플랜 오버라이드 적용에 실패했습니다" });
+    }
+  });
+
+  // Remove admin plan override (restore to original subscription state)
+  app.post("/api/admin/users/:id/remove-override", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "사용자를 찾을 수 없습니다" });
+      }
+
+      // Clear override fields and reset to basic/no subscription
+      const updateData: any = {
+        adminOverridePlan: null,
+        adminOverrideExpiresAt: null,
+        adminOverrideNote: null,
+        subscriptionTier: 'basic',
+        subscriptionExpiresAt: null,
+        canGenerateContent: false,
+        canUseChatbot: false,
+        canGenerateImages: false,
+      };
+
+      await storage.updateUserPermissions(userId, updateData);
+
+      res.json({
+        success: true,
+        message: "플랜 오버라이드가 해제되었습니다. 기본 플랜으로 복원되었습니다.",
+      });
+    } catch (error) {
+      console.error("Remove override error:", error);
+      res.status(500).json({ error: "오버라이드 해제에 실패했습니다" });
+    }
+  });
+
+  // Update individual permissions (toggle specific features)
+  app.post("/api/admin/users/:id/update-permissions", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { canGenerateContent, canUseChatbot, canGenerateImages } = req.body;
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ error: "사용자를 찾을 수 없습니다" });
+      }
+
+      const updateData: any = {};
+      if (canGenerateContent !== undefined) updateData.canGenerateContent = canGenerateContent;
+      if (canUseChatbot !== undefined) updateData.canUseChatbot = canUseChatbot;
+      if (canGenerateImages !== undefined) updateData.canGenerateImages = canGenerateImages;
+
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ error: "변경할 권한을 지정해주세요" });
+      }
+
+      await storage.updateUserPermissions(userId, updateData);
+
+      res.json({
+        success: true,
+        message: "개별 권한이 업데이트되었습니다.",
+        updated: updateData,
+      });
+    } catch (error) {
+      console.error("Update permissions error:", error);
+      res.status(500).json({ error: "권한 업데이트에 실패했습니다" });
     }
   });
 
@@ -146,12 +264,12 @@ export function setupAdminRoutes(app: Express, storage: IStorage) {
 
       // Grant user permissions
       await storage.updateUserPermissions(payment.userId, {
-        subscriptionTier: payment.planType,
+        subscriptionTier: payment.planType as 'basic' | 'premium',
         subscriptionExpiresAt: endDate,
         canGenerateContent: true,
         canUseChatbot: true,
         canGenerateImages: payment.planType === 'premium',
-      });
+      } as any);
 
       res.json({ success: true, message: "결제가 확인되고 권한이 부여되었습니다" });
     } catch (error) {
@@ -212,23 +330,23 @@ export function setupAdminRoutes(app: Express, storage: IStorage) {
   app.get("/api/admin/analytics", async (req, res) => {
     try {
       const { dateRange = "7d" } = req.query;
-      
+
       // 날짜 범위 계산
       const days = dateRange === "1d" ? 1 : dateRange === "7d" ? 7 : dateRange === "30d" ? 30 : 90;
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
-      
+
       const posthogApiKey = process.env.POSTHOG_API_KEY;
       const posthogProjectId = process.env.POSTHOG_PROJECT_ID;
       const posthogHost = process.env.POSTHOG_HOST || "https://us.i.posthog.com";
-      
+
       // PostHog API가 설정되지 않은 경우 DB 기반 분석 데이터 반환
       if (!posthogApiKey || !posthogProjectId) {
         // DB에서 직접 분석 데이터 생성
         const analyticsData = await generateAnalyticsFromDB(startDate, days);
         return res.json(analyticsData);
       }
-      
+
       // PostHog API 호출
       try {
         const [insightsResponse, eventsResponse] = await Promise.all([
@@ -240,17 +358,17 @@ export function setupAdminRoutes(app: Express, storage: IStorage) {
           // 이벤트 조회
           axios.get(`${posthogHost}/api/projects/${posthogProjectId}/events`, {
             headers: { Authorization: `Bearer ${posthogApiKey}` },
-            params: { 
+            params: {
               after: startDate.toISOString(),
               limit: 1000
             }
           })
         ]);
-        
+
         // PostHog 데이터 가공
         const events = eventsResponse.data.results || [];
         const analyticsData = processPostHogData(events, days);
-        
+
         res.json(analyticsData);
       } catch (posthogError) {
         console.error("PostHog API error:", posthogError);
@@ -428,17 +546,17 @@ export function setupAdminRoutes(app: Express, storage: IStorage) {
     const eventCounts: Record<string, number> = {};
     const dailyPageViews: Record<string, number> = {};
     const dailyUsers: Record<string, Set<string>> = {};
-    
+
     events.forEach(event => {
       // 이벤트 카운트
       const eventName = event.event || 'unknown';
       eventCounts[eventName] = (eventCounts[eventName] || 0) + 1;
-      
+
       // 일별 페이지뷰
       const date = event.timestamp?.split('T')[0];
       if (date) {
         dailyPageViews[date] = (dailyPageViews[date] || 0) + 1;
-        
+
         // 일별 순 사용자
         if (!dailyUsers[date]) dailyUsers[date] = new Set();
         if (event.distinct_id) dailyUsers[date].add(event.distinct_id);

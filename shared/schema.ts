@@ -25,6 +25,10 @@ export const users = pgTable("users", {
   canGenerateContent: boolean("can_generate_content").default(false),
   canGenerateImages: boolean("can_generate_images").default(false),
   canUseChatbot: boolean("can_use_chatbot").default(false),
+  // Admin override fields
+  adminOverridePlan: text("admin_override_plan"),
+  adminOverrideExpiresAt: timestamp("admin_override_expires_at"),
+  adminOverrideNote: text("admin_override_note"),
   // Token usage tracking
   totalTokensUsed: integer("total_tokens_used").default(0),
   monthlyTokensUsed: integer("monthly_tokens_used").default(0),
@@ -272,6 +276,9 @@ export const updateUserPermissionsSchema = z.object({
   canGenerateImages: z.boolean().optional(),
   canUseChatbot: z.boolean().optional(),
   isActive: z.boolean().optional(),
+  adminOverridePlan: z.enum(["basic", "premium"]).optional().nullable(),
+  adminOverrideExpiresAt: z.string().datetime().optional().nullable(),
+  adminOverrideNote: z.string().optional().nullable(),
 });
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
