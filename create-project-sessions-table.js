@@ -5,9 +5,15 @@ const { Pool } = pg;
 
 config();
 
-const pool = new Pool({ 
-  connectionString: process.env.DATABASE_URL 
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL
 });
+
+const addAdminOverrideColumnsSQL = `
+ALTER TABLE users ADD COLUMN IF NOT EXISTS admin_override_plan TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS admin_override_expires_at TIMESTAMP;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS admin_override_note TEXT;
+`;
 
 const createTableSQL = `
 CREATE TABLE IF NOT EXISTS project_sessions (
@@ -45,11 +51,15 @@ CREATE INDEX IF NOT EXISTS idx_project_sessions_updated_at ON project_sessions(u
 (async () => {
   try {
     console.log('🔧 project_sessions 테이블 생성 중...\n');
-    
+
     await pool.query(createTableSQL);
-    
+
     console.log('✅ 테이블 생성 완료!');
-    
+
+    console.log('🔧 admin_override 컬럼 추가 중...');
+    await pool.query(addAdminOverrideColumnsSQL);
+    console.log('✅ admin_override 컬럼 추가 완료!');
+
     await pool.end();
     process.exit(0);
   } catch (error) {
