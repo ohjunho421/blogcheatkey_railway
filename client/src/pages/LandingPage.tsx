@@ -2,19 +2,18 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { 
-  Zap, 
-  Sparkles, 
-  Clock, 
-  Search, 
-  FileText, 
-  BarChart3, 
-  MessageSquare, 
-  Smartphone, 
-  Check, 
-  Menu, 
+import {
+  Zap,
+  Sparkles,
+  Clock,
+  Search,
+  FileText,
+  BarChart3,
+  MessageSquare,
+  Smartphone,
+  Check,
+  Menu,
   X,
-  Star,
   AlertTriangle,
   XCircle,
   Store,
@@ -28,10 +27,10 @@ import {
   Briefcase,
   Copy,
   Bot,
-  Target,
-  Hash,
-  Layers,
-  Save
+  Save,
+  Info,
+  Wrench,
+  Building2
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -161,10 +160,10 @@ export default function LandingPage() {
       <main id="main-content" role="main">
         {/* Hero Section */}
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-background via-muted/30 to-background" aria-labelledby="hero-heading">
-          {/* Background Effects */}
-          <div className="absolute inset-0 overflow-hidden">
-            <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+          {/* Background Effects - static, not animated (UX: infinite animation is distracting) */}
+          <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+            <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
+            <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-secondary/5 rounded-full blur-3xl" />
           </div>
 
@@ -503,12 +502,12 @@ export default function LandingPage() {
                   <Bot className="w-4 h-4" />
                   <span className="text-sm font-medium">최첨단 AI 모델 통합</span>
                 </div>
-                <h3 className="text-2xl font-bold text-foreground">🤖 AI 모델 통합</h3>
+                <h3 className="text-2xl font-bold text-foreground">AI 모델 통합</h3>
               </div>
               <div className="grid md:grid-cols-3 gap-4">
                 {[
-                  { name: "Claude Sonnet 4.5", role: "메인 콘텐츠 생성, SEO 최적화" },
-                  { name: "Gemini 2.5 Pro", role: "키워드 분석, 챗봇 편집" },
+                  { name: "Claude Opus 4.6", role: "메인 콘텐츠 생성, SEO 최적화" },
+                  { name: "Gemini 2.5 Pro", role: "키워드 분석" },
                   { name: "Perplexity Sonar", role: "실시간 연구 데이터 수집" },
                 ].map((model, index) => (
                   <motion.div
@@ -541,7 +540,7 @@ export default function LandingPage() {
               className="text-center mb-16"
             >
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">🔄 사용 워크플로우</span>
+                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">사용 워크플로우</span>
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                 7단계로 완성되는 SEO 최적화 블로그 콘텐츠
@@ -738,7 +737,7 @@ export default function LandingPage() {
                 },
                 {
                   question: "어떤 AI 모델을 사용하나요?",
-                  answer: "Claude Sonnet 4.5(메인 콘텐츠 생성), Gemini 2.5 Pro(키워드 분석, 챗봇 편집), Perplexity Sonar(실시간 연구 데이터 수집) 등 최첨단 AI 모델을 통합 활용합니다."
+                  answer: "Claude Opus 4.6(메인 콘텐츠 생성 및 SEO 최적화), Gemini 2.5 Pro(키워드 분석), Perplexity Sonar(실시간 연구 데이터 수집) 등 최첨단 AI 모델을 통합 활용합니다."
                 },
                 {
                   question: "베이직과 프리미엄 플랜의 차이는 무엇인가요?",
@@ -807,7 +806,10 @@ export default function LandingPage() {
             <div className="max-w-4xl mx-auto">
               <div className="grid md:grid-cols-2 gap-8">
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-4">👥 사업자 정보</h3>
+                  <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <Building2 className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
+                    사업자 정보
+                  </h3>
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <p><span className="font-medium text-foreground">상호명:</span> 블로그치트키</p>
                     <p><span className="font-medium text-foreground">사업자번호:</span> 456-05-03530</p>
@@ -817,7 +819,10 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-4">🛠 기술 스택</h3>
+                  <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <Wrench className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
+                    기술 스택
+                  </h3>
                   <div className="flex flex-wrap gap-2">
                     {["React", "TypeScript", "Vite", "TailwindCSS", "Node.js", "Express", "PostgreSQL"].map((tech) => (
                       <span 

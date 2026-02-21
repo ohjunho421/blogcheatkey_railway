@@ -87,98 +87,104 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-card shadow-sm border-b">
+      {/* Header - floating sticky */}
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border/50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+          <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <img 
-                src={blogCheatKeyLogo} 
-                alt="블로그치트키 로고" 
-                className="w-10 h-10 object-contain"
+              <img
+                src={blogCheatKeyLogo}
+                alt="블로그치트키 로고"
+                className="w-9 h-9 object-contain"
               />
-              <h1 className="text-2xl font-bold text-foreground">블로그치트키</h1>
+              <span className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                블로그치트키
+              </span>
             </div>
-            <nav className="hidden md:flex space-x-6">
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">대시보드</a>
-              <button 
+            <nav className="hidden md:flex items-center space-x-1" aria-label="메인 네비게이션">
+              <button
                 onClick={() => navigate('/history')}
-                className="text-muted-foreground hover:text-primary transition-colors"
+                className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md transition-colors cursor-pointer"
               >
                 작성 내역
               </button>
             </nav>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center gap-2">
               <PaymentModal>
-                <Button variant="outline" size="sm">
-                  <CreditCard className="h-4 w-4 mr-2" />
+                <Button variant="outline" size="sm" className="cursor-pointer hidden sm:flex">
+                  <CreditCard className="h-4 w-4 mr-2" aria-hidden="true" />
                   구독하기
                 </Button>
               </PaymentModal>
-              
+
               {(project as any) && (
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => navigate('/')}
+                  className="cursor-pointer"
                 >
-                  <FileText className="h-4 w-4 mr-2" />
-                  새 프로젝트
+                  <FileText className="h-4 w-4 mr-1.5" aria-hidden="true" />
+                  <span className="hidden sm:inline">새 프로젝트</span>
                 </Button>
               )}
               {user && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="flex items-center space-x-2 h-auto p-2">
-                      <Avatar className="h-8 w-8">
+                    <Button variant="ghost" className="flex items-center gap-2 h-auto py-1.5 px-2 cursor-pointer">
+                      <Avatar className="h-7 w-7">
                         <AvatarImage src={user.profileImage} alt={user.name} />
-                        <AvatarFallback>
+                        <AvatarFallback className="text-xs bg-primary/10 text-primary">
                           {user.name.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <span className="text-sm text-muted-foreground hidden sm:block">
-                        {user.name}님
+                      <span className="text-sm text-muted-foreground hidden sm:block max-w-[80px] truncate">
+                        {user.name}
                       </span>
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
                     <div className="flex items-center justify-start gap-2 p-2">
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={user.profileImage} alt={user.name} />
-                        <AvatarFallback>
+                        <AvatarFallback className="text-xs bg-primary/10 text-primary">
                           {user.name.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex flex-col space-y-1">
+                      <div className="flex flex-col space-y-0.5">
                         <p className="text-sm font-medium leading-none">{user.name}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
+                        <p className="text-xs leading-none text-muted-foreground truncate max-w-[140px]">
                           {user.email}
                         </p>
                       </div>
                     </div>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate("/profile")}>
-                      <User className="mr-2 h-4 w-4" />
+                    <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer">
+                      <User className="mr-2 h-4 w-4" aria-hidden="true" />
                       프로필
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/subscribe")}>
-                      <CreditCard className="mr-2 h-4 w-4" />
+                    <DropdownMenuItem onClick={() => navigate("/subscribe")} className="cursor-pointer">
+                      <CreditCard className="mr-2 h-4 w-4" aria-hidden="true" />
                       구독하기
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => navigate("/history")}>
-                      <FileText className="mr-2 h-4 w-4" />
+                    <DropdownMenuItem onClick={() => navigate("/history")} className="cursor-pointer">
+                      <FileText className="mr-2 h-4 w-4" aria-hidden="true" />
                       작성 내역
                     </DropdownMenuItem>
                     {user.isAdmin && (
-                      <DropdownMenuItem onClick={() => navigate("/admin")}>
-                        <Shield className="mr-2 h-4 w-4" />
+                      <DropdownMenuItem onClick={() => navigate("/admin")} className="cursor-pointer">
+                        <Shield className="mr-2 h-4 w-4" aria-hidden="true" />
                         관리자 페이지
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout} disabled={logoutMutation.isPending}>
-                      <LogOut className="mr-2 h-4 w-4" />
+                    <DropdownMenuItem
+                      onClick={handleLogout}
+                      disabled={logoutMutation.isPending}
+                      className="cursor-pointer text-destructive focus:text-destructive"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
                       {logoutMutation.isPending ? "로그아웃 중..." : "로그아웃"}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -191,17 +197,17 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Progress Section - 프로젝트가 있거나 새로 만들 때 항상 표시 */}
-        <div className="mb-8">
+        {/* Progress Section */}
+        <div className="mb-8 p-5 rounded-2xl bg-card border border-border/50 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">프로젝트 진행 상황</h2>
+            <h2 className="text-base font-semibold text-foreground">프로젝트 진행 상황</h2>
             {(project as any) && (
-              <Badge variant="secondary">
-                키워드: {(project as any).keyword}
+              <Badge variant="secondary" className="font-normal text-xs">
+                {(project as any).keyword}
               </Badge>
             )}
           </div>
-          <Progress value={(project as any) ? getProgressPercentage() : 0} className="mb-4" />
+          <Progress value={(project as any) ? getProgressPercentage() : 0} className="mb-4 h-1.5" />
           <ProgressStepper currentStep={(project as any) ? getCurrentStepIndex() : 0} />
         </div>
 
