@@ -185,24 +185,32 @@ export default function LandingPage() {
                 <span className="text-sm font-medium">자영업자를 위한 AI 블로그 마케팅 솔루션</span>
               </motion.div>
 
-              {/* Headline - H1 for SEO (텍스트만 포함, span 사용 자제) */}
+              {/* Headline - H1 for SEO */}
               <motion.h1
                 id="hero-heading"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.8 }}
-                className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-6 text-foreground"
+                className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 text-foreground leading-tight"
               >
-                AI 블로그 콘텐츠 자동 생성 - 상품페이지, 브랜드소개, 광고문구까지
+                AI 블로그 콘텐츠 자동 생성
+                <br />
+                <span className="text-3xl md:text-4xl lg:text-5xl font-semibold text-muted-foreground">
+                  상품페이지 · 브랜드소개 · 광고문구
+                </span>
               </motion.h1>
-              {/* 부제목은 별도 요소로 분리 */}
+              {/* 부제목 */}
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, duration: 0.8 }}
-                className="text-2xl md:text-3xl lg:text-4xl font-bold mb-6"
+                className="text-2xl md:text-3xl font-bold mb-6"
               >
-                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">본업에 집중하세요, 콘텐츠는 AI가 대신</span>
+                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                  본업에 집중하세요,
+                  <br className="sm:hidden" />
+                  {" "}콘텐츠는 AI가 대신
+                </span>
               </motion.p>
 
               {/* Subheadline */}
@@ -210,11 +218,12 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5, duration: 0.8 }}
-                className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto"
+                className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed"
               >
                 SEO 몰라도 괜찮아요. 키워드 하나만 입력하면
-                <br className="hidden md:block" />
-                <span className="text-primary font-semibold">상위노출 조건을 완벽히 충족</span>하는 글이 3분 만에 완성됩니다.
+                <br />
+                <span className="text-primary font-semibold">상위노출 조건을 완벽히 충족</span>하는 글이{" "}
+                <span className="font-semibold text-foreground">3분 만에</span> 완성됩니다.
               </motion.p>
 
               {/* CTA Buttons */}
