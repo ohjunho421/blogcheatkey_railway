@@ -3,6 +3,12 @@ import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   Zap,
   Sparkles,
   Clock,
@@ -730,48 +736,81 @@ export default function LandingPage() {
               </p>
             </motion.div>
 
-            <div className="max-w-3xl mx-auto space-y-4">
-              {[
-                {
-                  question: "블로그치트키는 어떤 서비스인가요?",
-                  answer: "블로그치트키는 자영업자를 위한 AI 기반 SEO 최적화 블로그 콘텐츠 자동 생성 서비스입니다. 키워드 하나만 입력하면 네이버 상위노출 조건을 완벽히 충족하는 고품질 블로그 글이 3분 만에 완성됩니다."
-                },
-                {
-                  question: "SEO를 몰라도 사용할 수 있나요?",
-                  answer: "네, 전혀 문제없습니다. 블로그치트키가 형태소 빈도(15-17회), 글자수(1,700-2,000자), 키워드 최적화 등 모든 SEO 조건을 자동으로 맞춰줍니다. 사용자는 키워드만 입력하면 됩니다."
-                },
-                {
-                  question: "대행업체와 비교했을 때 장점은 무엇인가요?",
-                  answer: "대행업체는 월 수십만원의 비용이 들고 사기 위험이 있지만, 블로그치트키는 월 2-5만원으로 직접 생성하고 확인할 수 있어 투명하고 경제적입니다. 또한 내 전문성과 차별화 요소를 직접 담을 수 있습니다."
-                },
-                {
-                  question: "어떤 AI 모델을 사용하나요?",
-                  answer: "Claude Opus 4.6(메인 콘텐츠 생성 및 SEO 최적화), Gemini 2.5 Pro(키워드 분석), Perplexity Sonar(실시간 연구 데이터 수집) 등 최첨단 AI 모델을 통합 활용합니다."
-                },
-                {
-                  question: "베이직과 프리미엄 플랜의 차이는 무엇인가요?",
-                  answer: "베이직(월 20,000원)은 콘텐츠 생성, SEO 최적화, 키워드 분석, 세션 저장, 모바일 포맷팅을 제공합니다. 프리미엄(월 50,000원)은 베이직의 모든 기능에 AI 챗봇 편집, SSR 평가 기반 제목 추천, 톤앤매너 조정, 실시간 SEO 재검증 기능이 추가됩니다."
-                }
-              ].map((faq, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1, duration: 0.5 }}
-                  className="p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/20 transition-all duration-200"
-                >
-                  <h3 className="text-lg font-semibold text-foreground mb-3">
-                    {faq.question}
-                  </h3>
-                  <div>
-                    <p className="text-muted-foreground leading-relaxed">
-                      {faq.answer}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              className="max-w-3xl mx-auto"
+            >
+              <Accordion type="single" collapsible className="space-y-3">
+                {[
+                  {
+                    value: "faq-1",
+                    question: "블로그치트키는 어떤 서비스인가요?",
+                    lines: [
+                      "블로그치트키는 자영업자를 위한 AI 기반 SEO 최적화 블로그 콘텐츠 자동 생성 서비스입니다.",
+                      "키워드 하나만 입력하면 네이버 상위노출 조건을 완벽히 충족하는 고품질 블로그 글이 3분 만에 완성됩니다.",
+                    ],
+                  },
+                  {
+                    value: "faq-2",
+                    question: "SEO를 몰라도 사용할 수 있나요?",
+                    lines: [
+                      "네, 전혀 문제없습니다.",
+                      "블로그치트키가 형태소 빈도(15-17회), 글자수(1,700-2,000자), 키워드 최적화 등 모든 SEO 조건을 자동으로 맞춰줍니다.",
+                      "사용자는 키워드만 입력하면 됩니다.",
+                    ],
+                  },
+                  {
+                    value: "faq-3",
+                    question: "대행업체와 비교했을 때 장점은 무엇인가요?",
+                    lines: [
+                      "대행업체는 월 수십만원의 비용이 들고 사기 위험이 있습니다.",
+                      "블로그치트키는 월 2-5만원으로 직접 생성하고 확인할 수 있어 투명하고 경제적입니다.",
+                      "또한 내 전문성과 차별화 요소를 직접 담을 수 있습니다.",
+                    ],
+                  },
+                  {
+                    value: "faq-4",
+                    question: "어떤 AI 모델을 사용하나요?",
+                    lines: [
+                      "Claude Opus 4.6 — 메인 콘텐츠 생성 및 SEO 최적화",
+                      "Gemini 2.5 Pro — 키워드 분석",
+                      "Perplexity Sonar — 실시간 연구 데이터 수집",
+                    ],
+                  },
+                  {
+                    value: "faq-5",
+                    question: "베이직과 프리미엄 플랜의 차이는 무엇인가요?",
+                    lines: [
+                      "베이직(월 20,000원): 콘텐츠 생성, SEO 최적화, 키워드 분석, 세션 저장, 모바일 포맷팅",
+                      "프리미엄(월 50,000원): 베이직의 모든 기능 + AI 챗봇 편집, SSR 평가 기반 제목 추천, 톤앤매너 조정, 실시간 SEO 재검증",
+                    ],
+                  },
+                ].map((faq) => (
+                  <AccordionItem
+                    key={faq.value}
+                    value={faq.value}
+                    className="rounded-2xl bg-card border border-border/50 px-6 hover:border-primary/20 transition-all duration-200 data-[state=open]:border-primary/30 data-[state=open]:shadow-sm"
+                  >
+                    <AccordionTrigger className="text-base font-semibold text-foreground hover:no-underline py-5 text-left">
+                      {faq.question}
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-5">
+                      <ul className="space-y-2">
+                        {faq.lines.map((line, i) => (
+                          <li key={i} className="flex items-start gap-2 text-muted-foreground leading-relaxed">
+                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary/50 flex-shrink-0" />
+                            {line}
+                          </li>
+                        ))}
+                      </ul>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </motion.div>
           </div>
         </section>
       </main>
