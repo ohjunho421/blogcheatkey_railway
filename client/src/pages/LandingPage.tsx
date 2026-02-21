@@ -53,7 +53,7 @@ export default function LandingPage() {
       </a>
       
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-background/80 backdrop-blur-md border-b border-border/50" role="banner">
+      <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-200 bg-background/80 backdrop-blur-md border-b border-border/50" role="banner">
         <div className="container px-4 mx-auto">
           <div className="flex items-center justify-between h-16 md:h-20">
             <a href="/" className="flex items-center gap-2" aria-label="블로그치트키 홈으로 이동">
@@ -65,35 +65,35 @@ export default function LandingPage() {
             <nav className="hidden md:flex items-center gap-8" role="navigation" aria-label="메인 네비게이션">
               <button 
                 onClick={() => scrollToSection("pain-points")} 
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors duration-150"
                 aria-label="자영업자 고민 섹션으로 이동"
               >
                 자영업자 고민
               </button>
               <button 
                 onClick={() => scrollToSection("features")} 
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors duration-150"
                 aria-label="기능 섹션으로 이동"
               >
                 기능
               </button>
               <button 
                 onClick={() => scrollToSection("pricing")} 
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors duration-150"
                 aria-label="요금제 섹션으로 이동"
               >
                 요금제
               </button>
               <button 
                 onClick={() => scrollToSection("faq")} 
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors duration-150"
                 aria-label="자주 묻는 질문 섹션으로 이동"
               >
                 FAQ
               </button>
               <Button 
                 onClick={() => navigate("/login")}
-                className="bg-primary hover:bg-primary/90 shadow-lg transition-all duration-300 hover:scale-105"
+                className="bg-primary hover:bg-primary/90 shadow-lg transition-all duration-200 hover:scale-105"
                 aria-label="무료로 시작하기 - 로그인 페이지로 이동"
               >
                 <Zap className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -123,25 +123,25 @@ export default function LandingPage() {
             <div className="container px-4 py-4 flex flex-col gap-4">
               <button 
                 onClick={() => scrollToSection("pain-points")} 
-                className="text-left text-muted-foreground hover:text-foreground transition-colors py-2"
+                className="text-left text-muted-foreground hover:text-foreground transition-colors duration-150 py-2"
               >
                 자영업자 고민
               </button>
               <button 
                 onClick={() => scrollToSection("features")} 
-                className="text-left text-muted-foreground hover:text-foreground transition-colors py-2"
+                className="text-left text-muted-foreground hover:text-foreground transition-colors duration-150 py-2"
               >
                 기능
               </button>
               <button 
                 onClick={() => scrollToSection("pricing")} 
-                className="text-left text-muted-foreground hover:text-foreground transition-colors py-2"
+                className="text-left text-muted-foreground hover:text-foreground transition-colors duration-150 py-2"
               >
                 요금제
               </button>
               <button 
                 onClick={() => scrollToSection("faq")} 
-                className="text-left text-muted-foreground hover:text-foreground transition-colors py-2"
+                className="text-left text-muted-foreground hover:text-foreground transition-colors duration-150 py-2"
               >
                 FAQ
               </button>
@@ -224,19 +224,19 @@ export default function LandingPage() {
                 transition={{ delay: 0.7, duration: 0.8 }}
                 className="flex flex-col sm:flex-row gap-4 justify-center items-center"
               >
-                <Button 
+                <Button
                   size="lg"
                   onClick={() => navigate("/login")}
-                  className="text-lg px-8 py-6 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-primary/30"
+                  className="text-lg px-8 py-6 bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/25 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-orange-500/30 cursor-pointer"
                 >
-                  <Zap className="w-5 h-5 mr-2" />
+                  <Zap className="w-5 h-5 mr-2" aria-hidden="true" />
                   무료로 시작하기
                 </Button>
-                <Button 
+                <Button
                   size="lg"
                   variant="outline"
                   onClick={() => scrollToSection("pain-points")}
-                  className="text-lg px-8 py-6 border-primary/30 hover:bg-primary/5 transition-all duration-300"
+                  className="text-lg px-8 py-6 border-border hover:bg-muted/50 transition-all duration-200 cursor-pointer"
                 >
                   이런 고민 있으신가요?
                 </Button>
@@ -257,7 +257,7 @@ export default function LandingPage() {
                   <motion.div
                     key={index}
                     whileHover={{ scale: 1.05, y: -5 }}
-                    className="flex flex-col items-center p-6 rounded-2xl bg-card/50 backdrop-blur border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
+                    className="flex flex-col items-center p-6 rounded-2xl bg-card/50 backdrop-blur border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-200"
                   >
                     <stat.icon className="w-8 h-8 text-primary mb-3" />
                     <span className="text-2xl font-bold text-foreground">{stat.value}</span>
@@ -302,7 +302,7 @@ export default function LandingPage() {
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1, duration: 0.5 }}
                   whileHover={{ scale: 1.02, y: -3 }}
-                  className="p-6 rounded-2xl bg-card border border-border/50 hover:border-orange-500/30 hover:shadow-lg transition-all duration-300"
+                  className="p-6 rounded-2xl bg-card border border-border/50 hover:border-orange-500/30 hover:shadow-lg transition-all duration-200"
                 >
                   <div className="w-12 h-12 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center mb-4">
                     <item.icon className="w-6 h-6" />
@@ -424,12 +424,12 @@ export default function LandingPage() {
                     </motion.div>
                   ))}
                 </div>
-                <Button 
+                <Button
                   size="lg"
                   onClick={() => navigate("/login")}
-                  className="text-lg px-8 py-6 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 transition-all duration-300 hover:scale-105"
+                  className="text-lg px-8 py-6 bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/25 transition-all duration-200 hover:scale-105 cursor-pointer"
                 >
-                  <Zap className="w-5 h-5 mr-2" />
+                  <Zap className="w-5 h-5 mr-2" aria-hidden="true" />
                   지금 바로 시작하기
                 </Button>
               </div>
@@ -471,7 +471,7 @@ export default function LandingPage() {
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1, duration: 0.5 }}
                   whileHover={{ y: -5 }}
-                  className="group p-6 rounded-2xl bg-card border border-border/50 hover:shadow-xl hover:border-primary/20 transition-all duration-300"
+                  className="group p-6 rounded-2xl bg-card border border-border/50 hover:shadow-xl hover:border-primary/20 transition-all duration-200"
                 >
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 ${
                     feature.color === 'primary' ? 'bg-primary/10 text-primary' :
@@ -517,7 +517,7 @@ export default function LandingPage() {
                     viewport={{ once: true }}
                     transition={{ delay: index * 0.15, duration: 0.5 }}
                     whileHover={{ scale: 1.03 }}
-                    className="p-5 rounded-xl bg-gradient-to-br from-card to-muted/50 border border-border/50 text-center hover:shadow-lg transition-all duration-300"
+                    className="p-5 rounded-xl bg-gradient-to-br from-card to-muted/50 border border-border/50 text-center hover:shadow-lg transition-all duration-200"
                   >
                     <Sparkles className="w-8 h-8 text-primary mx-auto mb-3" />
                     <h4 className="font-semibold text-foreground mb-2">{model.name}</h4>
@@ -625,7 +625,7 @@ export default function LandingPage() {
                 viewport={{ once: true }}
                 transition={{ delay: 0.1, duration: 0.6 }}
                 whileHover={{ y: -5 }}
-                className="p-8 rounded-2xl bg-card border border-border/50 hover:shadow-xl transition-all duration-300"
+                className="p-8 rounded-2xl bg-card border border-border/50 hover:shadow-xl transition-all duration-200"
               >
                 <div className="text-center mb-8">
                   <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center bg-muted text-muted-foreground">
@@ -648,9 +648,9 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Button 
+                <Button
                   variant="outline"
-                  className="w-full py-6 text-lg transition-all duration-300 hover:scale-[1.02] hover:bg-muted"
+                  className="w-full py-6 text-lg transition-all duration-200 hover:scale-[1.02] hover:bg-muted cursor-pointer"
                   onClick={() => navigate("/login")}
                 >
                   베이직 시작하기
@@ -664,7 +664,7 @@ export default function LandingPage() {
                 viewport={{ once: true }}
                 transition={{ delay: 0.2, duration: 0.6 }}
                 whileHover={{ y: -5 }}
-                className="p-8 rounded-2xl bg-gradient-to-br from-primary/10 to-purple-500/10 border-2 border-primary/30 hover:shadow-xl hover:shadow-primary/10 transition-all duration-300 relative"
+                className="p-8 rounded-2xl bg-gradient-to-br from-primary/10 to-purple-500/10 border-2 border-primary/30 hover:shadow-xl hover:shadow-primary/10 transition-all duration-200 relative"
               >
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                   <span className="px-4 py-1.5 rounded-full bg-primary text-primary-foreground text-sm font-medium shadow-lg shadow-primary/25">
@@ -692,8 +692,8 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Button 
-                  className="w-full py-6 text-lg bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 transition-all duration-300 hover:scale-[1.02]"
+                <Button
+                  className="w-full py-6 text-lg bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/25 transition-all duration-200 hover:scale-[1.02] cursor-pointer"
                   onClick={() => navigate("/login")}
                 >
                   프리미엄 시작하기
@@ -750,7 +750,7 @@ export default function LandingPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1, duration: 0.5 }}
-                  className="p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/20 transition-all duration-300"
+                  className="p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/20 transition-all duration-200"
                 >
                   <h3 className="text-lg font-semibold text-foreground mb-3">
                     {faq.question}
@@ -787,13 +787,13 @@ export default function LandingPage() {
             <p className="text-xl text-primary font-semibold mb-8">
               블로그치트키로 직접 해보세요. 3분이면 충분합니다.
             </p>
-            <motion.div whileHover={{ scale: 1.05 }}>
-              <Button 
+            <motion.div whileHover={{ scale: 1.03 }}>
+              <Button
                 size="lg"
                 onClick={() => navigate("/login")}
-                className="text-lg px-10 py-6 bg-primary hover:bg-primary/90 shadow-xl shadow-primary/25 transition-all duration-300"
+                className="text-lg px-10 py-6 bg-orange-500 hover:bg-orange-600 text-white shadow-xl shadow-orange-500/25 transition-all duration-200 cursor-pointer"
               >
-                <Zap className="w-5 h-5 mr-2" />
+                <Zap className="w-5 h-5 mr-2" aria-hidden="true" />
                 무료체험 시작하기
               </Button>
             </motion.div>
@@ -846,7 +846,7 @@ export default function LandingPage() {
               <p className="text-sm text-muted-foreground">
                 © 2026 블로그치트키. All rights reserved.
               </p>
-              <a href="/privacy-policy" className="text-sm text-muted-foreground hover:text-foreground underline transition-colors">
+              <a href="/privacy-policy" className="text-sm text-muted-foreground hover:text-foreground underline transition-colors duration-150">
                 개인정보처리방침
               </a>
             </div>

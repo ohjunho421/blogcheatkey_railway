@@ -3,8 +3,9 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(0, 0%, 98%);
-  --foreground: hsl(20, 14.3%, 4.1%);
+  /* ui-ux-pro-max 디자인 시스템: Background #F8FAFC, Text #1E293B */
+  --background: hsl(210, 40%, 98%);
+  --foreground: hsl(215, 28%, 17%);
   --muted: hsl(60, 4.8%, 95.9%);
   --muted-foreground: hsl(25, 5.3%, 44.7%);
   --popover: hsl(0, 0%, 100%);
