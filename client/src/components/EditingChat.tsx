@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { MessageSquare, Send, Bot, User, Copy, Smartphone } from "lucide-react";
+import { MessageSquare, Send, Bot, User, Copy, Smartphone, ImagePlus, Loader2 } from "lucide-react";
 
 interface EditingChatProps {
   project: any;
@@ -218,6 +218,29 @@ export function EditingChat({ project, onRefresh }: EditingChatProps) {
     }
   };
 
+  // 자동 이미지 생성 (admin 전용)
+  const autoImageMutation = useMutation({
+    mutationFn: async (generateAll: boolean) => {
+      const response = await apiRequest("POST", `/api/projects/${project.id}/auto-images`, { generateAll });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      refetchChat();
+      onRefresh();
+      toast({
+        title: "이미지 생성 완료",
+        description: `${data.generatedCount}개의 이미지가 생성되었습니다.`,
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "이미지 생성 실패",
+        description: error?.message || "자동 이미지 생성에 실패했습니다.",
+        variant: "destructive",
+      });
+    },
+  });
+
   return (
     <Card>
       <CardHeader>
@@ -294,7 +317,7 @@ export function EditingChat({ project, onRefresh }: EditingChatProps) {
                 <p className="text-sm text-muted-foreground">
                   콘텐츠 수정 요청을 입력하거나<br/>
                   "제목 만들어줘"라고 말하면 10가지 유형별 제목을 생성합니다.<br/>
-                  <span className="text-xs">이미지 생성은 Google Whisk/Napkin AI를 사용해주세요.</span>
+                  <span className="text-xs">"이미지 그려줘", "인포그래픽 만들어줘"로 이미지를 생성할 수 있습니다. (관리자 전용)</span>
                 </p>
               </div>
             )}
@@ -322,9 +345,26 @@ export function EditingChat({ project, onRefresh }: EditingChatProps) {
               )}
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            💡 팁: <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Shift</kbd> + <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Enter</kbd>로 줄바꿈, <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Enter</kbd>로 전송
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              💡 팁: <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Shift</kbd> + <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Enter</kbd>로 줄바꿈, <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Enter</kbd>로 전송
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={() => autoImageMutation.mutate(false)}
+              disabled={autoImageMutation.isPending || !project.generatedContent}
+              title="문단별 핵심 이미지를 AI가 자동으로 생성합니다 (관리자 전용)"
+            >
+              {autoImageMutation.isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <ImagePlus className="h-3 w-3" />
+              )}
+              자동 이미지 생성
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

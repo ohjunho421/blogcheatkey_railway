@@ -991,20 +991,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Check if this is an image request
-      const isImageRequest = /이미지|그림|사진|인포그래픽|infographic/i.test(message);
+      const isImageRequest = /이미지|그림|사진|인포그래픽|infographic|그려|일러스트/i.test(message);
+      const isInfographicRequest = /인포그래픽|infographic|도표|차트|시각화|다이어그램/i.test(message);
 
       if (isImageRequest) {
-        // 이미지 생성 기능 제거됨 - 외부 도구 안내
-        await storage.createChatMessage({
-          projectId: id,
-          role: "assistant",
-          content: "이미지 생성은 이제 외부 도구를 사용해주세요!\n\n📸 **Google Whisk**: https://labs.google/fx/tools/whisk\n📊 **Napkin AI**: https://www.napkin.ai/\n\n콘텐츠 수정이나 제목 제안이 필요하시면 말씀해주세요.",
-        });
+        // 🔒 이미지 생성은 슈퍼유저(admin)만 가능
+        let isAdminUser = false;
+        if (userId) {
+          const user = await storage.getUser(userId);
+          if (user?.isAdmin) {
+            isAdminUser = true;
+          }
+        }
 
-        res.json({ 
-          success: true, 
-          type: 'external_tool_guide'
-        });
+        if (!isAdminUser) {
+          await storage.createChatMessage({
+            projectId: id,
+            role: "assistant",
+            content: "🔒 이미지 생성은 관리자 전용 기능입니다.\n\n외부 도구를 사용해주세요:\n📸 Google Whisk: https://labs.google/fx/tools/whisk\n📊 Napkin AI: https://www.napkin.ai/",
+          });
+
+          return res.json({ 
+            success: true, 
+            type: 'external_tool_guide'
+          });
+        }
+
+        try {
+          const { generateChatImage, generateInfographicHTML } = await import("./services/geminiImageGenerator.js");
+
+          if (isInfographicRequest) {
+            // 인포그래픽 생성
+            await storage.createChatMessage({
+              projectId: id,
+              role: "assistant",
+              content: "📊 인포그래픽을 생성하고 있습니다... 잠시만 기다려주세요.",
+            });
+
+            const subtitles = (project.subtitles as string[]) || [];
+            const result = await generateInfographicHTML(
+              project.keyword,
+              project.generatedContent || "",
+              subtitles
+            );
+
+            let responseContent = "📊 인포그래픽이 생성되었습니다!\n\n";
+            let imageUrl: string | undefined;
+
+            if (result.imageBase64) {
+              imageUrl = `data:${result.mimeType || "image/png"};base64,${result.imageBase64}`;
+              responseContent += "🖼️ 인포그래픽 이미지가 함께 생성되었습니다.\n";
+            }
+
+            if (result.html) {
+              responseContent += "📋 HTML 인포그래픽도 생성되었습니다. 복사하여 블로그에 삽입할 수 있습니다.";
+            }
+
+            await storage.createChatMessage({
+              projectId: id,
+              role: "assistant",
+              content: responseContent,
+              imageUrl,
+            });
+
+            // 프로젝트의 generatedImages에 추가
+            const existingImages = (project.generatedImages as string[]) || [];
+            if (imageUrl) {
+              existingImages.push(imageUrl);
+              await storage.updateBlogProject(id, {
+                generatedImages: existingImages as any,
+              });
+            }
+
+            return res.json({
+              success: true,
+              type: 'image',
+              imageUrl,
+              infographicHtml: result.html,
+            });
+          } else {
+            // 일반 이미지 생성
+            await storage.createChatMessage({
+              projectId: id,
+              role: "assistant",
+              content: "🎨 이미지를 생성하고 있습니다... 잠시만 기다려주세요.",
+            });
+
+            const result = await generateChatImage(
+              message,
+              project.keyword,
+              project.generatedContent || ""
+            );
+
+            const imageUrl = `data:${result.mimeType};base64,${result.imageBase64}`;
+
+            await storage.createChatMessage({
+              projectId: id,
+              role: "assistant",
+              content: "🖼️ 이미지가 생성되었습니다!\n\n다른 스타일이나 추가 이미지가 필요하시면 말씀해주세요.\n(예: \"인포그래픽으로 만들어줘\", \"사진 스타일로 그려줘\")",
+              imageUrl,
+            });
+
+            // 프로젝트의 generatedImages에 추가
+            const existingImages = (project.generatedImages as string[]) || [];
+            existingImages.push(imageUrl);
+            await storage.updateBlogProject(id, {
+              generatedImages: existingImages as any,
+            });
+
+            return res.json({
+              success: true,
+              type: 'image',
+              imageUrl,
+            });
+          }
+        } catch (imageError: any) {
+          console.error("Image generation error:", imageError);
+
+          await storage.createChatMessage({
+            projectId: id,
+            role: "assistant",
+            content: `❌ 이미지 생성에 실패했습니다.\n\n오류: ${imageError?.message || "알 수 없는 오류"}\n\n외부 도구를 사용해보세요:\n📸 Google Whisk: https://labs.google/fx/tools/whisk\n📊 Napkin AI: https://www.napkin.ai/`,
+          });
+
+          return res.json({
+            success: true,
+            type: 'error',
+            message: imageError?.message || "이미지 생성 실패",
+          });
+        }
       } else {
         // Regular content editing - Enhanced version
         if (!project.generatedContent) {
@@ -1159,8 +1274,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // 자동 이미지 생성 API (admin 전용) - 문단별 이미지 자동 제안/생성
+  app.post("/api/projects/:id/auto-images", async (req, res) => {
+    try {
+      req.setTimeout(180000); // 3분 (여러 이미지 생성)
+      res.setTimeout(180000);
+
+      const id = parseInt(req.params.id);
+      const { generateAll } = req.body; // true면 모든 문단, false면 high priority만
+
+      const project = await storage.getBlogProject(id);
+      if (!project) {
+        return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
+      }
+
+      // admin 권한 체크
+      const userId = project.userId;
+      if (userId) {
+        const user = await storage.getUser(userId);
+        if (!user?.isAdmin) {
+          return res.status(403).json({ error: "이미지 생성은 관리자 전용 기능입니다" });
+        }
+      }
+
+      if (!project.generatedContent) {
+        return res.status(400).json({ error: "생성된 콘텐츠가 없습니다" });
+      }
+
+      const { generateAutoImages } = await import("./services/geminiImageGenerator.js");
+
+      const subtitles = (project.subtitles as string[]) || [];
+      const result = await generateAutoImages(
+        project.keyword,
+        project.generatedContent,
+        subtitles,
+        generateAll || false
+      );
+
+      // 생성된 이미지를 프로젝트에 저장
+      if (result.generatedImages.length > 0) {
+        const existingImages = (project.generatedImages as string[]) || [];
+        const newImageUrls = result.generatedImages.map(
+          img => `data:${img.mimeType};base64,${img.imageBase64}`
+        );
+        existingImages.push(...newImageUrls);
+
+        await storage.updateBlogProject(id, {
+          generatedImages: existingImages as any,
+        });
+      }
+
+      res.json({
+        success: true,
+        suggestions: result.suggestions,
+        generatedCount: result.generatedImages.length,
+        images: result.generatedImages.map(img => ({
+          paragraphIndex: img.paragraphIndex,
+          subtitle: img.subtitle,
+          imageUrl: `data:${img.mimeType};base64,${img.imageBase64}`,
+        })),
+      });
+    } catch (error: any) {
+      console.error("Auto image generation error:", error);
+      res.status(500).json({ error: error?.message || "자동 이미지 생성에 실패했습니다" });
+    }
+  });
 
   // ===== PROJECT SESSION MANAGEMENT =====
+
   
   // Save project as session
   app.post("/api/projects/:id/sessions", async (req, res) => {
