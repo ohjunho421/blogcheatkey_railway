@@ -1035,17 +1035,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               subtitles
             );
 
-            let responseContent = "📊 인포그래픽이 생성되었습니다!\n\n";
-            let imageUrl: string | undefined;
-
-            if (result.imageBase64) {
-              imageUrl = `data:${result.mimeType || "image/png"};base64,${result.imageBase64}`;
-              responseContent += "🖼️ 인포그래픽 이미지가 함께 생성되었습니다.\n";
-            }
-
-            if (result.html) {
-              responseContent += "📋 HTML 인포그래픽도 생성되었습니다. 복사하여 블로그에 삽입할 수 있습니다.";
-            }
+            let responseContent = "인포그래픽이 생성되었습니다!\n\n";
+            const imageUrl = `data:${result.mimeType || "image/png"};base64,${result.imageBase64}`;
+            responseContent += "Gemini 3 Pro Image로 고품질 인포그래픽이 생성되었습니다.\n";
+            responseContent += "다른 스타일이나 수정이 필요하시면 말씀해주세요.";
 
             await storage.createChatMessage({
               projectId: id,

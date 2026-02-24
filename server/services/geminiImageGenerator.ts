@@ -4,8 +4,13 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || "",
 });
 
+// Gemini 3 Pro Image 모델 (4K, 텍스트 렌더링, Google Search 그라운딩 지원)
+const IMAGE_MODEL = "gemini-3-pro-image-preview";
+// Fallback 모델
+const FALLBACK_IMAGE_MODEL = "gemini-2.5-flash-preview-04-17";
+
 // ============================================================
-// 1. 일반 이미지 생성 (Gemini 2.5 Flash Image)
+// 1. 이미지 생성 (Gemini 3 Pro Image - 4K, 네이티브 인포그래픽)
 // ============================================================
 
 interface ImageGenerationResult {
@@ -15,7 +20,27 @@ interface ImageGenerationResult {
 }
 
 /**
- * 블로그 키워드/내용에 맞는 이미지를 Gemini API로 생성
+ * Gemini 3 Pro Image의 generateContent 응답에서 이미지 파트를 추출
+ */
+function extractImageFromResponse(response: any): { imageBase64: string; mimeType: string } | null {
+  if (!response?.candidates?.[0]?.content?.parts) return null;
+
+  for (const part of response.candidates[0].content.parts) {
+    if (part.inlineData) {
+      return {
+        imageBase64: part.inlineData.data || "",
+        mimeType: part.inlineData.mimeType || "image/png",
+      };
+    }
+  }
+  return null;
+}
+
+/**
+ * 블로그 키워드/내용에 맞는 이미지를 Gemini 3 Pro Image로 생성
+ * - 최대 4K 해상도
+ * - 선명한 텍스트 렌더링
+ * - Google Search 그라운딩 (실시간 데이터 기반 이미지)
  */
 export async function generateBlogImage(
   keyword: string,
@@ -24,45 +49,72 @@ export async function generateBlogImage(
   aspectRatio: "1:1" | "16:9" | "9:16" = "16:9"
 ): Promise<ImageGenerationResult> {
   const stylePrompts: Record<string, string> = {
-    photo: `Professional, high-quality photograph illustrating "${keyword}". ${description}. Clean, modern, well-lit photography with neutral background. No text overlay.`,
-    illustration: `Modern, clean digital illustration about "${keyword}". ${description}. Flat design style, professional color palette, visually engaging for a blog post. No text overlay.`,
-    infographic: `Clean infographic-style illustration about "${keyword}". ${description}. Use icons, simple charts, and visual elements. Modern flat design with professional color scheme. Minimal text, focus on visual communication.`,
+    photo: `Generate a professional, high-quality photograph illustrating "${keyword}". ${description}. Clean, modern, well-lit photography with neutral background. No text overlay.`,
+    illustration: `Generate a modern, clean digital illustration about "${keyword}". ${description}. Flat design style, professional color palette, visually engaging for a blog post. No text overlay.`,
+    infographic: `Generate a clean, professional infographic about "${keyword}". ${description}. Use icons, simple charts, data visualizations, and visual elements. Modern flat design with professional color scheme. Include clear, readable text labels in Korean where appropriate.`,
   };
 
   const prompt = stylePrompts[style] || stylePrompts.illustration;
 
-  try {
-    console.log(`🎨 Gemini 이미지 생성 시작: "${keyword}" (${style})`);
+  // 인포그래픽은 세로형, 나머지는 요청된 비율
+  const imageSize = style === "infographic" ? "2K" : "2K";
 
-    const response = await ai.models.generateImages({
-      model: "gemini-2.0-flash-exp",
-      prompt,
+  try {
+    console.log(`🎨 Gemini 3 Pro Image 생성 시작: "${keyword}" (${style}, ${aspectRatio})`);
+
+    const response = await ai.models.generateContent({
+      model: IMAGE_MODEL,
+      contents: prompt,
       config: {
-        numberOfImages: 1,
+        imageConfig: {
+          aspectRatio: aspectRatio,
+          imageSize: imageSize,
+        },
       },
     });
 
-    if (response.generatedImages && response.generatedImages.length > 0) {
-      const image = response.generatedImages[0];
-      console.log(`✅ 이미지 생성 완료`);
-
+    const imageData = extractImageFromResponse(response);
+    if (imageData) {
+      console.log(`✅ Gemini 3 Pro Image 생성 완료 (${imageSize})`);
       return {
-        imageBase64: image.image?.imageBytes
-          ? Buffer.from(image.image.imageBytes).toString("base64")
-          : "",
-        mimeType: image.image?.mimeType || "image/png",
+        imageBase64: imageData.imageBase64,
+        mimeType: imageData.mimeType,
         prompt,
       };
     }
 
     throw new Error("이미지 데이터가 응답에 없습니다");
   } catch (error: any) {
-    console.error("🔴 Gemini 이미지 생성 실패:", error?.message || error);
+    console.error("🔴 Gemini 3 Pro Image 생성 실패:", error?.message || error);
 
-    // Fallback: Imagen 4.0 시도
+    // Fallback 1: Gemini 2.5 Flash로 시도
     try {
-      console.log("🔄 Imagen 4.0으로 fallback 시도...");
-      const fallbackResponse = await ai.models.generateImages({
+      console.log("🔄 Gemini 2.5 Flash fallback 시도...");
+      const fallbackResponse = await ai.models.generateContent({
+        model: FALLBACK_IMAGE_MODEL,
+        contents: prompt,
+        config: {
+          responseModalities: ["TEXT", "IMAGE"],
+        },
+      });
+
+      const fallbackImage = extractImageFromResponse(fallbackResponse);
+      if (fallbackImage) {
+        console.log(`✅ Gemini 2.5 Flash fallback 이미지 생성 완료`);
+        return {
+          imageBase64: fallbackImage.imageBase64,
+          mimeType: fallbackImage.mimeType,
+          prompt,
+        };
+      }
+    } catch (fallback1Error: any) {
+      console.error("🔴 Gemini 2.5 Flash fallback 실패:", fallback1Error?.message);
+    }
+
+    // Fallback 2: Imagen 3.0으로 시도
+    try {
+      console.log("🔄 Imagen 3.0 fallback 시도...");
+      const imagenResponse = await ai.models.generateImages({
         model: "imagen-3.0-generate-002",
         prompt,
         config: {
@@ -70,13 +122,9 @@ export async function generateBlogImage(
         },
       });
 
-      if (
-        fallbackResponse.generatedImages &&
-        fallbackResponse.generatedImages.length > 0
-      ) {
-        const image = fallbackResponse.generatedImages[0];
-        console.log(`✅ Imagen fallback 이미지 생성 완료`);
-
+      if (imagenResponse.generatedImages && imagenResponse.generatedImages.length > 0) {
+        const image = imagenResponse.generatedImages[0];
+        console.log(`✅ Imagen 3.0 fallback 이미지 생성 완료`);
         return {
           imageBase64: image.image?.imageBytes
             ? Buffer.from(image.image.imageBytes).toString("base64")
@@ -85,8 +133,8 @@ export async function generateBlogImage(
           prompt,
         };
       }
-    } catch (fallbackError: any) {
-      console.error("🔴 Imagen fallback도 실패:", fallbackError?.message);
+    } catch (fallback2Error: any) {
+      console.error("🔴 Imagen 3.0 fallback도 실패:", fallback2Error?.message);
     }
 
     throw new Error(`이미지 생성 실패: ${error?.message || "알 수 없는 오류"}`);
@@ -94,98 +142,91 @@ export async function generateBlogImage(
 }
 
 // ============================================================
-// 2. 인포그래픽 생성 (Gemini로 HTML 생성 → base64 이미지)
+// 2. 인포그래픽 생성 (Gemini 3 Pro Image - 네이티브 4K 인포그래픽)
 // ============================================================
 
 interface InfographicResult {
-  html: string;
-  imageBase64?: string;
-  mimeType?: string;
+  html?: string;
+  imageBase64: string;
+  mimeType: string;
 }
 
 /**
- * Gemini를 사용하여 인포그래픽 HTML을 생성
- * 클라이언트에서 렌더링하거나 서버에서 이미지로 변환 가능
+ * Gemini 3 Pro Image로 네이티브 인포그래픽 이미지를 직접 생성
+ * - 4K 해상도, 선명한 텍스트 렌더링
+ * - Google Search 그라운딩으로 실시간 데이터 반영 가능
  */
 export async function generateInfographicHTML(
   keyword: string,
   content: string,
   subtitles: string[]
 ): Promise<InfographicResult> {
-  const prompt = `당신은 인포그래픽 디자인 전문가입니다.
+  const keyPoints = subtitles.slice(0, 5).map((s, i) => `${i + 1}. ${s}`).join("\n");
+  const contentSummary = content.substring(0, 1200);
 
-다음 블로그 글의 핵심 내용을 시각적으로 표현하는 인포그래픽 HTML을 생성하세요.
+  const prompt = `Generate a professional, visually stunning infographic image about "${keyword}".
 
-키워드: "${keyword}"
-소제목들: ${subtitles.join(", ")}
+Key sections to include:
+${keyPoints}
 
-블로그 내용 요약:
-${content.substring(0, 1500)}
+Content summary for reference:
+${contentSummary}
 
-=== 인포그래픽 HTML 생성 규칙 ===
-
-1. 완전한 standalone HTML (외부 CSS/JS 없이 inline style만 사용)
-2. 크기: 800px × 1200px (세로형 인포그래픽)
-3. 디자인 요소:
-   - 상단: 키워드를 포함한 제목 영역 (그라데이션 배경)
-   - 중간: 핵심 정보를 아이콘+텍스트로 3~4개 섹션
-   - 각 섹션에 관련 수치나 핵심 포인트
-   - 하단: 요약 또는 CTA
-4. 스타일:
-   - 모던하고 깔끔한 플랫 디자인
-   - 파스텔 또는 비즈니스 컬러 팔레트
-   - SVG 아이콘 사용 (간단한 도형으로)
-   - 한국어 텍스트 사용
-   - 폰트: 'Pretendard', 'Noto Sans KR', sans-serif
-5. 반드시 <html> 태그로 시작하고 </html>로 끝나는 완전한 HTML
-
-HTML 코드만 반환하세요 (설명 없이):`;
+Design requirements:
+- Vertical layout (portrait orientation), clean and modern
+- Title at the top with "${keyword}" prominently displayed
+- 3-5 sections with icons, charts, or data visualizations for each key point
+- Use a professional color palette (blues, teals, or warm business tones)
+- Include clear, readable text labels in Korean
+- Modern flat design with subtle gradients
+- Include relevant statistics, numbers, or key facts from the content
+- Bottom section with a summary or key takeaway
+- High quality, print-ready infographic style`;
 
   try {
-    console.log(`📊 인포그래픽 HTML 생성 시작: "${keyword}"`);
+    console.log(`📊 Gemini 3 Pro Image 인포그래픽 생성 시작: "${keyword}"`);
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      model: IMAGE_MODEL,
+      contents: prompt,
+      config: {
+        imageConfig: {
+          aspectRatio: "9:16",
+          imageSize: "4K",
+        },
+      },
     });
 
-    let html = response.text || "";
-
-    // HTML 코드 블록 추출
-    const htmlMatch = html.match(/```html\s*([\s\S]*?)```/);
-    if (htmlMatch) {
-      html = htmlMatch[1].trim();
-    } else if (!html.startsWith("<")) {
-      // HTML이 아닌 경우 <html> 태그 찾기
-      const startIdx = html.indexOf("<html");
-      const endIdx = html.lastIndexOf("</html>");
-      if (startIdx !== -1 && endIdx !== -1) {
-        html = html.substring(startIdx, endIdx + 7);
-      }
+    const imageData = extractImageFromResponse(response);
+    if (imageData) {
+      console.log(`✅ 인포그래픽 이미지 생성 완료 (4K)`);
+      return {
+        imageBase64: imageData.imageBase64,
+        mimeType: imageData.mimeType,
+      };
     }
 
-    console.log(`✅ 인포그래픽 HTML 생성 완료 (${html.length}자)`);
+    throw new Error("인포그래픽 이미지 데이터가 응답에 없습니다");
+  } catch (error: any) {
+    console.error("🔴 Gemini 3 인포그래픽 생성 실패:", error?.message || error);
 
-    // Gemini 이미지 생성으로 인포그래픽 스타일 이미지도 함께 생성 시도
-    let imageBase64: string | undefined;
-    let mimeType: string | undefined;
-
+    // Fallback: generateBlogImage의 infographic 스타일로 시도
     try {
-      const imgResult = await generateBlogImage(
+      console.log("🔄 인포그래픽 fallback 시도...");
+      const fallbackResult = await generateBlogImage(
         keyword,
-        `Key points: ${subtitles.slice(0, 3).join(", ")}. Data visualization style.`,
+        `Key points: ${subtitles.slice(0, 3).join(", ")}. Data visualization infographic style.`,
         "infographic",
         "9:16"
       );
-      imageBase64 = imgResult.imageBase64;
-      mimeType = imgResult.mimeType;
-    } catch (imgError) {
-      console.log("⚠️ 인포그래픽 이미지 생성 스킵 (HTML만 반환)");
+      return {
+        imageBase64: fallbackResult.imageBase64,
+        mimeType: fallbackResult.mimeType,
+      };
+    } catch (fallbackError: any) {
+      console.error("🔴 인포그래픽 fallback도 실패:", fallbackError?.message);
     }
 
-    return { html, imageBase64, mimeType };
-  } catch (error: any) {
-    console.error("🔴 인포그래픽 생성 실패:", error?.message || error);
     throw new Error(`인포그래픽 생성 실패: ${error?.message || "알 수 없는 오류"}`);
   }
 }
@@ -261,7 +302,7 @@ JSON 배열만 반환:`;
       config: {
         responseMimeType: "application/json",
       },
-      contents: [{ role: "user", parts: [{ text: analysisPrompt }] }],
+      contents: analysisPrompt,
     });
 
     const suggestions: ParagraphImageSuggestion[] = JSON.parse(
@@ -356,7 +397,7 @@ JSON만 반환:`;
       config: {
         responseMimeType: "application/json",
       },
-      contents: [{ role: "user", parts: [{ text: analysisPrompt }] }],
+      contents: analysisPrompt,
     });
 
     const analysis = JSON.parse(analysisResponse.text || "{}");

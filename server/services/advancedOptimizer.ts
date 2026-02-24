@@ -199,20 +199,14 @@ async function optimizeWithGemini(
   businessInfo: BusinessInfo,
   temperature: number = 0.7
 ): Promise<string> {
-  const { GoogleGenerativeAI } = await import('@google/genai');
+  const { GoogleGenAI } = await import('@google/genai');
   
-  if (!process.env.GOOGLE_API_KEY) {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  if (!apiKey) {
     throw new Error("Google API key is not configured");
   }
 
-  const genai = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-  const model = genai.getGenerativeModel({ 
-    model: "gemini-2.5-pro",
-    generationConfig: {
-      temperature,
-      maxOutputTokens: 2048,
-    },
-  });
+  const ai = new GoogleGenAI({ apiKey });
 
   const systemPrompt = `당신은 SEO 최적화 전문가입니다. 다음 조건을 반드시 지켜주세요:
 1. 키워드 "${keyword}" 형태소를 정확히 15-17회 사용
@@ -232,12 +226,16 @@ async function optimizeWithGemini(
     try {
       console.log(`Gemini optimization attempt ${attempt}/${maxRetries}`);
       
-      const result = await model.generateContent([
-        { role: 'user', parts: [{ text: systemPrompt + '\n\n' + prompt }] }
-      ]);
+      const result = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: systemPrompt + '\n\n' + prompt,
+        config: {
+          temperature,
+          maxOutputTokens: 2048,
+        },
+      });
       
-      const response = result.response;
-      const content = response.text();
+      const content = result.text;
       
       if (!content) {
         throw new Error("Empty response from Gemini");
