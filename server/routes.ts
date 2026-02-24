@@ -406,6 +406,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== IMAGE DOWNLOAD =====
+
+  app.get("/api/projects/:id/images/:imageIndex", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const imageIndex = parseInt(req.params.imageIndex);
+
+      const project = await storage.getBlogProject(id);
+      if (!project || !project.generatedImages) {
+        return res.status(404).json({ error: "이미지를 찾을 수 없습니다" });
+      }
+
+      const images = project.generatedImages as string[];
+      if (imageIndex < 0 || imageIndex >= images.length || !images[imageIndex]) {
+        return res.status(404).json({ error: "이미지를 찾을 수 없습니다" });
+      }
+
+      const imageUrl = images[imageIndex];
+
+      // data URL인 경우 base64에서 바이너리로 변환
+      if (imageUrl.startsWith("data:")) {
+        const matches = imageUrl.match(/^data:([^;]+);base64,(.+)$/);
+        if (!matches) {
+          return res.status(400).json({ error: "잘못된 이미지 데이터입니다" });
+        }
+        const mimeType = matches[1];
+        const base64Data = matches[2];
+        const imageBuffer = Buffer.from(base64Data, "base64");
+
+        const ext = mimeType.includes("png") ? "png" : mimeType.includes("jpeg") || mimeType.includes("jpg") ? "jpg" : "png";
+        res.setHeader("Content-Type", mimeType);
+        res.setHeader("Content-Disposition", `attachment; filename="infographic-${encodeURIComponent(project.keyword)}-${imageIndex + 1}.${ext}"`);
+        res.setHeader("Content-Length", imageBuffer.length.toString());
+        return res.send(imageBuffer);
+      }
+
+      // 외부 URL인 경우 프록시
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        return res.status(404).json({ error: "이미지 다운로드에 실패했습니다" });
+      }
+
+      const imageBuffer = Buffer.from(await response.arrayBuffer());
+      res.setHeader("Content-Type", response.headers.get("content-type") || "image/png");
+      res.setHeader("Content-Disposition", `attachment; filename="infographic-${encodeURIComponent(project.keyword)}-${imageIndex + 1}.png"`);
+      res.setHeader("Content-Length", imageBuffer.length.toString());
+      res.send(imageBuffer);
+    } catch (error) {
+      console.error("Image download error:", error);
+      res.status(500).json({ error: "이미지 다운로드에 실패했습니다" });
+    }
+  });
+
   // ===== KEYWORD ANALYSIS =====
   
   app.post("/api/projects/:id/analyze", async (req, res) => {

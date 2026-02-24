@@ -4,13 +4,13 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || "",
 });
 
-// Gemini 3 Pro Image 모델 (4K, 텍스트 렌더링, Google Search 그라운딩 지원)
-const IMAGE_MODEL = "gemini-3-pro-image-preview";
-// Fallback 모델
-const FALLBACK_IMAGE_MODEL = "gemini-2.5-flash-preview-04-17";
+// 1순위: Gemini 2.5 Flash Image (속도+효율 최적화 이미지 전용 모델, 낮은 지연 시간)
+const FAST_IMAGE_MODEL = "gemini-2.5-flash-image";
+// 2순위: Gemini 3 Pro Image (4K, 텍스트 렌더링, 인포그래픽 전용)
+const PRO_IMAGE_MODEL = "gemini-3-pro-image-preview";
 
 // ============================================================
-// 1. 이미지 생성 (Gemini 3 Pro Image - 4K, 네이티브 인포그래픽)
+// 1. 이미지 생성 (공식 문서 기반 - Gemini 네이티브 이미지 생성)
 // ============================================================
 
 interface ImageGenerationResult {
@@ -20,125 +20,119 @@ interface ImageGenerationResult {
 }
 
 /**
- * Gemini 3 Pro Image의 generateContent 응답에서 이미지 파트를 추출
+ * Gemini generateContent 응답에서 이미지 파트를 추출
+ * 공식 문서: response.candidates[0].content.parts[].inlineData
  */
 function extractImageFromResponse(response: any): { imageBase64: string; mimeType: string } | null {
-  if (!response?.candidates?.[0]?.content?.parts) return null;
-
-  for (const part of response.candidates[0].content.parts) {
-    if (part.inlineData) {
-      return {
-        imageBase64: part.inlineData.data || "",
-        mimeType: part.inlineData.mimeType || "image/png",
-      };
+  // 공식 경로: candidates[0].content.parts[].inlineData
+  const parts = response?.candidates?.[0]?.content?.parts;
+  if (parts && Array.isArray(parts)) {
+    for (const part of parts) {
+      if (part.inlineData?.data) {
+        return { imageBase64: part.inlineData.data, mimeType: part.inlineData.mimeType || "image/png" };
+      }
     }
   }
   return null;
 }
 
 /**
- * 블로그 키워드/내용에 맞는 이미지를 Gemini 3 Pro Image로 생성
- * - 최대 4K 해상도
- * - 선명한 텍스트 렌더링
- * - Google Search 그라운딩 (실시간 데이터 기반 이미지)
+ * 블로그 이미지 생성
+ * - 1순위: gemini-2.5-flash-image (빠르고 효율적, 1024px, 낮은 지연 시간)
+ * - 2순위: gemini-3-pro-image-preview (4K, 텍스트 렌더링, 인포그래픽)
+ * - 기본 스타일: photo-realistic (실사)
  */
 export async function generateBlogImage(
   keyword: string,
   description: string,
-  style: "photo" | "illustration" | "infographic" = "illustration",
+  style: "photo" | "illustration" | "infographic" = "photo",
   aspectRatio: "1:1" | "16:9" | "9:16" = "16:9"
 ): Promise<ImageGenerationResult> {
+  // 실사 품질 프롬프트: 짧고 구체적
   const stylePrompts: Record<string, string> = {
-    photo: `Generate a professional, high-quality photograph illustrating "${keyword}". ${description}. Clean, modern, well-lit photography with neutral background. No text overlay.`,
-    illustration: `Generate a modern, clean digital illustration about "${keyword}". ${description}. Flat design style, professional color palette, visually engaging for a blog post. No text overlay.`,
-    infographic: `Generate a clean, professional infographic about "${keyword}". ${description}. Use icons, simple charts, data visualizations, and visual elements. Modern flat design with professional color scheme. Include clear, readable text labels in Korean where appropriate.`,
+    photo: `Photorealistic, high resolution, professional photography. ${description}. Subject: ${keyword}. Studio lighting, sharp focus, 8K quality, no text, no watermark.`,
+    illustration: `Professional digital illustration, ${description}. Topic: ${keyword}. Clean modern style, vibrant colors, detailed, no text overlay.`,
+    infographic: `Professional infographic about "${keyword}". ${description}. Clean data visualization, icons, charts, modern flat design, readable Korean text labels.`,
   };
 
-  const prompt = stylePrompts[style] || stylePrompts.illustration;
+  const prompt = stylePrompts[style] || stylePrompts.photo;
 
-  // 인포그래픽은 세로형, 나머지는 요청된 비율
-  const imageSize = style === "infographic" ? "2K" : "2K";
+  // === 1순위: gemini-2.5-flash-image (빠른 이미지 전용 모델) ===
+  // 인포그래픽은 텍스트 렌더링이 필요하므로 Gemini 3 Pro Image로 직행
+  if (style !== "infographic") {
+    try {
+      console.log(`🎨 Gemini 2.5 Flash Image 생성 시작: "${keyword}" (${style})`);
+      const startTime = Date.now();
 
+      const response = await ai.models.generateContent({
+        model: FAST_IMAGE_MODEL,
+        contents: prompt,
+        config: {
+          responseModalities: ["Image"],
+          imageConfig: {
+            aspectRatio: aspectRatio,
+          },
+        },
+      });
+
+      const imageData = extractImageFromResponse(response);
+      if (imageData) {
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        console.log(`✅ Gemini 2.5 Flash Image 생성 완료 (${elapsed}초, ${(imageData.imageBase64.length / 1024).toFixed(0)}KB)`);
+        return { imageBase64: imageData.imageBase64, mimeType: imageData.mimeType, prompt };
+      }
+    } catch (flashError: any) {
+      console.error("🔴 Gemini 2.5 Flash Image 실패:", flashError?.message || flashError);
+    }
+  }
+
+  // === 2순위: gemini-3-pro-image-preview (인포그래픽 또는 Flash 실패 시) ===
   try {
-    console.log(`🎨 Gemini 3 Pro Image 생성 시작: "${keyword}" (${style}, ${aspectRatio})`);
+    console.log(`🎨 Gemini 3 Pro Image 시도: "${keyword}" (${style})`);
+    const startTime = Date.now();
 
     const response = await ai.models.generateContent({
-      model: IMAGE_MODEL,
+      model: PRO_IMAGE_MODEL,
       contents: prompt,
       config: {
         imageConfig: {
           aspectRatio: aspectRatio,
-          imageSize: imageSize,
+          imageSize: style === "infographic" ? "4K" : "2K",
         },
       },
     });
 
     const imageData = extractImageFromResponse(response);
     if (imageData) {
-      console.log(`✅ Gemini 3 Pro Image 생성 완료 (${imageSize})`);
-      return {
-        imageBase64: imageData.imageBase64,
-        mimeType: imageData.mimeType,
-        prompt,
-      };
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      console.log(`✅ Gemini 3 Pro Image 생성 완료 (${elapsed}초)`);
+      return { imageBase64: imageData.imageBase64, mimeType: imageData.mimeType, prompt };
     }
-
-    throw new Error("이미지 데이터가 응답에 없습니다");
-  } catch (error: any) {
-    console.error("🔴 Gemini 3 Pro Image 생성 실패:", error?.message || error);
-
-    // Fallback 1: Gemini 2.5 Flash로 시도
-    try {
-      console.log("🔄 Gemini 2.5 Flash fallback 시도...");
-      const fallbackResponse = await ai.models.generateContent({
-        model: FALLBACK_IMAGE_MODEL,
-        contents: prompt,
-        config: {
-          responseModalities: ["TEXT", "IMAGE"],
-        },
-      });
-
-      const fallbackImage = extractImageFromResponse(fallbackResponse);
-      if (fallbackImage) {
-        console.log(`✅ Gemini 2.5 Flash fallback 이미지 생성 완료`);
-        return {
-          imageBase64: fallbackImage.imageBase64,
-          mimeType: fallbackImage.mimeType,
-          prompt,
-        };
-      }
-    } catch (fallback1Error: any) {
-      console.error("🔴 Gemini 2.5 Flash fallback 실패:", fallback1Error?.message);
-    }
-
-    // Fallback 2: Imagen 3.0으로 시도
-    try {
-      console.log("🔄 Imagen 3.0 fallback 시도...");
-      const imagenResponse = await ai.models.generateImages({
-        model: "imagen-3.0-generate-002",
-        prompt,
-        config: {
-          numberOfImages: 1,
-        },
-      });
-
-      if (imagenResponse.generatedImages && imagenResponse.generatedImages.length > 0) {
-        const image = imagenResponse.generatedImages[0];
-        console.log(`✅ Imagen 3.0 fallback 이미지 생성 완료`);
-        return {
-          imageBase64: image.image?.imageBytes
-            ? Buffer.from(image.image.imageBytes).toString("base64")
-            : "",
-          mimeType: image.image?.mimeType || "image/png",
-          prompt,
-        };
-      }
-    } catch (fallback2Error: any) {
-      console.error("🔴 Imagen 3.0 fallback도 실패:", fallback2Error?.message);
-    }
-
-    throw new Error(`이미지 생성 실패: ${error?.message || "알 수 없는 오류"}`);
+  } catch (proError: any) {
+    console.error("🔴 Gemini 3 Pro Image 실패:", proError?.message || proError);
   }
+
+  // === 3순위: gemini-2.5-flash-image TEXT+IMAGE 모드 (최후 fallback) ===
+  try {
+    console.log("🔄 Flash Image TEXT+IMAGE fallback 시도...");
+    const fallbackResponse = await ai.models.generateContent({
+      model: FAST_IMAGE_MODEL,
+      contents: prompt,
+      config: {
+        responseModalities: ["Text", "Image"],
+      },
+    });
+
+    const fallbackImage = extractImageFromResponse(fallbackResponse);
+    if (fallbackImage) {
+      console.log(`✅ Flash Image fallback 완료`);
+      return { imageBase64: fallbackImage.imageBase64, mimeType: fallbackImage.mimeType, prompt };
+    }
+  } catch (fallbackError: any) {
+    console.error("🔴 Flash Image fallback 실패:", fallbackError?.message);
+  }
+
+  throw new Error("모든 이미지 생성 모델이 실패했습니다. 잠시 후 다시 시도해주세요.");
 }
 
 // ============================================================
@@ -187,7 +181,7 @@ Design requirements:
     console.log(`📊 Gemini 3 Pro Image 인포그래픽 생성 시작: "${keyword}"`);
 
     const response = await ai.models.generateContent({
-      model: IMAGE_MODEL,
+      model: PRO_IMAGE_MODEL,
       contents: prompt,
       config: {
         imageConfig: {
@@ -362,52 +356,40 @@ JSON 배열만 반환:`;
 
 /**
  * 챗봇에서 사용자 요청에 따라 이미지를 생성
+ * - 기본: 실사(photo-realistic) 스타일 (Whisk 수준)
+ * - 인포그래픽/일러스트 명시 요청 시에만 스타일 변경
+ * - 분석 단계를 간소화하여 속도 개선
  */
 export async function generateChatImage(
   userRequest: string,
   keyword: string,
   content: string
 ): Promise<ImageGenerationResult> {
-  // 사용자 요청을 분석하여 적절한 이미지 프롬프트 생성
-  const analysisPrompt = `사용자가 블로그 글에 넣을 이미지를 요청했습니다.
+  // 빠른 스타일 감지 (AI 분석 없이 키워드 매칭으로 속도 개선)
+  const lowerReq = userRequest.toLowerCase();
+  let style: "photo" | "illustration" | "infographic" = "photo"; // 기본: 실사
+  let aspectRatio: "1:1" | "16:9" | "9:16" = "16:9";
 
-키워드: "${keyword}"
-사용자 요청: "${userRequest}"
-블로그 내용 일부: ${content.substring(0, 800)}
+  if (/인포그래픽|infographic|도표|차트|시각화|다이어그램|통계/.test(lowerReq)) {
+    style = "infographic";
+    aspectRatio = "9:16";
+  } else if (/일러스트|illustration|그림|만화|캐릭터|아이콘/.test(lowerReq)) {
+    style = "illustration";
+  } else if (/세로|portrait|9:16/.test(lowerReq)) {
+    aspectRatio = "9:16";
+  } else if (/정사각|square|1:1/.test(lowerReq)) {
+    aspectRatio = "1:1";
+  }
 
-사용자의 요청을 분석하여 다음 JSON을 반환하세요:
-{
-  "description": "이미지 설명 (영어, 구체적이고 상세하게)",
-  "style": "photo" | "illustration" | "infographic",
-  "aspectRatio": "16:9" | "1:1" | "9:16"
-}
+  // 블로그 내용에서 핵심 주제 추출 (짧게)
+  const contentHint = content.substring(0, 300).replace(/\n/g, ' ').trim();
 
-규칙:
-- description은 영어로, 이미지 생성 AI가 이해할 수 있도록 구체적으로
-- 사용자가 "인포그래픽"을 요청하면 style을 "infographic"으로
-- 사용자가 "사진"을 요청하면 style을 "photo"로
-- 기본은 "illustration"
-- 블로그 내용과 관련된 시각적 요소를 포함
-
-JSON만 반환:`;
+  // Whisk 스타일 프롬프트: 짧고 구체적
+  const description = `${userRequest}. Context: blog about ${keyword}. ${contentHint.substring(0, 100)}`;
 
   try {
-    const analysisResponse = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      config: {
-        responseMimeType: "application/json",
-      },
-      contents: analysisPrompt,
-    });
-
-    const analysis = JSON.parse(analysisResponse.text || "{}");
-
-    return await generateBlogImage(
-      keyword,
-      analysis.description || userRequest,
-      analysis.style || "illustration",
-      analysis.aspectRatio || "16:9"
-    );
+    console.log(`🎨 챗봇 이미지 생성: "${keyword}" (${style}, ${aspectRatio})`);
+    return await generateBlogImage(keyword, description, style, aspectRatio);
   } catch (error: any) {
     console.error("🔴 챗봇 이미지 생성 실패:", error?.message || error);
     throw new Error(
