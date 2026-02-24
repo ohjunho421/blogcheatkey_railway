@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { MessageSquare, Send, Bot, User, Copy, Smartphone, ImagePlus, Loader2 } from "lucide-react";
+import { MessageSquare, Send, Bot, User, Copy, Smartphone, ImagePlus, Loader2, Download } from "lucide-react";
 
 interface EditingChatProps {
   project: any;
@@ -298,13 +298,30 @@ export function EditingChat({ project, onRefresh }: EditingChatProps) {
                         {formatTextForReadability(msg.content)}
                       </div>
                       {msg.imageUrl && (
-                        <div className="mt-2">
+                        <div className="mt-2 space-y-1">
                           <img 
                             src={msg.imageUrl} 
                             alt="Generated image"
                             className="max-w-full h-auto rounded-lg border shadow-sm"
                             style={{ maxHeight: '200px' }}
                           />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1"
+                            onClick={() => {
+                              const a = document.createElement('a');
+                              a.href = msg.imageUrl;
+                              a.download = `image-${project.keyword}-${msg.id}.png`;
+                              document.body.appendChild(a);
+                              a.click();
+                              document.body.removeChild(a);
+                              toast({ title: "다운로드 시작", description: "이미지 다운로드가 시작되었습니다." });
+                            }}
+                          >
+                            <Download className="h-3 w-3" />
+                            다운로드
+                          </Button>
                         </div>
                       )}
                     </div>

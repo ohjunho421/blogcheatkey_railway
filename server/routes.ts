@@ -1042,7 +1042,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: "user",
         content: message,
       });
-
       // Check if this is an image request
       const isImageRequest = /이미지|그림|사진|인포그래픽|infographic|그려|일러스트/i.test(message);
       const isInfographicRequest = /인포그래픽|infographic|도표|차트|시각화|다이어그램/i.test(message);
@@ -1061,12 +1060,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.createChatMessage({
             projectId: id,
             role: "assistant",
-            content: "🔒 이미지 생성은 관리자 전용 기능입니다.\n\n외부 도구를 사용해주세요:\n📸 Google Whisk: https://labs.google/fx/tools/whisk\n📊 Napkin AI: https://www.napkin.ai/",
+            content: "이미지 생성은 관리자 전용 기능입니다.\n\n외부 도구를 사용해주세요:\nGoogle Whisk: https://labs.google/fx/tools/whisk\nNapkin AI: https://www.napkin.ai/",
           });
 
           return res.json({ 
             success: true, 
-            type: 'external_tool_guide'
+            type: 'external_tool_guide',
           });
         }
 
@@ -1078,7 +1077,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await storage.createChatMessage({
               projectId: id,
               role: "assistant",
-              content: "📊 인포그래픽을 생성하고 있습니다... 잠시만 기다려주세요.",
+              content: "인포그래픽을 생성하고 있습니다... 잠시만 기다려주세요.",
             });
 
             const subtitles = (project.subtitles as string[]) || [];
@@ -1088,57 +1087,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
               subtitles
             );
 
-            let responseContent = "인포그래픽이 생성되었습니다!\n\n";
             const imageUrl = `data:${result.mimeType || "image/png"};base64,${result.imageBase64}`;
-            responseContent += "Gemini 3 Pro Image로 고품질 인포그래픽이 생성되었습니다.\n";
-            responseContent += "다른 스타일이나 수정이 필요하시면 말씀해주세요.";
 
             await storage.createChatMessage({
               projectId: id,
               role: "assistant",
-              content: responseContent,
+              content: "인포그래픽이 생성되었습니다!\n\nNano Banana Pro로 고품질 인포그래픽이 생성되었습니다.\n다른 스타일이나 수정이 필요하시면 말씀해주세요.",
               imageUrl,
             });
 
-            // 프로젝트의 generatedImages에 추가
-            const existingImages = (project.generatedImages as string[]) || [];
-            if (imageUrl) {
-              existingImages.push(imageUrl);
-              await storage.updateBlogProject(id, {
-                generatedImages: existingImages as any,
-              });
-            }
-
-            return res.json({
-              success: true,
-              type: 'image',
-              imageUrl,
-              infographicHtml: result.html,
-            });
-          } else {
-            // 일반 이미지 생성
-            await storage.createChatMessage({
-              projectId: id,
-              role: "assistant",
-              content: "🎨 이미지를 생성하고 있습니다... 잠시만 기다려주세요.",
-            });
-
-            const result = await generateChatImage(
-              message,
-              project.keyword,
-              project.generatedContent || ""
-            );
-
-            const imageUrl = `data:${result.mimeType};base64,${result.imageBase64}`;
-
-            await storage.createChatMessage({
-              projectId: id,
-              role: "assistant",
-              content: "🖼️ 이미지가 생성되었습니다!\n\n다른 스타일이나 추가 이미지가 필요하시면 말씀해주세요.\n(예: \"인포그래픽으로 만들어줘\", \"사진 스타일로 그려줘\")",
-              imageUrl,
-            });
-
-            // 프로젝트의 generatedImages에 추가
             const existingImages = (project.generatedImages as string[]) || [];
             existingImages.push(imageUrl);
             await storage.updateBlogProject(id, {
@@ -1150,14 +1107,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
               type: 'image',
               imageUrl,
             });
+          } else {
+            // 일반 이미지 생성 (다중 이미지 지원)
+            const countMatch = message.match(/(\d+)\s*(?:장|개|매|개씩|장씩)/);
+            const requestedCount = countMatch ? Math.min(parseInt(countMatch[1]), 10) : 1;
+
+            await storage.createChatMessage({
+              projectId: id,
+              role: "assistant",
+              content: requestedCount > 1
+                ? `이미지 ${requestedCount}장을 생성하고 있습니다... 잠시만 기다려주세요.`
+                : "이미지를 생성하고 있습니다... 잠시만 기다려주세요.",
+            });
+
+            const results = await generateChatImage(
+              message,
+              project.keyword,
+              project.generatedContent || ""
+            );
+
+            const existingImages = (project.generatedImages as string[]) || [];
+            const imageUrls: string[] = [];
+
+            for (let i = 0; i < results.length; i++) {
+              const r = results[i];
+              const imgUrl = `data:${r.mimeType};base64,${r.imageBase64}`;
+              imageUrls.push(imgUrl);
+              existingImages.push(imgUrl);
+
+              await storage.createChatMessage({
+                projectId: id,
+                role: "assistant",
+                content: results.length > 1
+                  ? `이미지 ${i + 1}/${results.length}`
+                  : "이미지가 생성되었습니다!\n\n다른 스타일이나 추가 이미지가 필요하시면 말씀해주세요.\n(예: \"사진 5장 그려줘\", \"인포그래픽으로 만들어줘\")",
+                imageUrl: imgUrl,
+              });
+            }
+
+            if (results.length > 1) {
+              await storage.createChatMessage({
+                projectId: id,
+                role: "assistant",
+                content: `${results.length}장의 이미지가 생성되었습니다! 각 이미지를 개별 다운로드할 수 있습니다.\n\n(예: \"사진 5장 그려줘\", \"인포그래픽으로 만들어줘\", \"일러스트 3장\")`,
+              });
+            }
+
+            await storage.updateBlogProject(id, {
+              generatedImages: existingImages as any,
+            });
+
+            return res.json({
+              success: true,
+              type: 'image',
+              imageUrls,
+              imageCount: results.length,
+            });
           }
         } catch (imageError: any) {
-          console.error("Image generation error:", imageError);
+          console.error("이미지 생성 에러:", imageError);
 
           await storage.createChatMessage({
             projectId: id,
             role: "assistant",
-            content: `❌ 이미지 생성에 실패했습니다.\n\n오류: ${imageError?.message || "알 수 없는 오류"}\n\n외부 도구를 사용해보세요:\n📸 Google Whisk: https://labs.google/fx/tools/whisk\n📊 Napkin AI: https://www.napkin.ai/`,
+            content: `이미지 생성에 실패했습니다.\n\n오류: ${imageError?.message || "알 수 없는 오류"}\n\n외부 도구를 사용해보세요:\nGoogle Whisk: https://labs.google/fx/tools/whisk\nNapkin AI: https://www.napkin.ai/`,
           });
 
           return res.json({
@@ -1173,34 +1186,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         try {
-          // Use enhanced chatbot with multi-version generation and evaluation
           const { enhancedEditContent, analyzeUserRequest, generateContentBasedTitle } = await import("./services/enhancedChatbot.js");
           
-          // First analyze user request to detect intent
           const quickAnalysis = await analyzeUserRequest(message, project.generatedContent, project.keyword);
           
-          // Check if this is a title request
           if (quickAnalysis.intent === 'title_suggestion') {
-            // Generate SSR-based titles
             const titlesWithScores = await generateContentBasedTitle(
               project.generatedContent,
               project.keyword,
               quickAnalysis
             );
             
-            let titleResponse = `📝 SSR 평가 기반 Top 5 제목 추천\n\n`;
-            titleResponse += `✨ 25가지 스타일로 제목 생성 후 클릭 유도력 평가\n`;
-            titleResponse += `🏆 가장 효과적인 상위 5개 제목을 선정했습니다!\n\n`;
+            let titleResponse = `SSR 평가 기반 Top 5 제목 추천\n\n`;
+            titleResponse += `25가지 스타일로 제목 생성 후 클릭 유도력 평가\n`;
+            titleResponse += `가장 효과적인 상위 5개 제목을 선정했습니다!\n\n`;
 
-            titlesWithScores.forEach((item, index) => {
+            titlesWithScores.forEach((item: any, index: number) => {
               const stars = '⭐'.repeat(Math.round(item.score));
               titleResponse += `${index + 1}. ${item.title}\n`;
               titleResponse += `   ${stars} ${item.score.toFixed(1)}점\n\n`;
             });
 
-            const avgScore = titlesWithScores.reduce((sum, t) => sum + t.score, 0) / titlesWithScores.length;
-            titleResponse += `📊 평균 점수: ${avgScore.toFixed(1)}/5.0\n\n`;
-            titleResponse += `💡 마음에 드는 제목을 선택하시거나,\n"더 흥미롭게", "더 전문적으로" 등 스타일을 요청하시면\n다시 만들어드릴게요!`;
+            const avgScore = titlesWithScores.reduce((sum: number, t: any) => sum + t.score, 0) / titlesWithScores.length;
+            titleResponse += `평균 점수: ${avgScore.toFixed(1)}/5.0\n\n`;
+            titleResponse += `마음에 드는 제목을 선택하시거나,\n"더 흥미롭게", "더 전문적으로" 등 스타일을 요청하시면\n다시 만들어드릴게요!`;
             
             await storage.createChatMessage({
               projectId: id,
@@ -1216,7 +1225,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
           
-          // Regular content editing
           const result = await enhancedEditContent(
             project.generatedContent,
             message,
@@ -1226,18 +1234,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           const editedContent = result.bestVersion;
           
-          // Analyze morphemes to ensure SEO conditions are met
           const { analyzeMorphemes } = await import("./services/morphemeAnalyzer.js");
           const morphemeAnalysis = await analyzeMorphemes(editedContent, project.keyword, project.customMorphemes || undefined);
           
-          // Create detailed response with analysis
-          let responseMessage = `✅ 콘텐츠 수정 완료\n\n`;
-          responseMessage += `📊 요청 분석:\n`;
+          let responseMessage = `콘텐츠 수정 완료\n\n`;
+          responseMessage += `요청 분석:\n`;
           responseMessage += `• 수정 의도: ${result.analysis.intent}\n`;
           responseMessage += `• 수정 대상: ${result.analysis.target}\n`;
           responseMessage += `• 적용 전략: ${result.analysis.persuasionStrategy}\n\n`;
 
-          responseMessage += `🏆 최적 버전 선택 (${result.allVersions.length}개 버전 중):\n`;
+          responseMessage += `최적 버전 선택 (${result.allVersions.length}개 버전 중):\n`;
           responseMessage += `• 품질 점수: ${result.allVersions[0]?.score.toFixed(1)}/10\n`;
 
           if (result.allVersions[0]?.strengths.length > 0) {
@@ -1245,19 +1251,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           if (!morphemeAnalysis.isOptimized) {
-            responseMessage += `\n⚠️ SEO 최적화 상태:\n${morphemeAnalysis.issues.slice(0, 3).join('\n')}`;
+            responseMessage += `\nSEO 최적화 상태:\n${morphemeAnalysis.issues.slice(0, 3).join('\n')}`;
           } else {
-            responseMessage += `\n✅ SEO 최적화 조건 충족`;
+            responseMessage += `\nSEO 최적화 조건 충족`;
           }
 
-          // Save assistant message
           await storage.createChatMessage({
             projectId: id,
             role: "assistant",
             content: responseMessage,
           });
 
-          // Update project with edited content
           const seoAnalysis = await analyzeSEOOptimization(editedContent, project.keyword);
           const updatedProject = await storage.updateBlogProject(id, {
             generatedContent: editedContent,
@@ -1269,7 +1273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             type: 'edit', 
             project: updatedProject,
             analysis: result.analysis,
-            versions: result.allVersions.map(v => ({
+            versions: result.allVersions.map((v: any) => ({
               score: v.score,
               strengths: v.strengths,
               weaknesses: v.weaknesses
@@ -1278,7 +1282,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (enhancedError) {
           console.error("Enhanced chatbot error, falling back:", enhancedError);
           
-          // Fallback to basic editing
           const { editContent } = await import("./services/gemini.js");
           const editedContent = await editContent(
             project.generatedContent,

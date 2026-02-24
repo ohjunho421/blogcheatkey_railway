@@ -1,0 +1,47 @@
+﻿client/src/pages/admin.tsx(159,40): error TS2769: No overload matches this call.
+  Overload 1 of 4, '(value: string | number | Date): Date', gave the following error.
+    Argument of type 'Date | null' is not assignable to parameter of type 'string | number | Date'.
+      Type 'null' is not assignable to type 'string | number | Date'.
+  Overload 2 of 4, '(value: string | number): Date', gave the following error.
+    Argument of type 'Date | null' is not assignable to parameter of type 'string | number'.
+      Type 'null' is not assignable to type 'string | number'.
+client/src/pages/PaymentFail.tsx(2,23): error TS2305: Module '"wouter"' has no exported member 'useNavigate'.
+client/src/pages/PaymentSuccess.tsx(2,23): error TS2305: Module '"wouter"' has no exported member 'useNavigate'.
+server/admin-routes.ts(50,51): error TS2345: Argument of type '{ subscriptionTier: any; subscriptionExpiresAt: Date; canGenerateContent: boolean; canUseChatbot: boolean; canGenerateImages: boolean; }' is not assignable to parameter of type '{ isActive?: boolean | undefined; isAdmin?: boolean | undefined; subscriptionTier?: "basic" | "premium" | undefined; subscriptionExpiresAt?: string | null | undefined; canGenerateContent?: boolean | undefined; canGenerateImages?: boolean | undefined; canUseChatbot?: boolean | undefined; }'.
+  Types of property 'subscriptionExpiresAt' are incompatible.
+    Type 'Date' is not assignable to type 'string'.
+server/admin-routes.ts(76,51): error TS2345: Argument of type '{ subscriptionTier: string; subscriptionExpiresAt: null; canGenerateContent: boolean; canUseChatbot: boolean; canGenerateImages: boolean; }' is not assignable to parameter of type '{ isActive?: boolean | undefined; isAdmin?: boolean | undefined; subscriptionTier?: "basic" | "premium" | undefined; subscriptionExpiresAt?: string | null | undefined; canGenerateContent?: boolean | undefined; canGenerateImages?: boolean | undefined; canUseChatbot?: boolean | undefined; }'.
+  Types of property 'subscriptionTier' are incompatible.
+    Type 'string' is not assignable to type '"basic" | "premium" | undefined'.
+server/admin-routes.ts(149,9): error TS2322: Type 'string' is not assignable to type '"basic" | "premium" | undefined'.
+server/admin-routes.ts(150,9): error TS2322: Type 'Date' is not assignable to type 'string'.
+server/services/advancedOptimizer.ts(41,60): error TS2339: Property 'isOptimized' does not exist on type 'Promise<MorphemeAnalysis>'.
+server/services/advancedOptimizer.ts(41,94): error TS2339: Property 'characterCount' does not exist on type 'Promise<MorphemeAnalysis>'.
+server/services/advancedOptimizer.ts(45,9): error TS2740: Type 'Promise<MorphemeAnalysis>' is missing the following properties from type 'MorphemeAnalysis': isOptimized, isKeywordOptimized, isLengthOptimized, keywordMorphemeCount, and 6 more.
+server/services/advancedOptimizer.ts(73,68): error TS2339: Property 'isOptimized' does not exist on type 'Promise<MorphemeAnalysis>'.
+server/services/advancedOptimizer.ts(73,110): error TS2339: Property 'characterCount' does not exist on type 'Promise<MorphemeAnalysis>'.
+server/services/advancedOptimizer.ts(77,9): error TS2740: Type 'Promise<MorphemeAnalysis>' is missing the following properties from type 'MorphemeAnalysis': isOptimized, isKeywordOptimized, isLengthOptimized, keywordMorphemeCount, and 6 more.
+server/services/advancedOptimizer.ts(101,83): error TS2345: Argument of type '{ businessName: string; businessType: string; expertise: string; differentiators: string; }' is not assignable to parameter of type 'Record<string, number>'.
+  Property 'businessName' is incompatible with index signature.
+    Type 'string' is not assignable to type 'number'.
+server/services/advancedOptimizer.ts(104,65): error TS2339: Property 'isOptimized' does not exist on type 'Promise<MorphemeAnalysis>'.
+server/services/advancedOptimizer.ts(104,104): error TS2339: Property 'characterCount' does not exist on type 'Promise<MorphemeAnalysis>'.
+server/services/advancedOptimizer.ts(108,9): error TS2740: Type 'Promise<MorphemeAnalysis>' is missing the following properties from type 'MorphemeAnalysis': isOptimized, isKeywordOptimized, isLengthOptimized, keywordMorphemeCount, and 6 more.
+server/services/imageGeneration.ts(109,55): error TS2339: Property 'message' does not exist on type '{}'.
+server/services/morphemeOveruseResolver.ts(44,50): error TS2339: Property 'some' does not exist on type 'Promise<string[]>'.
+server/services/morphemeOveruseResolver.ts(44,55): error TS7006: Parameter 'comp' implicitly has an 'any' type.
+server/services/morphemeOveruseResolver.ts(91,54): error TS2339: Property 'map' does not exist on type 'Promise<string[]>'.
+server/services/morphemeOveruseResolver.ts(91,58): error TS7006: Parameter 'comp' implicitly has an 'any' type.
+server/services/morphemeOveruseResolver.ts(103,50): error TS2339: Property 'some' does not exist on type 'Promise<string[]>'.
+server/services/morphemeOveruseResolver.ts(103,55): error TS7006: Parameter 'comp' implicitly has an 'any' type.
+server/services/seoOptimizer.ts(25,34): error TS2339: Property 'keywordFrequency' does not exist on type 'Promise<{ keywordFrequency: number; characterCount: number; morphemeCount: number; isOptimized: boolean; issues: string[]; suggestions: string[]; targetCharacterRange: string; }>'.
+server/services/seoOptimizer.ts(26,32): error TS2339: Property 'characterCount' does not exist on type 'Promise<{ keywordFrequency: number; characterCount: number; morphemeCount: number; isOptimized: boolean; issues: string[]; suggestions: string[]; targetCharacterRange: string; }>'.
+server/services/seoOptimizer.ts(27,31): error TS2339: Property 'morphemeCount' does not exist on type 'Promise<{ keywordFrequency: number; characterCount: number; morphemeCount: number; isOptimized: boolean; issues: string[]; suggestions: string[]; targetCharacterRange: string; }>'.
+server/services/seoOptimizer.ts(28,29): error TS2339: Property 'isOptimized' does not exist on type 'Promise<{ keywordFrequency: number; characterCount: number; morphemeCount: number; isOptimized: boolean; issues: string[]; suggestions: string[]; targetCharacterRange: string; }>'.
+server/services/seoOptimizer.ts(29,24): error TS2339: Property 'issues' does not exist on type 'Promise<{ keywordFrequency: number; characterCount: number; morphemeCount: number; isOptimized: boolean; issues: string[]; suggestions: string[]; targetCharacterRange: string; }>'.
+server/services/seoOptimizer.ts(30,29): error TS2339: Property 'suggestions' does not exist on type 'Promise<{ keywordFrequency: number; characterCount: number; morphemeCount: number; isOptimized: boolean; issues: string[]; suggestions: string[]; targetCharacterRange: string; }>'.
+server/services/webFetcher.ts(99,39): error TS1501: This regular expression flag is only available when targeting 'es2018' or later.
+server/services/webFetcher.ts(100,50): error TS1501: This regular expression flag is only available when targeting 'es2018' or later.
+server/services/webFetcher.ts(101,53): error TS1501: This regular expression flag is only available when targeting 'es2018' or later.
+server/services/webFetcher.ts(102,50): error TS1501: This regular expression flag is only available when targeting 'es2018' or later.
+server/services/webFetcher.ts(103,33): error TS1501: This regular expression flag is only available when targeting 'es2018' or later.

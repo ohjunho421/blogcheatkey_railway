@@ -37,16 +37,17 @@ function extractImageFromResponse(response: any): { imageBase64: string; mimeTyp
 }
 
 /**
- * 블로그 이미지 생성
- * - 1순위: gemini-2.5-flash-image (빠르고 효율적, 1024px, 낮은 지연 시간)
- * - 2순위: gemini-3-pro-image-preview (4K, 텍스트 렌더링, 인포그래픽)
+ * 블로그 이미지 생성 - 스마트 전략
+ * quality="high": Nano Banana Pro (gemini-3-pro-image-preview) 1순위 → 4K 고품질
+ * quality="fast": Nano Banana (gemini-2.5-flash-image) 1순위 → 빠른 속도
  * - 기본 스타일: photo-realistic (실사)
  */
 export async function generateBlogImage(
   keyword: string,
   description: string,
   style: "photo" | "illustration" | "infographic" = "photo",
-  aspectRatio: "1:1" | "16:9" | "9:16" = "16:9"
+  aspectRatio: "1:1" | "16:9" | "9:16" = "16:9",
+  quality: "high" | "fast" = "high"
 ): Promise<ImageGenerationResult> {
   // 실사 품질 프롬프트: 짧고 구체적
   const stylePrompts: Record<string, string> = {
@@ -57,11 +58,39 @@ export async function generateBlogImage(
 
   const prompt = stylePrompts[style] || stylePrompts.photo;
 
-  // === 1순위: gemini-2.5-flash-image (빠른 이미지 전용 모델) ===
-  // 인포그래픽은 텍스트 렌더링이 필요하므로 Gemini 3 Pro Image로 직행
-  if (style !== "infographic") {
+  // 인포그래픽은 항상 Pro (텍스트 렌더링 필요)
+  const useProFirst = quality === "high" || style === "infographic";
+
+  if (useProFirst) {
+    // === 품질 우선: Nano Banana Pro 1순위 ===
     try {
-      console.log(`🎨 Gemini 2.5 Flash Image 생성 시작: "${keyword}" (${style})`);
+      console.log(`🎨 [HIGH] Nano Banana Pro 생성 시작: "${keyword}" (${style})`);
+      const startTime = Date.now();
+
+      const response = await ai.models.generateContent({
+        model: PRO_IMAGE_MODEL,
+        contents: prompt,
+        config: {
+          imageConfig: {
+            aspectRatio: aspectRatio,
+            imageSize: style === "infographic" ? "4K" : "2K",
+          },
+        },
+      });
+
+      const imageData = extractImageFromResponse(response);
+      if (imageData) {
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        console.log(`✅ Nano Banana Pro 생성 완료 (${elapsed}초, ${(imageData.imageBase64.length / 1024).toFixed(0)}KB)`);
+        return { imageBase64: imageData.imageBase64, mimeType: imageData.mimeType, prompt };
+      }
+    } catch (proError: any) {
+      console.error("🔴 Nano Banana Pro 실패:", proError?.message || proError);
+    }
+
+    // Pro 실패 시 Flash로 fallback
+    try {
+      console.log(`🔄 [HIGH] Nano Banana fallback 시도...`);
       const startTime = Date.now();
 
       const response = await ai.models.generateContent({
@@ -78,58 +107,64 @@ export async function generateBlogImage(
       const imageData = extractImageFromResponse(response);
       if (imageData) {
         const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-        console.log(`✅ Gemini 2.5 Flash Image 생성 완료 (${elapsed}초, ${(imageData.imageBase64.length / 1024).toFixed(0)}KB)`);
+        console.log(`✅ Nano Banana fallback 완료 (${elapsed}초)`);
+        return { imageBase64: imageData.imageBase64, mimeType: imageData.mimeType, prompt };
+      }
+    } catch (fallbackError: any) {
+      console.error("🔴 Nano Banana fallback 실패:", fallbackError?.message);
+    }
+  } else {
+    // === 속도 우선: Nano Banana 1순위 ===
+    try {
+      console.log(`🎨 [FAST] Nano Banana 생성 시작: "${keyword}" (${style})`);
+      const startTime = Date.now();
+
+      const response = await ai.models.generateContent({
+        model: FAST_IMAGE_MODEL,
+        contents: prompt,
+        config: {
+          responseModalities: ["Image"],
+          imageConfig: {
+            aspectRatio: aspectRatio,
+          },
+        },
+      });
+
+      const imageData = extractImageFromResponse(response);
+      if (imageData) {
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        console.log(`✅ Nano Banana 생성 완료 (${elapsed}초, ${(imageData.imageBase64.length / 1024).toFixed(0)}KB)`);
         return { imageBase64: imageData.imageBase64, mimeType: imageData.mimeType, prompt };
       }
     } catch (flashError: any) {
-      console.error("🔴 Gemini 2.5 Flash Image 실패:", flashError?.message || flashError);
+      console.error("🔴 Nano Banana 실패:", flashError?.message || flashError);
     }
-  }
 
-  // === 2순위: gemini-3-pro-image-preview (인포그래픽 또는 Flash 실패 시) ===
-  try {
-    console.log(`🎨 Gemini 3 Pro Image 시도: "${keyword}" (${style})`);
-    const startTime = Date.now();
+    // Flash 실패 시 Pro로 fallback
+    try {
+      console.log(`🔄 [FAST] Nano Banana Pro fallback 시도...`);
+      const startTime = Date.now();
 
-    const response = await ai.models.generateContent({
-      model: PRO_IMAGE_MODEL,
-      contents: prompt,
-      config: {
-        imageConfig: {
-          aspectRatio: aspectRatio,
-          imageSize: style === "infographic" ? "4K" : "2K",
+      const response = await ai.models.generateContent({
+        model: PRO_IMAGE_MODEL,
+        contents: prompt,
+        config: {
+          imageConfig: {
+            aspectRatio: aspectRatio,
+            imageSize: "2K",
+          },
         },
-      },
-    });
+      });
 
-    const imageData = extractImageFromResponse(response);
-    if (imageData) {
-      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-      console.log(`✅ Gemini 3 Pro Image 생성 완료 (${elapsed}초)`);
-      return { imageBase64: imageData.imageBase64, mimeType: imageData.mimeType, prompt };
+      const imageData = extractImageFromResponse(response);
+      if (imageData) {
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        console.log(`✅ Nano Banana Pro fallback 완료 (${elapsed}초)`);
+        return { imageBase64: imageData.imageBase64, mimeType: imageData.mimeType, prompt };
+      }
+    } catch (fallbackError: any) {
+      console.error("🔴 Nano Banana Pro fallback 실패:", fallbackError?.message);
     }
-  } catch (proError: any) {
-    console.error("🔴 Gemini 3 Pro Image 실패:", proError?.message || proError);
-  }
-
-  // === 3순위: gemini-2.5-flash-image TEXT+IMAGE 모드 (최후 fallback) ===
-  try {
-    console.log("🔄 Flash Image TEXT+IMAGE fallback 시도...");
-    const fallbackResponse = await ai.models.generateContent({
-      model: FAST_IMAGE_MODEL,
-      contents: prompt,
-      config: {
-        responseModalities: ["Text", "Image"],
-      },
-    });
-
-    const fallbackImage = extractImageFromResponse(fallbackResponse);
-    if (fallbackImage) {
-      console.log(`✅ Flash Image fallback 완료`);
-      return { imageBase64: fallbackImage.imageBase64, mimeType: fallbackImage.mimeType, prompt };
-    }
-  } catch (fallbackError: any) {
-    console.error("🔴 Flash Image fallback 실패:", fallbackError?.message);
   }
 
   throw new Error("모든 이미지 생성 모델이 실패했습니다. 잠시 후 다시 시도해주세요.");
@@ -322,7 +357,8 @@ JSON 배열만 반환:`;
           keyword,
           suggestion.imageDescription,
           suggestion.imageType,
-          "16:9"
+          "16:9",
+          "fast"
         );
 
         generatedImages.push({
@@ -355,16 +391,29 @@ JSON 배열만 반환:`;
 }
 
 /**
- * 챗봇에서 사용자 요청에 따라 이미지를 생성
- * - 기본: 실사(photo-realistic) 스타일 (Whisk 수준)
+ * 사용자 요청에서 이미지 장수를 파싱
+ * "10장 그려줘", "5개 만들어줘", "이미지 3장" 등
+ */
+function parseImageCount(request: string): number {
+  const match = request.match(/(\d+)\s*(?:장|개|매|枚|개씩|장씩)/);
+  if (match) {
+    const count = parseInt(match[1]);
+    return Math.min(Math.max(count, 1), 10); // 1~10장 제한
+  }
+  return 1;
+}
+
+/**
+ * 챗봇에서 사용자 요청에 따라 이미지를 생성 (다중 이미지 지원)
+ * - "10장 그려줘" → 10장 생성, 각각 다른 variation
+ * - 기본: 실사(photo-realistic) 스타일
  * - 인포그래픽/일러스트 명시 요청 시에만 스타일 변경
- * - 분석 단계를 간소화하여 속도 개선
  */
 export async function generateChatImage(
   userRequest: string,
   keyword: string,
   content: string
-): Promise<ImageGenerationResult> {
+): Promise<ImageGenerationResult[]> {
   // 빠른 스타일 감지 (AI 분석 없이 키워드 매칭으로 속도 개선)
   const lowerReq = userRequest.toLowerCase();
   let style: "photo" | "illustration" | "infographic" = "photo"; // 기본: 실사
@@ -381,19 +430,47 @@ export async function generateChatImage(
     aspectRatio = "1:1";
   }
 
-  // 블로그 내용에서 핵심 주제 추출 (짧게)
+  const count = parseImageCount(userRequest);
   const contentHint = content.substring(0, 300).replace(/\n/g, ' ').trim();
 
-  // Whisk 스타일 프롬프트: 짧고 구체적
-  const description = `${userRequest}. Context: blog about ${keyword}. ${contentHint.substring(0, 100)}`;
+  // 다중 이미지: 각각 다른 variation 프롬프트
+  const variations = [
+    "", // 기본
+    "Different angle and composition.",
+    "Close-up detail shot.",
+    "Wide establishing shot.",
+    "Dramatic lighting and mood.",
+    "Bright and cheerful atmosphere.",
+    "Minimalist clean composition.",
+    "Dynamic action-oriented view.",
+    "Warm golden hour lighting.",
+    "Cool blue-toned professional look.",
+  ];
 
-  try {
-    console.log(`🎨 챗봇 이미지 생성: "${keyword}" (${style}, ${aspectRatio})`);
-    return await generateBlogImage(keyword, description, style, aspectRatio);
-  } catch (error: any) {
-    console.error("🔴 챗봇 이미지 생성 실패:", error?.message || error);
-    throw new Error(
-      `이미지 생성 실패: ${error?.message || "알 수 없는 오류"}`
-    );
+  const results: ImageGenerationResult[] = [];
+  // 다중 이미지는 속도를 위해 "fast" 모드, 단일은 "high" 모드
+  const quality = count > 1 ? "fast" as const : "high" as const;
+
+  console.log(`🎨 챗봇 이미지 생성: "${keyword}" (${style}, ${aspectRatio}, ${count}장, ${quality})`);
+
+  for (let i = 0; i < count; i++) {
+    try {
+      const variation = count > 1 ? ` ${variations[i % variations.length]}` : "";
+      const description = `${userRequest}.${variation} Context: blog about ${keyword}. ${contentHint.substring(0, 100)}`;
+
+      console.log(`🎨 이미지 ${i + 1}/${count} 생성 중...`);
+      const result = await generateBlogImage(keyword, description, style, aspectRatio, quality);
+      results.push(result);
+    } catch (error: any) {
+      console.error(`🔴 이미지 ${i + 1}/${count} 생성 실패:`, error?.message || error);
+      // 하나 실패해도 나머지 계속 생성
+    }
   }
+
+  if (results.length === 0) {
+    throw new Error("이미지 생성에 실패했습니다. 잠시 후 다시 시도해주세요.");
+  }
+
+  console.log(`✅ 챗봇 이미지 생성 완료: ${results.length}/${count}장 성공`);
+  return results;
 }
