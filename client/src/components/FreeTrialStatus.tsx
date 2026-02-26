@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Crown, AlertTriangle } from "lucide-react";
+import { Sparkles, Crown, AlertTriangle, AlertCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import PaymentModal from "@/components/PaymentModal";
 
@@ -66,15 +66,15 @@ export function FreeTrialStatus() {
     const expiredAt = new Date(user.subscriptionExpiresAt!);
     
     return (
-      <Card className="border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50">
+      <Card className="border-2 border-orange-400 bg-gradient-to-r from-orange-50 to-amber-50">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-orange-500" />
-            <span className="text-orange-700">구독 만료</span>
+            <AlertCircle className="h-4 w-4 text-orange-600" />
+            <span className="text-orange-600 font-semibold">구독 만료</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <p className="text-sm text-orange-600">
+          <p className="text-sm text-orange-600 font-semibold">
             구독이 {expiredAt.toLocaleDateString('ko-KR')}에 만료되었습니다.
           </p>
           <p className="text-xs text-orange-500">
@@ -117,7 +117,7 @@ export function FreeTrialStatus() {
       <CardContent className="space-y-3">
         <div className="flex items-center justify-between text-sm">
           <span className={isLimitReached ? 'text-red-600' : 'text-blue-600'}>
-            사용: {usedCount} / {MAX_FREE_GENERATIONS}회
+            블로그 글 생성 {usedCount} / {MAX_FREE_GENERATIONS}회 사용
           </span>
           <span className={`font-medium ${isLimitReached ? 'text-red-700' : 'text-blue-700'}`}>
             {isLimitReached ? '0회 남음' : `${remainingCount}회 남음`}
@@ -126,7 +126,7 @@ export function FreeTrialStatus() {
         
         <Progress 
           value={progressPercent} 
-          className={`h-2 ${isLimitReached ? '[&>div]:bg-red-500' : '[&>div]:bg-blue-500'}`}
+          className={`h-2 ${isLimitReached ? '[&>div]:bg-red-500' : '[&>div]:bg-primary'}`}
         />
 
         {isLimitReached ? (
@@ -136,7 +136,7 @@ export function FreeTrialStatus() {
             </p>
             <PaymentModal>
               <Button size="sm" className="w-full bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600">
-                <Crown className="h-4 w-4 mr-2" />
+                <Sparkles className="h-4 w-4 mr-2" />
                 지금 구독하기
               </Button>
             </PaymentModal>

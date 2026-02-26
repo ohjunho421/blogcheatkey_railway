@@ -235,6 +235,10 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">1</span>
+            <span className="text-sm font-medium text-muted-foreground">1단계: 키워드 분석</span>
+          </div>
           <div>
             <Label htmlFor="keyword">블로그 주제 키워드 <span className="text-red-500">*</span></Label>
             <div className="flex gap-2">
@@ -311,7 +315,7 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
             {/* Search Intent */}
             <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-4 border-l-4 border-primary">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold text-foreground">검색 의도 분석</h3>
+                <h3 className="font-semibold text-foreground">사용자가 검색하는 이유</h3>
                 {!isEditingIntent && (
                   <Button
                     variant="ghost"
@@ -366,7 +370,7 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
             {/* User Concerns */}
             <div className="bg-orange-50 dark:bg-orange-950 rounded-lg p-4 border-l-4 border-orange-500">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold text-foreground">사용자 고민사항</h3>
+                <h3 className="font-semibold text-foreground">사용자가 해결하고 싶은 문제</h3>
                 {!isEditingConcerns && (
                   <Button
                     variant="ghost"
@@ -427,7 +431,7 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
                   variant="outline"
                   onClick={() => regenerateSubtitles.mutate(project.id)}
                   disabled={regenerateSubtitles.isPending}
-                  className="h-8"
+                  className="border-primary text-primary hover:bg-primary/5"
                 >
                   {regenerateSubtitles.isPending ? (
                     <>
@@ -444,6 +448,10 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
               </div>
               <p className="text-xs text-muted-foreground mb-3">
                 드래그앤드롭으로 순서를 변경할 수 있습니다
+              </p>
+              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1 mb-2">
+                <GripVertical className="h-3 w-3" />
+                아이콘을 드래그해 소제목 순서를 바꿀 수 있어요
               </p>
               <DragDropContext onDragEnd={handleDragEnd}>
                 <Droppable droppableId="subtitles" type="SUBTITLE">
@@ -557,12 +565,12 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
                   {researchData.isPending ? (
                     <>
                       <Search className="h-4 w-4 mr-2 animate-spin" />
-                      퍼플렉시티 자료 수집 중...
+                      AI 정보 수집 중...
                     </>
                   ) : (
                     <>
                       <Search className="h-4 w-4 mr-2" />
-                      퍼플렉시티 자료 수집하기
+                      AI로 관련 정보 자동 수집하기
                     </>
                   )}
                 </Button>

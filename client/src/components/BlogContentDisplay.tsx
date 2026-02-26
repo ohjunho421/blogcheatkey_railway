@@ -253,11 +253,14 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
           <div className="space-y-6">
             {/* SEO 분석 결과 */}
             {project.seoMetrics && (
-              <div className="bg-blue-50 dark:bg-blue-950 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                <h3 className="font-semibold text-foreground mb-3 flex items-center">
-                  <CheckCircle2 className="h-4 w-4 mr-2 text-blue-600" />
+              <div className="bg-primary/5 dark:bg-blue-950 rounded-lg p-4 border-l-4 border-primary">
+                <h3 className="font-semibold text-foreground mb-1 flex items-center">
+                  <CheckCircle2 className="h-4 w-4 mr-2 text-primary" />
                   SEO 최적화 상태
                 </h3>
+                <p className="text-xs text-muted-foreground mt-1 mb-3">
+                  아래 기준을 충족하면 네이버/구글 검색 순위 향상에 도움이 됩니다
+                </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                   <div className="bg-white dark:bg-gray-800 p-3 rounded">
                     <div className="text-muted-foreground text-xs mb-1">글자수</div>
@@ -282,7 +285,7 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
                 </div>
                 
                 {project.seoMetrics.issues && project.seoMetrics.issues.length > 0 && (
-                  <div className="mt-4 bg-orange-50 dark:bg-orange-950 p-3 rounded border border-orange-200 dark:border-orange-800">
+                  <div className="mt-4 bg-orange-50/50 dark:bg-orange-950 p-3 rounded border-l-4 border-orange-400">
                     <div className="font-medium text-orange-800 dark:text-orange-200 text-sm mb-2">
                       ⚠️ 개선 필요 사항
                     </div>
@@ -385,7 +388,7 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
                   disabled={reoptimizeContent.isPending || regenerateContent.isPending}
                   variant="outline"
                   size="sm"
-                  className="w-full sm:w-auto border-blue-500 text-blue-600 hover:bg-blue-50"
+                  className="w-full sm:w-auto border-primary text-primary hover:bg-primary/5"
                 >
                   {reoptimizeContent.isPending ? (
                     <>
@@ -395,7 +398,7 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
                   ) : (
                     <>
                       <RefreshCw className="h-4 w-4 mr-2" />
-                      최적화 다시하기
+                      SEO 재최적화
                     </>
                   )}
                 </Button>
@@ -416,7 +419,7 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
                   ) : (
                     <>
                       <RefreshCw className="h-4 w-4 mr-2" />
-                      완전히 새로 생성
+                      처음부터 다시 생성
                     </>
                   )}
                 </Button>
@@ -428,7 +431,7 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
                   <div className="flex items-center mb-3">
                     <Smartphone className="h-4 w-4 mr-2 text-gray-600" />
                     <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      모바일 화면 미리보기 (한글 약 23자 기준)
+                      모바일(375px) 미리보기 (한글 약 23자 기준)
                     </span>
                   </div>
                   <div className="bg-white dark:bg-gray-800 p-3 rounded border max-w-xs mx-auto">
@@ -453,6 +456,9 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
           </CardTitle>
           <p className="text-sm text-muted-foreground">
             블로그에 사용할 이미지나 인포그래픽을 생성하려면 아래 외부 도구를 사용해주세요
+          </p>
+          <p className="text-xs text-muted-foreground">
+            ↗ 새 탭에서 열립니다
           </p>
         </CardHeader>
         <CardContent>

@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Mail } from "lucide-react";
+import { Loader2, Mail, Lock, CheckCircle2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { FaGoogle } from "react-icons/fa";
 import { SocialLogin } from "@/components/SocialLogin";
@@ -131,101 +131,146 @@ export default function Login() {
 
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">로그인</CardTitle>
-          <CardDescription className="text-center">
-            블로그치트키로 AI 블로그 생성을 시작하세요
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Google 로그인 오류 Alert 주석 처리
-          {location.includes("error=google") && (
-            <Alert variant="destructive">
-              <AlertDescription>
-                구글 로그인에 실패했습니다. 다시 시도해주세요.
-              </AlertDescription>
-            </Alert>
-          )}
-          */}
-
-
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>이메일</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="your@email.com"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>비밀번호</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="비밀번호를 입력하세요"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={loginMutation.isPending}
-              >
-                {loginMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    로그인 중...
-                  </>
-                ) : (
-                  "로그인"
-                )}
-              </Button>
-            </form>
-          </Form>
-
-          {/* 소셜 로그인 */}
-          <SocialLogin onLoginSuccess={() => navigate("/")} />
-
-          <div className="text-center space-y-2">
-            <p className="text-sm text-gray-600">
-              계정이 없으신가요?{" "}
-              <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-500">
-                회원가입
-              </Link>
-            </p>
-            <p className="text-xs text-gray-500">
-              로그인 시{" "}
-              <Link href="/privacy-policy" className="underline hover:text-gray-700">
-                개인정보처리방침
-              </Link>
-              에 동의하는 것으로 간주됩니다.
-            </p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-primary/5 to-background py-12 px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-4xl flex rounded-2xl overflow-hidden shadow-xl">
+        {/* Left brand panel — hidden on mobile, visible on md+ */}
+        <div className="hidden md:flex md:w-5/12 bg-gradient-to-br from-sky-500 to-purple-600 flex-col justify-between p-10 text-white">
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight mb-1">블로그치트키</h1>
+            <p className="text-sm text-white/75 font-medium">AI 블로그 콘텐츠 자동 생성</p>
           </div>
-        </CardContent>
-      </Card>
+          <ul className="space-y-4">
+            {[
+              { text: "무료 체험 3회 제공" },
+              { text: "SEO 자동 최적화" },
+              { text: "3분 만에 완성" },
+            ].map(({ text }) => (
+              <li key={text} className="flex items-center gap-3 text-sm font-medium">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-white/90" />
+                {text}
+              </li>
+            ))}
+          </ul>
+          <p className="text-xs text-white/50">© 2026 블로그치트키</p>
+        </div>
+
+        {/* Right form card */}
+        <Card className="w-full md:w-7/12 rounded-none md:rounded-none border-0 shadow-none">
+          <CardHeader className="space-y-2 pt-8">
+            {/* Brand name visible on mobile only */}
+            <div className="md:hidden text-center mb-1">
+              <span className="text-xl font-extrabold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                블로그치트키
+              </span>
+            </div>
+            <CardTitle className="text-2xl font-bold text-center">로그인</CardTitle>
+            <CardDescription className="text-center text-muted-foreground">
+              블로그치트키로 AI 블로그 생성을 시작하세요
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 pb-8">
+            {/* Google 로그인 오류 Alert 주석 처리
+            {location.includes("error=google") && (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  구글 로그인에 실패했습니다. 다시 시도해주세요.
+                </AlertDescription>
+              </Alert>
+            )}
+            */}
+
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>이메일</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="your@email.com"
+                          className="rounded-lg"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center justify-between">
+                        <FormLabel>비밀번호</FormLabel>
+                        <Link
+                          href="/forgot-password"
+                          className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+                        >
+                          비밀번호를 잊으셨나요?
+                        </Link>
+                      </div>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="비밀번호를 입력하세요"
+                          className="rounded-lg"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <Button
+                  type="submit"
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-lg"
+                  disabled={loginMutation.isPending}
+                >
+                  {loginMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      로그인 중...
+                    </>
+                  ) : (
+                    "로그인"
+                  )}
+                </Button>
+
+                {/* Security badge */}
+                <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+                  <Lock className="h-3 w-3" />
+                  <span>256-bit 암호화 보안</span>
+                </div>
+              </form>
+            </Form>
+
+            {/* 소셜 로그인 */}
+            <SocialLogin onLoginSuccess={() => navigate("/")} />
+
+            <div className="text-center space-y-2">
+              <p className="text-sm text-muted-foreground">
+                계정이 없으신가요?{" "}
+                <Link href="/signup" className="font-medium text-primary hover:text-primary/80 transition-colors">
+                  회원가입
+                </Link>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                로그인 시{" "}
+                <Link href="/privacy-policy" className="underline hover:text-foreground transition-colors">
+                  개인정보처리방침
+                </Link>
+                에 동의하는 것으로 간주됩니다.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

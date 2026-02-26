@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Save, Loader2, User, Mail, Phone, CreditCard } from "lucide-react";
+import { ArrowLeft, Save, Loader2, User, Mail, Phone, CreditCard, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Profile() {
@@ -72,13 +72,13 @@ export default function Profile() {
     user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt) > new Date();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border/50">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">프로필 설정</h1>
+          <h1 className="text-xl font-bold text-foreground">프로필 설정</h1>
         </div>
       </header>
 
@@ -117,7 +117,7 @@ export default function Profile() {
                 id="email"
                 value={user.email}
                 disabled
-                className="bg-gray-100 dark:bg-gray-800"
+                className="bg-muted"
               />
               <p className="text-xs text-muted-foreground">이메일은 변경할 수 없습니다.</p>
             </div>
@@ -167,7 +167,7 @@ export default function Profile() {
         </Card>
 
         {/* 구독 정보 */}
-        <Card>
+        <Card className={`rounded-2xl border border-border/50 ${hasActiveSubscription ? 'border-l-4 border-green-500' : 'border-l-4 border-orange-500'}`}>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <CreditCard className="h-5 w-5" />
@@ -206,6 +206,33 @@ export default function Profile() {
                 구독하기
               </Button>
             )}
+          </CardContent>
+        </Card>
+
+        {/* 보안 */}
+        <Card className="rounded-2xl border border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Lock className="w-4 h-4 text-muted-foreground" />
+              보안
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-3">비밀번호를 변경하거나 보안을 관리하세요</p>
+            <Button variant="outline" size="sm">비밀번호 변경 이메일 전송</Button>
+          </CardContent>
+        </Card>
+
+        {/* 위험 영역 */}
+        <Card className="rounded-2xl border border-destructive/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base text-destructive">위험 영역</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-3">계정을 삭제하면 모든 데이터가 영구적으로 삭제됩니다.</p>
+            <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/5">
+              계정 삭제 요청
+            </Button>
           </CardContent>
         </Card>
       </main>

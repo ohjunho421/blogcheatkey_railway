@@ -97,7 +97,7 @@ export default function Home() {
                 alt="블로그치트키 로고"
                 className="w-9 h-9 object-contain"
               />
-              <span className="text-xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+              <span className="text-xl font-bold bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">
                 블로그치트키
               </span>
             </div>
@@ -210,6 +210,28 @@ export default function Home() {
           <Progress value={(project as any) ? getProgressPercentage() : 0} className="mb-4 h-1.5" />
           <ProgressStepper currentStep={(project as any) ? getCurrentStepIndex() : 0} />
         </div>
+
+        {/* 현재 단계 안내 */}
+        {getCurrentStepIndex() === 0 && (
+          <div className="mx-4 mb-4 p-3 rounded-xl bg-primary/5 border border-primary/20 text-sm text-primary flex items-center gap-2">
+            <span className="font-semibold">✦</span> 키워드를 입력하고 AI 분석을 시작하세요
+          </div>
+        )}
+        {getCurrentStepIndex() === 1 && (
+          <div className="mx-4 mb-4 p-3 rounded-xl bg-primary/5 border border-primary/20 text-sm text-primary flex items-center gap-2">
+            <span className="font-semibold">✦</span> AI가 관련 정보를 수집합니다. 잠시 기다려 주세요
+          </div>
+        )}
+        {getCurrentStepIndex() === 2 && (
+          <div className="mx-4 mb-4 p-3 rounded-xl bg-primary/5 border border-primary/20 text-sm text-primary flex items-center gap-2">
+            <span className="font-semibold">✦</span> 비즈니스 정보를 입력하고 콘텐츠를 생성하세요
+          </div>
+        )}
+        {getCurrentStepIndex() === 3 && (
+          <div className="mx-4 mb-4 p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-sm text-green-700 flex items-center gap-2">
+            <span className="font-semibold">✓</span> 콘텐츠 생성이 완료되었습니다! 아래에서 확인하세요
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Input Forms */}

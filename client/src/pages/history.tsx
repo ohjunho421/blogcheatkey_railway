@@ -1,9 +1,10 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, Calendar, Tag, ExternalLink, Copy, ChevronLeft, FolderOpen, Loader2 } from "lucide-react";
+import { FileText, Calendar, Tag, ExternalLink, Copy, ChevronLeft, FolderOpen, Loader2, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
@@ -33,6 +34,7 @@ export default function History() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: projects = [], isLoading } = useQuery<CompletedProject[]>({
     queryKey: ["/api/completed-projects"],
@@ -157,20 +159,20 @@ export default function History() {
       <div className="min-h-screen bg-background">
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="mb-8">
-            <div className="h-8 w-48 mb-4 bg-gray-200 rounded animate-pulse" />
-            <div className="h-6 w-96 bg-gray-200 rounded animate-pulse" />
+            <div className="h-8 w-48 mb-4 bg-muted rounded animate-pulse" />
+            <div className="h-6 w-96 bg-muted rounded animate-pulse" />
           </div>
           <div className="grid gap-6">
             {[...Array(3)].map((_, i) => (
               <Card key={i}>
                 <CardHeader>
-                  <div className="h-6 w-3/4 bg-gray-200 rounded animate-pulse mb-2" />
-                  <div className="h-4 w-1/2 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-6 w-3/4 bg-muted rounded animate-pulse mb-2" />
+                  <div className="h-4 w-1/2 bg-muted rounded animate-pulse" />
                 </CardHeader>
                 <CardContent>
-                  <div className="h-4 w-full bg-gray-200 rounded animate-pulse mb-2" />
-                  <div className="h-4 w-full bg-gray-200 rounded animate-pulse mb-2" />
-                  <div className="h-4 w-2/3 bg-gray-200 rounded animate-pulse" />
+                  <div className="h-4 w-full bg-muted rounded animate-pulse mb-2" />
+                  <div className="h-4 w-full bg-muted rounded animate-pulse mb-2" />
+                  <div className="h-4 w-2/3 bg-muted rounded animate-pulse" />
                 </CardContent>
               </Card>
             ))}
@@ -217,6 +219,20 @@ export default function History() {
           </div>
         </div>
 
+        {/* 검색 */}
+        <div className="mb-6">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="키워드나 제목으로 검색..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 rounded-xl border border-border bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            />
+          </div>
+        </div>
+
         {/* Projects List */}
         {projects.length === 0 ? (
           <Card className="text-center py-12">
@@ -233,10 +249,17 @@ export default function History() {
           </Card>
         ) : (
           <div className="grid gap-6">
-            {projects.map((project) => {
+            {projects
+              .filter(
+                (p) =>
+                  !searchQuery ||
+                  p.keyword?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  p.title?.toLowerCase().includes(searchQuery.toLowerCase())
+              )
+              .map((project) => {
               const references = extractReferences(project.referenceData);
               const matchingSession = findMatchingSession(project);
-              
+
               return (
                 <Card key={project.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader className="pb-4">
@@ -259,22 +282,21 @@ export default function History() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        {matchingSession && (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => loadSession.mutate(matchingSession.id)}
-                            disabled={loadSession.isPending}
-                            className="flex items-center gap-2"
-                          >
-                            {loadSession.isPending ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <FolderOpen className="h-4 w-4" />
-                            )}
-                            불러오기
-                          </Button>
-                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={!matchingSession || loadSession.isPending}
+                          title={!matchingSession ? "이 세션은 더 이상 불러올 수 없습니다" : ""}
+                          onClick={() => matchingSession && loadSession.mutate(matchingSession.id)}
+                          className="flex items-center gap-2"
+                        >
+                          {loadSession.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <FolderOpen className="h-4 w-4" />
+                          )}
+                          불러오기
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
@@ -290,9 +312,9 @@ export default function History() {
                   
                   <CardContent className="space-y-4">
                     {/* Content Preview */}
-                    <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="bg-muted/50 rounded-lg p-4">
                       <h4 className="font-medium mb-2">글 내용 미리보기</h4>
-                      <p className="text-sm text-gray-700 line-clamp-3">
+                      <p className="text-sm text-muted-foreground line-clamp-3">
                         {project.content.substring(0, 200)}...
                       </p>
                     </div>
@@ -308,14 +330,14 @@ export default function History() {
                           {references.map((ref: any, index: number) => (
                             <div
                               key={index}
-                              className="flex items-center justify-between p-3 bg-blue-50 rounded-lg"
+                              className="flex items-center justify-between p-3 bg-primary/5 border-l-2 border-primary/30 rounded"
                             >
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-blue-900 truncate">
+                                <p className="text-sm font-medium text-primary/80 truncate">
                                   {ref.title || `참고자료 ${index + 1}`}
                                 </p>
                                 {ref.url && (
-                                  <p className="text-xs text-blue-600 truncate">
+                                  <p className="text-xs text-primary/60 truncate">
                                     {ref.url}
                                   </p>
                                 )}
@@ -325,7 +347,7 @@ export default function History() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => window.open(ref.url, '_blank')}
-                                  className="ml-2 text-blue-600 hover:text-blue-800"
+                                  className="ml-2 text-primary/60 hover:text-primary"
                                 >
                                   <ExternalLink className="h-4 w-4" />
                                 </Button>
