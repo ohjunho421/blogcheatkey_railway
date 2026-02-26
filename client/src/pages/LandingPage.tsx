@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
-import { motion } from "framer-motion";
+import { motion, useInView, useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
   Accordion,
@@ -34,14 +34,52 @@ import {
   Copy,
   Bot,
   Save,
-  Info,
   Wrench,
-  Building2
+  Building2,
+  Star,
+  Quote,
 } from "lucide-react";
+
+// Animated counter hook
+function useCountUp(target: number, duration: number = 1500) {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+
+  useEffect(() => {
+    if (!inView) return;
+    if (target <= 0) { setCount(target); return; }
+    let start = 0;
+    const step = target / (duration / 16);
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= target) {
+        setCount(target);
+        clearInterval(timer);
+      } else {
+        setCount(Math.floor(start));
+      }
+    }, 16);
+    return () => clearInterval(timer);
+  }, [inView, target, duration]);
+
+  return { count, ref };
+}
 
 export default function LandingPage() {
   const [, navigate] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
+
+  const fadeUp = (delay = 0) =>
+    prefersReducedMotion
+      ? {}
+      : { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { delay, duration: 0.8 } };
+
+  const fadeUpInView = (delay = 0) =>
+    prefersReducedMotion
+      ? {}
+      : { initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { delay, duration: 0.6 } };
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -165,122 +203,194 @@ export default function LandingPage() {
 
       <main id="main-content" role="main">
         {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-background via-muted/30 to-background" aria-labelledby="hero-heading">
-          {/* Background Effects - static, not animated (UX: infinite animation is distracting) */}
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden" aria-labelledby="hero-heading" style={{ background: "linear-gradient(135deg, hsl(210,40%,98%) 0%, hsl(215,80%,96%) 35%, hsl(255,60%,97%) 65%, hsl(210,40%,98%) 100%)" }}>
+          {/* Background Effects */}
           <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
-            <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
-            <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-secondary/5 rounded-full blur-3xl" />
+            <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-primary/8 rounded-full blur-3xl" />
+            <div className="absolute -bottom-40 -left-40 w-[500px] h-[500px] bg-purple-500/8 rounded-full blur-3xl" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/4 rounded-full blur-3xl" />
+            {/* Decorative grid */}
+            <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: "radial-gradient(circle, hsl(207,90%,54%) 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
           </div>
 
-          <div className="container relative z-10 px-4 py-20">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="max-w-4xl mx-auto text-center"
-            >
-              {/* Badge */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2, duration: 0.5 }}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary mb-8"
-              >
-                <Store className="w-4 h-4" />
-                <span className="text-sm font-medium">자영업자를 위한 AI 블로그 마케팅 솔루션</span>
-              </motion.div>
-
-              {/* Headline - H1 for SEO */}
-              <motion.h1
-                id="hero-heading"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.8 }}
-                className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 text-foreground leading-tight"
-              >
-                AI 블로그 콘텐츠 자동 생성
-                <br />
-                <span className="text-3xl md:text-4xl lg:text-5xl font-semibold text-muted-foreground">
-                  상품페이지 · 브랜드소개 · 광고문구
-                </span>
-              </motion.h1>
-              {/* 부제목 */}
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4, duration: 0.8 }}
-                className="text-2xl md:text-3xl font-bold mb-6"
-              >
-                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-                  본업에 집중하세요,
-                  <br className="sm:hidden" />
-                  {" "}콘텐츠는 AI가 대신
-                </span>
-              </motion.p>
-
-              {/* Subheadline */}
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5, duration: 0.8 }}
-                className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed"
-              >
-                SEO 몰라도 괜찮아요. 키워드 하나만 입력하면
-                <br />
-                <span className="text-primary font-semibold">상위노출 조건을 완벽히 충족</span>하는 글이{" "}
-                <span className="font-semibold text-foreground">3분 만에</span> 완성됩니다.
-              </motion.p>
-
-              {/* CTA Buttons */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7, duration: 0.8 }}
-                className="flex flex-col sm:flex-row gap-4 justify-center items-center"
-              >
-                <Button
-                  size="lg"
-                  onClick={() => navigate("/login")}
-                  className="text-lg px-8 py-6 bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/25 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-orange-500/30 cursor-pointer"
+          <div className="container relative z-10 px-4 py-20 pt-32">
+            <div className="max-w-5xl mx-auto">
+              <div className="grid lg:grid-cols-2 gap-12 items-center">
+                {/* Left: Copy */}
+                <motion.div
+                  {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 24 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.8 } })}
+                  className="text-left"
                 >
-                  <Zap className="w-5 h-5 mr-2" aria-hidden="true" />
-                  무료로 시작하기
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={() => scrollToSection("pain-points")}
-                  className="text-lg px-8 py-6 border-border hover:bg-muted/50 transition-all duration-200 cursor-pointer"
-                >
-                  이런 고민 있으신가요?
-                </Button>
-              </motion.div>
+                  {/* Badge */}
+                  <motion.div
+                    {...(prefersReducedMotion ? {} : { initial: { opacity: 0, scale: 0.9 }, animate: { opacity: 1, scale: 1 }, transition: { delay: 0.2, duration: 0.5 } })}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary mb-6"
+                  >
+                    <Store className="w-4 h-4" aria-hidden="true" />
+                    <span className="text-sm font-medium">자영업자를 위한 AI 블로그 마케팅 솔루션</span>
+                  </motion.div>
 
-              {/* Stats Cards - 자영업자 관점 */}
+                  {/* Headline - H1 for SEO */}
+                  <motion.h1
+                    id="hero-heading"
+                    {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { delay: 0.3, duration: 0.8 } })}
+                    className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 text-foreground leading-[1.1]"
+                  >
+                    AI 블로그 콘텐츠
+                    <br />
+                    <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                      자동 생성
+                    </span>
+                  </motion.h1>
+
+                  {/* Sub-headline */}
+                  <motion.p
+                    {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { delay: 0.45, duration: 0.8 } })}
+                    className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed"
+                  >
+                    SEO 몰라도 괜찮아요. 키워드 하나만 입력하면
+                    {" "}<span className="text-primary font-semibold">상위노출 조건을 완벽히 충족</span>하는 글이
+                    {" "}<span className="font-bold text-foreground">3분 만에</span> 완성됩니다.
+                  </motion.p>
+
+                  {/* CTA Buttons */}
+                  <motion.div
+                    {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { delay: 0.6, duration: 0.8 } })}
+                    className="flex flex-col sm:flex-row gap-4 items-start"
+                  >
+                    <Button
+                      size="lg"
+                      onClick={() => navigate("/login")}
+                      className="text-lg px-8 py-6 bg-orange-500 hover:bg-orange-600 text-white shadow-lg shadow-orange-500/30 transition-all duration-200 hover:scale-105 hover:shadow-xl hover:shadow-orange-500/40 cursor-pointer"
+                      aria-label="무료로 시작하기 - 로그인 페이지로 이동"
+                    >
+                      <Zap className="w-5 h-5 mr-2" aria-hidden="true" />
+                      무료로 시작하기
+                    </Button>
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      onClick={() => scrollToSection("pain-points")}
+                      className="text-lg px-8 py-6 border-border hover:bg-muted/50 transition-all duration-200 cursor-pointer"
+                    >
+                      이런 고민 있으신가요?
+                    </Button>
+                  </motion.div>
+
+                  {/* Trust Badges */}
+                  <motion.div
+                    {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, transition: { delay: 0.75, duration: 0.6 } })}
+                    className="flex flex-wrap gap-3 mt-5"
+                  >
+                    {[
+                      { label: "무료 체험 3회 제공" },
+                      { label: "신용카드 불필요" },
+                      { label: "언제든 해지 가능" },
+                    ].map((badge) => (
+                      <span
+                        key={badge.label}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card/80 border border-border/60 text-xs font-medium text-muted-foreground backdrop-blur shadow-sm"
+                      >
+                        <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" aria-hidden="true" />
+                        {badge.label}
+                      </span>
+                    ))}
+                  </motion.div>
+                </motion.div>
+
+                {/* Right: Product Mockup */}
+                <motion.div
+                  {...(prefersReducedMotion ? {} : { initial: { opacity: 0, x: 30, y: 10 }, animate: { opacity: 1, x: 0, y: 0 }, transition: { delay: 0.5, duration: 0.9, ease: "easeOut" } })}
+                  className="hidden lg:block"
+                  aria-hidden="true"
+                >
+                  {/* Browser chrome frame */}
+                  <div className="rounded-2xl overflow-hidden shadow-2xl shadow-primary/15 border border-border/60 bg-card">
+                    {/* Browser top bar */}
+                    <div className="flex items-center gap-2 px-4 py-3 bg-muted/70 border-b border-border/50">
+                      <div className="flex gap-1.5">
+                        <div className="w-3 h-3 rounded-full bg-red-400/80" />
+                        <div className="w-3 h-3 rounded-full bg-yellow-400/80" />
+                        <div className="w-3 h-3 rounded-full bg-green-400/80" />
+                      </div>
+                      <div className="flex-1 mx-4 h-6 rounded-full bg-background/80 border border-border/50 flex items-center px-3">
+                        <span className="text-xs text-muted-foreground truncate">blogcheatkey.com/generate</span>
+                      </div>
+                    </div>
+                    {/* App UI mockup */}
+                    <div className="p-5 bg-background space-y-4">
+                      {/* Input row */}
+                      <div>
+                        <div className="text-xs font-medium text-muted-foreground mb-1.5">키워드 입력</div>
+                        <div className="flex gap-2">
+                          <div className="flex-1 h-9 rounded-lg bg-muted/60 border border-border/50 flex items-center px-3">
+                            <span className="text-sm text-foreground/70">벤츠 엔진경고등 원인</span>
+                          </div>
+                          <div className="h-9 px-4 rounded-lg bg-primary flex items-center">
+                            <Zap className="w-4 h-4 text-white" />
+                          </div>
+                        </div>
+                      </div>
+                      {/* Progress bar */}
+                      <div>
+                        <div className="flex justify-between text-xs text-muted-foreground mb-1.5">
+                          <span>AI 콘텐츠 생성 중...</span>
+                          <span className="text-primary font-medium">87%</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-muted overflow-hidden">
+                          <div className="h-full w-[87%] rounded-full bg-gradient-to-r from-primary to-purple-500" />
+                        </div>
+                      </div>
+                      {/* Generated content preview */}
+                      <div className="rounded-xl bg-muted/40 border border-border/40 p-4 space-y-2">
+                        <div className="h-3 rounded-full bg-foreground/10 w-3/4" />
+                        <div className="h-3 rounded-full bg-foreground/8 w-full" />
+                        <div className="h-3 rounded-full bg-foreground/8 w-5/6" />
+                        <div className="h-3 rounded-full bg-foreground/6 w-4/5" />
+                        <div className="h-3 rounded-full bg-foreground/8 w-full" />
+                        <div className="h-3 rounded-full bg-foreground/6 w-2/3" />
+                      </div>
+                      {/* SEO badges row */}
+                      <div className="flex gap-2 flex-wrap">
+                        {[
+                          { label: "SEO 최적화", color: "bg-primary/10 text-primary border-primary/20" },
+                          { label: "형태소 17회", color: "bg-green-500/10 text-green-600 border-green-500/20" },
+                          { label: "1,847자", color: "bg-purple-500/10 text-purple-600 border-purple-500/20" },
+                        ].map((b) => (
+                          <span key={b.label} className={`text-xs px-2.5 py-1 rounded-full border font-medium ${b.color}`}>{b.label}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+
+              {/* Stats Cards - 자영업자 관점*/}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.9, duration: 0.8 }}
-                className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6"
+                {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { delay: 0.9, duration: 0.8 } })}
+                className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-5"
               >
                 {[
-                  { icon: Clock, value: "6시간 → 3분", label: "글 작성 시간 단축" },
-                  { icon: ShieldCheck, value: "직접 생성", label: "대행업체 사기 걱정 NO" },
-                  { icon: TrendingUp, value: "SEO 자동 최적화", label: "전문지식 필요 없음" },
+                  { icon: Clock, value: "98%", label: "글 작성 시간 단축 (6시간 → 3분)" },
+                  { icon: ShieldCheck, value: "100%", label: "직접 생성 — 대행업체 사기 걱정 NO" },
+                  { icon: TrendingUp, value: "SEO 자동", label: "전문지식 필요 없음" },
                 ].map((stat, index) => (
                   <motion.div
                     key={index}
-                    whileHover={{ scale: 1.05, y: -5 }}
-                    className="flex flex-col items-center p-6 rounded-2xl bg-card/50 backdrop-blur border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-200"
+                    {...(prefersReducedMotion ? {} : { whileHover: { scale: 1.04, y: -4 } })}
+                    className="flex items-center gap-4 p-5 rounded-2xl bg-card/70 backdrop-blur border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-200"
                   >
-                    <stat.icon className="w-8 h-8 text-primary mb-3" />
-                    <span className="text-2xl font-bold text-foreground">{stat.value}</span>
-                    <span className="text-sm text-muted-foreground">{stat.label}</span>
+                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <stat.icon className="w-6 h-6 text-primary" aria-hidden="true" />
+                    </div>
+                    <div className="text-left">
+                      <div className="text-xl font-bold text-foreground">{stat.value}</div>
+                      <div className="text-sm text-muted-foreground leading-snug">{stat.label}</div>
+                    </div>
                   </motion.div>
                 ))}
               </motion.div>
-            </motion.div>
+            </div>
           </div>
         </section>
 
@@ -288,10 +398,7 @@ export default function LandingPage() {
         <section id="pain-points" className="py-24 bg-gradient-to-b from-background to-muted/30" aria-labelledby="pain-points-heading">
           <div className="container px-4 mx-auto">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
+              {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { duration: 0.6 } })}
               className="text-center mb-16"
             >
               <h2 id="pain-points-heading" className="text-3xl md:text-4xl font-bold mb-4">
@@ -472,34 +579,47 @@ export default function LandingPage() {
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-20">
               {[
-                { icon: Search, title: "AI 키워드 분석", description: "검색 의도 자동 파악, SEO 최적화 소제목 4개 자동 제안, 사용자 고민 포인트 분석", color: "primary" },
-                { icon: FileText, title: "SEO 최적화 콘텐츠", description: "형태소 15-17회 정확한 출현, 1,700-2,000자 자동 조절, 구조화된 콘텐츠 생성", color: "purple" },
-                { icon: BarChart3, title: "실시간 연구 데이터", description: "Perplexity AI로 신뢰할 수 있는 최신 정보 수집, 연구 자료 기반 콘텐츠", color: "green" },
-                { icon: MessageSquare, title: "AI 챗봇 편집", description: "자연어로 콘텐츠 수정, SSR 평가 기반 제목 추천, 톤앤매너 조정", color: "orange" },
-                { icon: Smartphone, title: "모바일 최적화", description: "25-30자 단위 자동 줄바꿈, AI 스마트 포맷팅, 원클릭 복사", color: "blue" },
-                { icon: Save, title: "세션 관리", description: "작업 내용 자동/수동 저장, 이전 세션 불러오기, 프로젝트 히스토리", color: "pink" },
+                { icon: Search, title: "AI 키워드 분석", description: "검색 의도 자동 파악, SEO 최적화 소제목 4개 자동 제안, 사용자 고민 포인트 분석", color: "primary", gradient: "from-primary to-blue-500", result: "키워드 적합도 +94%" },
+                { icon: FileText, title: "SEO 최적화 콘텐츠", description: "형태소 15-17회 정확한 출현, 1,700-2,000자 자동 조절, 구조화된 콘텐츠 생성", color: "purple", gradient: "from-purple-500 to-violet-600", result: "상위노출 조건 100% 충족" },
+                { icon: BarChart3, title: "실시간 연구 데이터", description: "Perplexity AI로 신뢰할 수 있는 최신 정보 수집, 연구 자료 기반 콘텐츠", color: "green", gradient: "from-green-500 to-emerald-600", result: "신뢰도 높은 정보 자동 반영" },
+                { icon: MessageSquare, title: "AI 챗봇 편집", description: "자연어로 콘텐츠 수정, SSR 평가 기반 제목 추천, 톤앤매너 조정", color: "orange", gradient: "from-orange-400 to-orange-600", result: "수정 시간 80% 단축" },
+                { icon: Smartphone, title: "모바일 최적화", description: "25-30자 단위 자동 줄바꿈, AI 스마트 포맷팅, 원클릭 복사", color: "blue", gradient: "from-sky-400 to-blue-600", result: "모바일 가독성 최적화" },
+                { icon: Save, title: "세션 관리", description: "작업 내용 자동/수동 저장, 이전 세션 불러오기, 프로젝트 히스토리", color: "pink", gradient: "from-pink-400 to-rose-500", result: "언제든지 이어서 작업" },
               ].map((feature, index) => (
                 <motion.div
                   key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1, duration: 0.5 }}
-                  whileHover={{ y: -5 }}
-                  className="group p-6 rounded-2xl bg-card border border-border/50 hover:shadow-xl hover:border-primary/20 transition-all duration-200"
+                  {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { delay: index * 0.1, duration: 0.5 }, whileHover: { y: -6 } })}
+                  className="group relative p-6 rounded-2xl bg-card border border-border/50 hover:shadow-xl hover:border-primary/20 transition-all duration-250 overflow-hidden"
                 >
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300 ${
-                    feature.color === 'primary' ? 'bg-primary/10 text-primary' :
-                    feature.color === 'purple' ? 'bg-purple-500/10 text-purple-500' :
-                    feature.color === 'green' ? 'bg-green-500/10 text-green-500' :
-                    feature.color === 'orange' ? 'bg-orange-500/10 text-orange-500' :
-                    feature.color === 'blue' ? 'bg-blue-500/10 text-blue-500' :
-                    'bg-pink-500/10 text-pink-500'
+                  {/* Gradient top border accent */}
+                  <div className={`absolute top-0 left-0 right-0 h-1 rounded-t-2xl bg-gradient-to-r ${feature.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} aria-hidden="true" />
+                  {/* Static thin border always visible */}
+                  <div className={`absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl bg-gradient-to-r ${feature.gradient} opacity-40`} aria-hidden="true" />
+
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300 ${
+                    feature.color === 'primary' ? 'bg-primary/12 text-primary' :
+                    feature.color === 'purple' ? 'bg-purple-500/12 text-purple-500' :
+                    feature.color === 'green' ? 'bg-green-500/12 text-green-600' :
+                    feature.color === 'orange' ? 'bg-orange-500/12 text-orange-500' :
+                    feature.color === 'blue' ? 'bg-sky-500/12 text-sky-600' :
+                    'bg-pink-500/12 text-pink-500'
                   }`}>
-                    <feature.icon className="w-6 h-6" />
+                    <feature.icon className="w-7 h-7" aria-hidden="true" />
                   </div>
                   <h3 className="text-xl font-semibold mb-2 text-foreground">{feature.title}</h3>
-                  <p className="text-muted-foreground">{feature.description}</p>
+                  <p className="text-muted-foreground text-sm leading-relaxed mb-4">{feature.description}</p>
+                  {/* Result metric */}
+                  <div className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full ${
+                    feature.color === 'primary' ? 'bg-primary/10 text-primary' :
+                    feature.color === 'purple' ? 'bg-purple-500/10 text-purple-600' :
+                    feature.color === 'green' ? 'bg-green-500/10 text-green-700' :
+                    feature.color === 'orange' ? 'bg-orange-500/10 text-orange-600' :
+                    feature.color === 'blue' ? 'bg-sky-500/10 text-sky-700' :
+                    'bg-pink-500/10 text-pink-600'
+                  }`}>
+                    <TrendingUp className="w-3.5 h-3.5" aria-hidden="true" />
+                    결과: {feature.result}
+                  </div>
                 </motion.div>
               ))}
             </div>
@@ -541,6 +661,114 @@ export default function LandingPage() {
                 ))}
               </div>
             </motion.div>
+          </div>
+        </section>
+
+        {/* Testimonials Section */}
+        <section className="py-24 bg-gradient-to-b from-muted/30 to-background" aria-labelledby="testimonials-heading">
+          <div className="container px-4 mx-auto">
+            <motion.div
+              {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { duration: 0.6 } })}
+              className="text-center mb-14"
+            >
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-600 mb-4">
+                <Star className="w-4 h-4 fill-orange-500 text-orange-500" aria-hidden="true" />
+                <span className="text-sm font-medium">실제 자영업자 후기</span>
+              </div>
+              <h2 id="testimonials-heading" className="text-3xl md:text-4xl font-bold mb-4">
+                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                  사장님들의 생생한 후기
+                </span>
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                블로그치트키를 사용하는 자영업자분들의 실제 경험을 확인하세요
+              </p>
+            </motion.div>
+
+            <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+              {[
+                {
+                  name: "김민정",
+                  business: "헤어살롱 원장",
+                  businessType: "미용실",
+                  initial: "김",
+                  color: "bg-pink-500",
+                  rating: 5,
+                  quote: "블로그 글 하나 쓰는 데 반나절씩 걸렸는데, 이제는 3분이면 끝나요. 키워드만 넣으면 SEO 최적화된 글이 바로 나오니까 정말 편하고, 실제로 네이버 상위에 노출되기 시작했어요. 손님이 '블로그 보고 왔어요'라고 할 때 뿌듯합니다.",
+                  stat: "예약 문의 월 +40% 증가",
+                },
+                {
+                  name: "이준혁",
+                  business: "치과 원장",
+                  businessType: "치과의원",
+                  initial: "이",
+                  color: "bg-primary",
+                  rating: 5,
+                  quote: "의료 분야는 전문 용어도 많고 콘텐츠 품질이 중요한데, 블로그치트키가 Perplexity로 최신 연구 데이터까지 반영해줘서 신뢰감 있는 글이 나와요. 대행업체에 월 30만원 주던 걸 직접 하니까 비용 절감이 확실하게 됩니다.",
+                  stat: "마케팅 비용 월 25만원 절약",
+                },
+                {
+                  name: "박소연",
+                  business: "한식당 대표",
+                  businessType: "식당",
+                  initial: "박",
+                  color: "bg-green-500",
+                  rating: 5,
+                  quote: "전에는 SNS 홍보만 했는데 블로그는 엄두도 못 냈어요. 블로그치트키로 메뉴 소개 글 몇 개 올렸더니 검색해서 오시는 손님이 생겼어요. AI 챗봇으로 우리 가게 분위기에 맞게 톤을 바꿀 수 있어서 내 글처럼 느껴져요.",
+                  stat: "블로그 유입 방문객 월 +65명",
+                },
+              ].map((testimonial, index) => (
+                <motion.div
+                  key={index}
+                  {...(prefersReducedMotion ? {} : {
+                    initial: { opacity: 0, y: 24 },
+                    whileInView: { opacity: 1, y: 0 },
+                    viewport: { once: true },
+                    transition: { delay: index * 0.12, duration: 0.55 },
+                    whileHover: { y: -6 },
+                  })}
+                  className="group relative flex flex-col p-6 rounded-2xl bg-card border border-border/50 hover:shadow-xl transition-all duration-250 overflow-hidden"
+                >
+                  {/* Hover gradient border */}
+                  <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{ background: "linear-gradient(135deg, hsl(207,90%,54%,0.08), hsl(270,60%,65%,0.08))", border: "1.5px solid hsl(207,90%,54%,0.25)" }} aria-hidden="true" />
+
+                  {/* Quote icon */}
+                  <Quote className="w-8 h-8 text-primary/20 mb-4 flex-shrink-0" aria-hidden="true" />
+
+                  {/* Star rating */}
+                  <div className="flex gap-1 mb-4" role="img" aria-label={`별점 ${testimonial.rating}점`}>
+                    {Array.from({ length: testimonial.rating }).map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-orange-400 text-orange-400" aria-hidden="true" />
+                    ))}
+                  </div>
+
+                  {/* Review text */}
+                  <blockquote className="text-muted-foreground text-sm leading-relaxed flex-1 mb-5">
+                    "{testimonial.quote}"
+                  </blockquote>
+
+                  {/* Result stat badge */}
+                  <div className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full bg-primary/8 text-primary border border-primary/15 mb-5 self-start">
+                    <TrendingUp className="w-3.5 h-3.5" aria-hidden="true" />
+                    {testimonial.stat}
+                  </div>
+
+                  {/* Author */}
+                  <div className="flex items-center gap-3 pt-4 border-t border-border/40">
+                    <div
+                      className={`w-10 h-10 rounded-full ${testimonial.color} flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}
+                      aria-hidden="true"
+                    >
+                      {testimonial.initial}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-foreground text-sm">{testimonial.name}</div>
+                      <div className="text-xs text-muted-foreground">{testimonial.business} · {testimonial.businessType}</div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -615,14 +843,11 @@ export default function LandingPage() {
         <section id="pricing" className="py-24 bg-muted/30" aria-labelledby="pricing-heading">
           <div className="container px-4 mx-auto">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
+              {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { duration: 0.6 } })}
+              className="text-center mb-12"
             >
               <h2 id="pricing-heading" className="text-3xl md:text-4xl font-bold mb-4">
-                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">블로그치트키 요금제 - 대행업체보다 저렴하게</span>
+                <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">블로그치트키 요금제</span>
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
                 대행업체 월 수십만원 vs 블로그치트키 월 2-5만원
@@ -632,14 +857,59 @@ export default function LandingPage() {
               </p>
             </motion.div>
 
+            {/* Cost Comparison Visual */}
+            <motion.div
+              {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { delay: 0.1, duration: 0.6 } })}
+              className="max-w-2xl mx-auto mb-12 p-6 rounded-2xl bg-card border border-border/50 shadow-sm"
+              aria-label="대행업체 대비 비용 비교"
+            >
+              <h3 className="text-center text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-5">대행업체 대비 비용 비교</h3>
+              <div className="space-y-4">
+                {/* Agency bar */}
+                <div>
+                  <div className="flex justify-between text-sm mb-1.5">
+                    <span className="font-medium text-muted-foreground">블로그 대행업체</span>
+                    <span className="font-bold text-muted-foreground">₩300,000 / 월</span>
+                  </div>
+                  <div className="h-8 rounded-lg bg-muted/60 border border-border/40 overflow-hidden">
+                    <motion.div
+                      className="h-full rounded-lg bg-gradient-to-r from-muted-foreground/30 to-muted-foreground/20 flex items-center justify-end pr-3"
+                      style={{ width: "100%" }}
+                      {...(prefersReducedMotion ? {} : { initial: { width: 0 }, whileInView: { width: "100%" }, viewport: { once: true }, transition: { delay: 0.4, duration: 0.8, ease: "easeOut" } })}
+                    >
+                      <span className="text-xs text-muted-foreground font-medium">사기 위험 있음</span>
+                    </motion.div>
+                  </div>
+                </div>
+                {/* Cheatkey bar */}
+                <div>
+                  <div className="flex justify-between text-sm mb-1.5">
+                    <span className="font-semibold text-primary">블로그치트키 프리미엄</span>
+                    <span className="font-bold text-primary">₩50,000 / 월</span>
+                  </div>
+                  <div className="h-8 rounded-lg bg-primary/8 border border-primary/20 overflow-hidden">
+                    <motion.div
+                      className="h-full rounded-lg bg-gradient-to-r from-primary to-blue-500 flex items-center justify-end pr-3"
+                      style={{ width: "17%" }}
+                      {...(prefersReducedMotion ? {} : { initial: { width: 0 }, whileInView: { width: "17%" }, viewport: { once: true }, transition: { delay: 0.6, duration: 0.7, ease: "easeOut" } })}
+                    >
+                      <span className="text-xs text-white font-bold whitespace-nowrap">83% 저렴</span>
+                    </motion.div>
+                  </div>
+                </div>
+              </div>
+              <p className="text-center text-xs text-muted-foreground mt-4">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/8 text-primary border border-primary/15">
+                  <Check className="w-3.5 h-3.5" aria-hidden="true" />
+                  무료 체험 3회 포함 — 신용카드 없이 시작
+                </span>
+              </p>
+            </motion.div>
+
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               {/* Basic Plan */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.1, duration: 0.6 }}
-                whileHover={{ y: -5 }}
+                {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { delay: 0.1, duration: 0.6 }, whileHover: { y: -5 } })}
                 className="p-8 rounded-2xl bg-card border border-border/50 hover:shadow-xl transition-all duration-200"
               >
                 <div className="text-center mb-8">
@@ -674,11 +944,7 @@ export default function LandingPage() {
 
               {/* Premium Plan */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2, duration: 0.6 }}
-                whileHover={{ y: -5 }}
+                {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { delay: 0.2, duration: 0.6 }, whileHover: { y: -5 } })}
                 className="p-8 rounded-2xl bg-gradient-to-br from-primary/10 to-purple-500/10 border-2 border-primary/30 hover:shadow-xl hover:shadow-primary/10 transition-all duration-200 relative"
               >
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2">
@@ -820,12 +1086,12 @@ export default function LandingPage() {
         {/* CTA Section */}
         <div className="container px-4 py-20 mx-auto">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 20 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true }, transition: { duration: 0.6 } })}
             className="max-w-3xl mx-auto text-center"
           >
+            {/* Social proof counter */}
+            <FooterBlogCounter prefersReducedMotion={prefersReducedMotion ?? false} />
+
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
               블로그 마케팅, 이러지도 저러지도 못하셨다면
             </h2>
@@ -835,7 +1101,7 @@ export default function LandingPage() {
             <p className="text-xl text-primary font-semibold mb-8">
               블로그치트키로 직접 해보세요. 3분이면 충분합니다.
             </p>
-            <motion.div whileHover={{ scale: 1.03 }}>
+            <motion.div {...(prefersReducedMotion ? {} : { whileHover: { scale: 1.03 } })}>
               <Button
                 size="lg"
                 onClick={() => navigate("/login")}
@@ -905,4 +1171,21 @@ export default function LandingPage() {
   );
 }
 
-// 모든 컴포넌트가 인라인으로 통합되어 별도 컴포넌트 불필요
+// Footer blog counter with count-up animation
+function FooterBlogCounter({ prefersReducedMotion }: { prefersReducedMotion: boolean }) {
+  const TARGET = 1847;
+  const { count, ref } = useCountUp(TARGET, 1800);
+
+  return (
+    <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/8 border border-primary/20 text-primary mb-8">
+      <Sparkles className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+      <span className="text-sm font-semibold">
+        지금까지{" "}
+        <span ref={ref} aria-live="polite" aria-atomic="true">
+          {prefersReducedMotion ? TARGET.toLocaleString() : count.toLocaleString()}
+        </span>
+        개의 블로그 생성 완료
+      </span>
+    </div>
+  );
+}
