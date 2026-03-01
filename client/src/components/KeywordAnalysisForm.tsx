@@ -571,49 +571,37 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
                 </p>
               </div>
             )}
-          </CardContent>
-        </Card>
-      )}
 
-      {/* 자료 수집 카드 — 분석 완료 후 별도 단계로 분리 */}
-      {project && project.keywordAnalysis && (project.status === 'keyword_analysis' || project.status === 'data_collection') && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center text-lg">
-              <Search className="h-5 w-5 text-primary mr-2" />
-              자료 수집
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">2</span>
-              <span className="text-sm font-medium text-muted-foreground">2단계: 글 방향 설정 후 자료 수집</span>
-            </div>
-
-            <ArticleDirectionSelector
-              keyword={project.keyword}
-              isLoading={analyzeWithDirection.isPending || researchData.isPending}
-              onConfirm={async (direction) => {
-                try {
-                  // 방향이 있으면 재분석 (소제목 재생성), 없으면 바로 수집
-                  if (direction) {
-                    await analyzeWithDirection.mutateAsync({ id: project.id, direction });
-                    onRefresh();
-                    toast({
-                      title: "소제목 재생성 완료",
-                      description: "방향을 반영한 소제목으로 자료를 수집합니다.",
-                    });
-                  }
-                  researchData.mutate(project.id);
-                } catch {
-                  toast({
-                    title: "오류",
-                    description: "소제목 재생성에 실패했습니다.",
-                    variant: "destructive",
-                  });
-                }
-              }}
-            />
+            {/* 자료 수집 — 분석 결과 카드 안에서 자연스럽게 이어짐 */}
+            {(project.status === 'keyword_analysis' || project.status === 'data_collection') && (
+              <>
+                <div className="border-t border-border/50 pt-4">
+                  <ArticleDirectionSelector
+                    keyword={project.keyword}
+                    isLoading={analyzeWithDirection.isPending || researchData.isPending}
+                    onConfirm={async (direction) => {
+                      try {
+                        if (direction) {
+                          await analyzeWithDirection.mutateAsync({ id: project.id, direction });
+                          onRefresh();
+                          toast({
+                            title: "소제목 재생성 완료",
+                            description: "방향을 반영한 소제목으로 자료를 수집합니다.",
+                          });
+                        }
+                        researchData.mutate(project.id);
+                      } catch {
+                        toast({
+                          title: "오류",
+                          description: "소제목 재생성에 실패했습니다.",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                  />
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       )}

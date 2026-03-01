@@ -1,12 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Compass,
-  ChevronRight,
-  SkipForward,
-  Loader2,
-} from "lucide-react";
+import { ChevronRight, SkipForward, Loader2 } from "lucide-react";
 
 const EXAMPLE_CHIPS = [
   "내 사업장을 홍보하려는 분들에게 도움이 되는 글",
@@ -43,20 +38,13 @@ export function ArticleDirectionSelector({
   };
 
   return (
-    <div className="space-y-4">
-      {/* 헤더 */}
-      <div className="flex items-center gap-2">
-        <Compass className="h-4 w-4 text-primary" />
-        <span className="text-sm font-semibold text-foreground">글 방향 설정</span>
-        <span className="text-xs text-muted-foreground">(선택사항)</span>
-      </div>
-
+    <div className="space-y-3">
       <p className="text-xs text-muted-foreground leading-relaxed">
         이 글을 <strong>어떤 목적으로, 누구를 위해</strong> 쓰는지 알려주세요.
-        AI가 그 방향에 맞는 소제목과 자료를 찾아드립니다.
+        AI가 소제목과 자료를 그 방향에 맞게 바꿔드립니다.
       </p>
 
-      {/* 예시 힌트 칩 */}
+      {/* 예시 칩 */}
       <div className="flex flex-wrap gap-1.5">
         {EXAMPLE_CHIPS.map((chip) => (
           <button
@@ -76,26 +64,21 @@ export function ArticleDirectionSelector({
       </div>
 
       {/* 자유 입력 */}
-      <div className="space-y-1.5">
-        <Textarea
-          value={direction}
-          onChange={(e) => setDirection(e.target.value)}
-          placeholder={`예: "${keyword}을/를 이용해 수익을 내려는 사업자를 위한 실전 가이드"`}
-          className="text-sm resize-none h-20 placeholder:text-muted-foreground/60"
-          disabled={isLoading}
-        />
-        <p className="text-[11px] text-muted-foreground">
-          위 예시를 눌러 편집하거나, 직접 목적과 대상 독자를 입력하세요.
-        </p>
-      </div>
+      <Textarea
+        value={direction}
+        onChange={(e) => setDirection(e.target.value)}
+        placeholder={`예: "${keyword}을/를 이용해 수익을 내려는 사업자를 위한 실전 가이드"`}
+        className="text-sm resize-none h-16 placeholder:text-muted-foreground/60"
+        disabled={isLoading}
+      />
 
       {/* 액션 버튼 */}
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2">
         <Button
           size="sm"
           onClick={handleConfirm}
           disabled={!direction.trim() || isLoading}
-          className="flex-1 gap-1.5 cursor-pointer min-h-[40px]"
+          className="w-full gap-1.5 cursor-pointer min-h-[40px]"
         >
           {isLoading ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -109,7 +92,7 @@ export function ArticleDirectionSelector({
           variant="ghost"
           onClick={handleSkip}
           disabled={isLoading}
-          className="gap-1.5 text-muted-foreground cursor-pointer min-h-[40px] shrink-0"
+          className="w-full gap-1.5 text-muted-foreground cursor-pointer"
         >
           {isLoading ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
