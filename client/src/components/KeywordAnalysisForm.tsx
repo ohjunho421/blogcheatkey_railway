@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Search, Brain, Lightbulb, GripVertical, Sparkles, Edit, Trash, Check, X, Plus, Save, RefreshCw, Loader2, CheckCircle2 } from "lucide-react";
+import { Search, Brain, Lightbulb, GripVertical, Edit, Trash, Check, X, Plus, Save, RefreshCw, Loader2, CheckCircle2 } from "lucide-react";
 import { ArticleDirectionSelector } from "./ArticleDirectionSelector";
 import { useLocation } from "wouter";
 
@@ -167,6 +167,15 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
         description: error.message,
         variant: "destructive",
       });
+    },
+  });
+
+  const analyzeWithDirection = useMutation({
+    mutationFn: async ({ id, direction }: { id: number; direction: string | null }) => {
+      const analyzeResponse = await apiRequest("POST", `/api/projects/${id}/analyze`, {
+        direction: direction || undefined,
+      });
+      return analyzeResponse.json();
     },
   });
 
@@ -551,48 +560,6 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
               </DragDropContext>
             </div>
 
-            {/* Article Direction Selector (선택사항) */}
-            {(project.status === 'keyword_analysis' || project.status === 'data_collection') &&
-              project.keywordAnalysis?.directionSuggestions?.length > 0 && (
-              <div className="mt-4 pt-4 border-t">
-                <ArticleDirectionSelector
-                  project={project}
-                  onDirectionSet={onRefresh}
-                />
-              </div>
-            )}
-
-            {/* Research Data Collection Button */}
-            {(project.status === 'keyword_analysis' || project.status === 'data_collection') && (
-              <div className="mt-4 pt-4 border-t">
-                <Button
-                  onClick={() => researchData.mutate(project.id)}
-                  disabled={researchData.isPending}
-                  className="w-full"
-                  size="default"
-                >
-                  {researchData.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      AI 정보 수집 중...
-                    </>
-                  ) : (
-                    <>
-                      <Search className="h-4 w-4 mr-2" />
-                      {project.keywordAnalysis?.articleDirection
-                        ? `'${project.keywordAnalysis.articleDirectionLabel || '선택한 방향'}' 기준으로 자료 수집`
-                        : "AI로 관련 정보 자동 수집하기"}
-                    </>
-                  )}
-                </Button>
-                <p className="text-xs text-muted-foreground mt-2 text-center">
-                  {project.keywordAnalysis?.articleDirection
-                    ? `선택한 방향이 자료 수집에 반영됩니다 · Perplexity AI`
-                    : "Perplexity AI로 관련 정보를 수집합니다"}
-                </p>
-              </div>
-            )}
-
             {project.status === 'business_info' && (
               <div className="flex flex-col items-center gap-1 py-4 text-center">
                 <CheckCircle2 className="h-5 w-5 text-green-600" />
@@ -604,6 +571,49 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
                 </p>
               </div>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 자료 수집 카드 — 분석 완료 후 별도 단계로 분리 */}
+      {project && project.keywordAnalysis && (project.status === 'keyword_analysis' || project.status === 'data_collection') && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center text-lg">
+              <Search className="h-5 w-5 text-primary mr-2" />
+              자료 수집
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">2</span>
+              <span className="text-sm font-medium text-muted-foreground">2단계: 글 방향 설정 후 자료 수집</span>
+            </div>
+
+            <ArticleDirectionSelector
+              keyword={project.keyword}
+              isLoading={analyzeWithDirection.isPending || researchData.isPending}
+              onConfirm={async (direction) => {
+                try {
+                  // 방향이 있으면 재분석 (소제목 재생성), 없으면 바로 수집
+                  if (direction) {
+                    await analyzeWithDirection.mutateAsync({ id: project.id, direction });
+                    onRefresh();
+                    toast({
+                      title: "소제목 재생성 완료",
+                      description: "방향을 반영한 소제목으로 자료를 수집합니다.",
+                    });
+                  }
+                  researchData.mutate(project.id);
+                } catch {
+                  toast({
+                    title: "오류",
+                    description: "소제목 재생성에 실패했습니다.",
+                    variant: "destructive",
+                  });
+                }
+              }}
+            />
           </CardContent>
         </Card>
       )}

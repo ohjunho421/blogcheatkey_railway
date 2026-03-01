@@ -12,18 +12,22 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || "default_key"
 });
 
-export async function analyzeKeyword(keyword: string): Promise<KeywordAnalysis> {
+export async function analyzeKeyword(keyword: string, direction?: string): Promise<KeywordAnalysis> {
   if (!process.env.GEMINI_API_KEY && !process.env.GEMINI_API_KEY_ENV_VAR) {
     throw new Error("Gemini API key is not configured");
   }
 
-  const prompt = `키워드: "${keyword}"
+  const directionLine = direction
+    ? `\n글쓰기 목적/방향: "${direction}"\n이 목적/방향을 반드시 반영하여 소제목을 생성해주세요.`
+    : '';
+
+  const prompt = `키워드: "${keyword}"${directionLine}
 
 다음 JSON 형식으로만 응답해주세요. 설명이나 다른 텍스트 없이 JSON만 반환해주세요:
 
 {
   "searchIntent": "검색 의도 설명 (150-200자)",
-  "userConcerns": "사용자 고민사항 (150-200자)",  
+  "userConcerns": "사용자 고민사항 (150-200자)",
   "suggestedSubtitles": ["소제목1", "소제목2", "소제목3", "소제목4"]
 }`;
 
@@ -36,7 +40,9 @@ export async function analyzeKeyword(keyword: string): Promise<KeywordAnalysis> 
       const response = await ai.models.generateContent({
         model: "gemini-2.5-pro",
         config: {
-          systemInstruction: "당신은 SEO 전문가이자 블로그 작성 전문가입니다. 사용자의 검색 의도를 정확히 파악하고, 실용적이고 도움이 되는 블로그 구조를 제안해주세요.",
+          systemInstruction: direction
+            ? "당신은 SEO 전문가이자 블로그 작성 전문가입니다. 사용자가 지정한 글쓰기 목적과 방향을 최우선으로 반영하여 블로그 구조를 제안해주세요."
+            : "당신은 SEO 전문가이자 블로그 작성 전문가입니다. 사용자의 검색 의도를 정확히 파악하고, 실용적이고 도움이 되는 블로그 구조를 제안해주세요.",
         },
         contents: [{
           role: "user",
@@ -78,11 +84,12 @@ export async function analyzeKeyword(keyword: string): Promise<KeywordAnalysis> 
         } else {
           // Return fallback analysis after all retries
           console.log("All retries failed, returning fallback analysis");
+          const directionNote = direction ? ` (방향: ${direction})` : '';
           return {
             searchIntent: `${keyword}에 대한 정보를 찾고 있는 사용자들은 실용적이고 구체적인 가이드를 원합니다. 이들은 단순한 정의보다는 실제 적용 방법, 장단점, 그리고 개인적인 경험이나 전문가 의견을 통해 더 깊이 있는 이해를 얻고자 합니다.`,
             userConcerns: `${keyword}를 검색하는 사용자들은 어디서부터 시작해야 할지 모르거나, 너무 많은 정보로 인해 혼란스러워합니다. 또한 신뢰할 수 있는 정보원을 찾기 어려워하며, 실제로 적용 가능한 구체적인 방법을 찾고 있습니다.`,
             suggestedSubtitles: [
-              `${keyword}란 무엇인가? 기본 개념 정리`,
+              `${keyword}란 무엇인가? 기본 개념 정리${directionNote}`,
               `${keyword}의 주요 특징과 장점`,
               `${keyword} 시작하는 방법: 단계별 가이드`,
               `${keyword} 관련 주의사항과 전문가 조언`

@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
 import { businessInfoSchema, keywordAnalysisSchema, seoMetricsSchema, updateUserPermissionsSchema } from "@shared/schema";
-import { analyzeKeyword, editContent, enhanceIntroductionAndConclusion, suggestArticleDirections } from "./services/gemini";
+import { analyzeKeyword, editContent, enhanceIntroductionAndConclusion } from "./services/gemini";
 import { preparePayment, verifyPayment, cancelPayment, getPaymentHistory } from "./services/portone";
 import { setupAuth, requireAuth } from './auth';
 import { writeOptimizedBlogPost } from "./services/anthropic";
@@ -470,27 +470,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
       }
 
-      // Analyze keyword using Gemini
-      const analysis = await analyzeKeyword(project.keyword);
+      const { direction } = req.body as { direction?: string };
 
-      // 분석 결과를 먼저 저장 후 방향 제안을 비동기로 추가 (응답 속도 우선)
+      // Analyze keyword using Gemini (direction이 있으면 소제목 생성에 반영)
+      const analysis = await analyzeKeyword(project.keyword, direction || undefined);
+
+      // direction이 있으면 keywordAnalysis에 함께 저장
+      const keywordAnalysis = direction
+        ? { ...analysis, articleDirection: direction }
+        : analysis;
+
       const updatedProject = await storage.updateBlogProject(id, {
-        keywordAnalysis: analysis,
+        keywordAnalysis,
         subtitles: analysis.suggestedSubtitles,
         status: "data_collection",
       });
-
-      // 방향 제안은 비동기로 생성해서 업데이트 (UX: 키워드 분석 결과 먼저 보여주기)
-      suggestArticleDirections(project.keyword, analysis.searchIntent, analysis.userConcerns)
-        .then(async (directionSuggestions) => {
-          const existing = await storage.getBlogProject(id);
-          if (!existing) return;
-          const existingAnalysis = (existing.keywordAnalysis as any) || {};
-          await storage.updateBlogProject(id, {
-            keywordAnalysis: { ...existingAnalysis, directionSuggestions },
-          });
-        })
-        .catch(() => {});
 
       res.json(updatedProject);
     } catch (error) {
