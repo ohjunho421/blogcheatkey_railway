@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
 import { businessInfoSchema, keywordAnalysisSchema, seoMetricsSchema, updateUserPermissionsSchema } from "@shared/schema";
-import { analyzeKeyword, editContent, enhanceIntroductionAndConclusion } from "./services/gemini";
+import { analyzeKeyword, editContent, enhanceIntroductionAndConclusion, suggestArticleDirections } from "./services/gemini";
 import { preparePayment, verifyPayment, cancelPayment, getPaymentHistory } from "./services/portone";
 import { setupAuth, requireAuth } from './auth';
 import { writeOptimizedBlogPost } from "./services/anthropic";
@@ -472,12 +472,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Analyze keyword using Gemini
       const analysis = await analyzeKeyword(project.keyword);
-      
+
+      // 분석 결과를 먼저 저장 후 방향 제안을 비동기로 추가 (응답 속도 우선)
       const updatedProject = await storage.updateBlogProject(id, {
         keywordAnalysis: analysis,
         subtitles: analysis.suggestedSubtitles,
         status: "data_collection",
       });
+
+      // 방향 제안은 비동기로 생성해서 업데이트 (UX: 키워드 분석 결과 먼저 보여주기)
+      suggestArticleDirections(project.keyword, analysis.searchIntent, analysis.userConcerns)
+        .then(async (directionSuggestions) => {
+          const existing = await storage.getBlogProject(id);
+          if (!existing) return;
+          const existingAnalysis = (existing.keywordAnalysis as any) || {};
+          await storage.updateBlogProject(id, {
+            keywordAnalysis: { ...existingAnalysis, directionSuggestions },
+          });
+        })
+        .catch(() => {});
 
       res.json(updatedProject);
     } catch (error) {
@@ -497,9 +510,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
       }
 
-      // Search research data using Perplexity
+      // Search research data using Perplexity (방향 반영)
       const subtitles = project.subtitles as string[] || [];
-      const researchData = await searchResearch(project.keyword, subtitles);
+      const keywordAnalysis = project.keywordAnalysis as any;
+      const articleDirection = keywordAnalysis?.articleDirection;
+      const researchData = await searchResearch(project.keyword, subtitles, articleDirection);
       
       const updatedProject = await storage.updateBlogProject(id, {
         researchData,
@@ -513,8 +528,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== ARTICLE DIRECTION (optional) =====
+
+  app.post("/api/projects/:id/direction", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { articleDirection, articleDirectionLabel } = req.body;
+
+      const project = await storage.getBlogProject(id);
+      if (!project) return res.status(404).json({ error: "프로젝트를 찾을 수 없습니다" });
+
+      const existingAnalysis = (project.keywordAnalysis as any) || {};
+      await storage.updateBlogProject(id, {
+        keywordAnalysis: {
+          ...existingAnalysis,
+          articleDirection: articleDirection || null,
+          articleDirectionLabel: articleDirectionLabel || null,
+        },
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Direction save error:", error);
+      res.status(500).json({ error: "방향 저장에 실패했습니다" });
+    }
+  });
+
   // ===== BUSINESS INFO =====
-  
+
   app.post("/api/projects/:id/business-info", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -1010,6 +1051,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Send chat message (content editing or title generation)
   app.post("/api/projects/:id/chat", async (req, res) => {
+    req.setTimeout(240000); // 4분 (방향 전환 재리서치+재생성 포함)
     try {
       const id = parseInt(req.params.id);
       const { message } = req.body;
@@ -1189,7 +1231,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const { enhancedEditContent, analyzeUserRequest, generateContentBasedTitle } = await import("./services/enhancedChatbot.js");
           
           const quickAnalysis = await analyzeUserRequest(message, project.generatedContent, project.keyword);
-          
+
+          // 방향 전환 요청 감지 (재리서치 + 재생성)
+          const isDirectionChange = quickAnalysis.intent === 'direction_change' ||
+            /방향\s*(바꿔|바꿔줘|변경|전환|다시|새로)|다른\s*각도|다른\s*방향|다른\s*관점|(비교|추천|가이드|리뷰|문제해결|전문가)\s*(형|식|으로|방식|스타일)\s*(으로|로)?\s*(다시|새로|써줘|작성|바꿔)/i.test(message);
+
+          if (isDirectionChange) {
+            await storage.createChatMessage({
+              projectId: id,
+              role: "assistant",
+              content: `새로운 방향으로 글을 다시 작성합니다.\n\n1단계: 새 방향에 맞는 자료 수집 중...\n(약 30-60초 소요됩니다)`,
+            });
+
+            try {
+              // 메시지에서 새 방향 추출 (조사/명령어 제거 후 의미 있는 내용만 추출)
+              const extracted = message
+                .replace(/방향\s*(바꿔|바꿔줘|변경|전환|다시|새로)\s*(줘|주세요)?/g, '')
+                .replace(/다른\s*(각도|방향|관점)(\s*으로)?/g, '')
+                .replace(/^[\s,。.]+|[\s,。.]+$/g, '')
+                .trim();
+              // 추출 결과가 너무 짧거나 없으면 원본 메시지 앞 100자 사용
+              const newDirection = extracted.length > 3
+                ? extracted.slice(0, 200)
+                : message.slice(0, 100);
+
+              // 기존 keywordAnalysis 업데이트
+              const existingAnalysis = (project.keywordAnalysis as any) || {};
+              await storage.updateBlogProject(id, {
+                keywordAnalysis: {
+                  ...existingAnalysis,
+                  articleDirection: newDirection,
+                  articleDirectionLabel: '챗봇에서 변경',
+                },
+              });
+
+              // 새 방향으로 재리서치
+              const subtitles = project.subtitles as string[] || [];
+              const newResearchData = await searchResearch(project.keyword, subtitles, newDirection);
+              await storage.updateBlogProject(id, { researchData: newResearchData });
+
+              await storage.createChatMessage({
+                projectId: id,
+                role: "assistant",
+                content: `2단계: 새 자료를 바탕으로 글 재생성 중...`,
+              });
+
+              // 재생성
+              const { generateStrictMorphemeContent } = await import("./services/strictMorphemeGenerator.js");
+              const updatedProject2 = await storage.getBlogProject(id);
+              if (!updatedProject2) throw new Error("프로젝트를 찾을 수 없습니다");
+
+              const generationResult = await generateStrictMorphemeContent(
+                project.keyword,
+                subtitles,
+                newResearchData as any,
+                updatedProject2.businessInfo as any,
+                updatedProject2.referenceBlogLinks as any,
+                project.customMorphemes as string | undefined,
+                existingAnalysis.searchIntent,
+                existingAnalysis.userConcerns
+              );
+              const newContent = generationResult.content;
+
+              const { analyzeMorphemes: analyzeM } = await import("./services/morphemeAnalyzer.js");
+              const morphemeResult = await analyzeM(newContent, project.keyword, project.customMorphemes || undefined);
+
+              await storage.updateBlogProject(id, {
+                generatedContent: newContent,
+                seoMetrics: morphemeResult as any,
+              });
+
+              const responseMsg = `방향 전환 완료!\n\n새 방향: ${newDirection}\n\n글이 새로운 관점으로 재작성되었습니다.\nSEO: ${morphemeResult.isOptimized ? '최적화 완료' : '추가 최적화 필요'}`;
+
+              await storage.createChatMessage({
+                projectId: id,
+                role: "assistant",
+                content: responseMsg,
+              });
+
+              return res.json({
+                success: true,
+                type: 'direction_change',
+                newContent,
+                message: responseMsg,
+              });
+            } catch (dirErr: any) {
+              console.error("Direction change error:", dirErr);
+              await storage.createChatMessage({
+                projectId: id,
+                role: "assistant",
+                content: `방향 전환 중 오류가 발생했습니다: ${dirErr?.message || "알 수 없는 오류"}\n\n다시 시도하거나, 더 구체적인 방향을 말씀해주세요.`,
+              });
+              return res.json({ success: true, type: 'error', message: dirErr?.message });
+            }
+          }
+
           if (quickAnalysis.intent === 'title_suggestion') {
             const titlesWithScores = await generateContentBasedTitle(
               project.generatedContent,

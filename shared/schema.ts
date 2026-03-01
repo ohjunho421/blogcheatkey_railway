@@ -244,10 +244,20 @@ export const businessInfoSchema = z.object({
   differentiators: z.string().min(1, "차별점을 입력해주세요"),
 });
 
+export const articleDirectionSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  description: z.string(),
+  angle: z.string(), // 글의 핵심 각도/관점
+});
+
 export const keywordAnalysisSchema = z.object({
   searchIntent: z.string(),
   userConcerns: z.string(),
   suggestedSubtitles: z.array(z.string()),
+  directionSuggestions: z.array(articleDirectionSchema).optional(),
+  articleDirection: z.string().optional(), // 선택된 방향
+  articleDirectionLabel: z.string().optional(), // 선택된 방향의 레이블
 });
 
 export const seoMetricsSchema = z.object({
@@ -297,4 +307,5 @@ export type BusinessInfo = z.infer<typeof businessInfoSchema>;
 export type KeywordAnalysis = z.infer<typeof keywordAnalysisSchema>;
 export type SEOMetrics = z.infer<typeof seoMetricsSchema>;
 export type ReferenceBlogLink = z.infer<typeof referenceBlogLinkSchema>;
+export type ArticleDirection = z.infer<typeof articleDirectionSchema>;
 export type UpdateUserPermissions = z.infer<typeof updateUserPermissionsSchema>;

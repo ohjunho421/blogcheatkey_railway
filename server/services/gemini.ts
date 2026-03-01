@@ -100,6 +100,80 @@ export async function analyzeKeyword(keyword: string): Promise<KeywordAnalysis> 
   throw new Error("키워드 분석에 실패했습니다: 최대 재시도 횟수 초과");
 }
 
+export async function suggestArticleDirections(
+  keyword: string,
+  searchIntent: string,
+  userConcerns: string
+): Promise<Array<{ id: string; label: string; description: string; angle: string }>> {
+  const prompt = `키워드: "${keyword}"
+검색 의도: ${searchIntent}
+사용자 고민: ${userConcerns}
+
+이 키워드로 블로그 글을 쓸 때 가능한 4가지 글 방향을 제안해주세요.
+검색 의도와 다른 관점/각도의 방향들도 포함하여 다양하게 제안해주세요.
+
+다음 JSON 형식으로만 응답하세요:
+[
+  {
+    "id": "guide",
+    "label": "단계별 가이드형",
+    "description": "독자가 따라할 수 있는 방법/순서 중심 설명",
+    "angle": "how-to 형식으로 구체적 단계와 팁 위주"
+  },
+  {
+    "id": "comparison",
+    "label": "비교/추천형",
+    "description": "옵션들을 비교하여 최선의 선택을 안내",
+    "angle": "장단점 비교와 상황별 추천 위주"
+  },
+  {
+    "id": "problem_solution",
+    "label": "문제해결형",
+    "description": "독자의 고민과 문제를 직접 해결",
+    "angle": "원인 분석과 해결책 제시 위주"
+  },
+  {
+    "id": "expert_review",
+    "label": "전문가 리뷰형",
+    "description": "깊이 있는 전문 지식과 인사이트 제공",
+    "angle": "전문 용어와 데이터 기반 심층 분석"
+  }
+]
+
+위 형식을 참고하여 "${keyword}" 키워드에 맞게 4가지 방향을 제안하세요.
+label, description, angle은 반드시 해당 키워드에 맞게 구체적으로 작성하세요.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-pro",
+      config: {
+        systemInstruction: "당신은 SEO 블로그 전략 전문가입니다. 키워드에 맞는 다양한 글 방향을 제안합니다.",
+      },
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+    });
+
+    const rawText = response.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!rawText) throw new Error("Empty response");
+
+    let jsonStr = rawText.trim();
+    if (jsonStr.startsWith('```json')) jsonStr = jsonStr.slice(7);
+    if (jsonStr.startsWith('```')) jsonStr = jsonStr.slice(3);
+    if (jsonStr.endsWith('```')) jsonStr = jsonStr.slice(0, -3);
+
+    const parsed = JSON.parse(jsonStr.trim());
+    if (!Array.isArray(parsed)) throw new Error("Invalid format");
+    return parsed;
+  } catch (error) {
+    // 기본 방향 제안 반환
+    return [
+      { id: "guide", label: "단계별 가이드형", description: "방법/순서 중심으로 독자가 따라할 수 있게 설명", angle: "how-to 형식으로 구체적 단계와 팁 위주" },
+      { id: "comparison", label: "비교/추천형", description: "옵션들을 비교하여 최선의 선택을 안내", angle: "장단점 비교와 상황별 추천 위주" },
+      { id: "problem_solution", label: "문제해결형", description: "독자의 고민과 문제를 직접 해결", angle: "원인 분석과 해결책 제시 위주" },
+      { id: "expert_review", label: "전문가 리뷰형", description: "깊이 있는 전문 지식과 인사이트 제공", angle: "전문 데이터 기반 심층 분석" },
+    ];
+  }
+}
+
 export async function editContent(
   originalContent: string, 
   editRequest: string, 

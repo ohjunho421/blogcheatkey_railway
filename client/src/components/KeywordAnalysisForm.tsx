@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { Search, Brain, Lightbulb, GripVertical, Sparkles, Edit, Trash, Check, X, Plus, Save, RefreshCw } from "lucide-react";
+import { Search, Brain, Lightbulb, GripVertical, Sparkles, Edit, Trash, Check, X, Plus, Save, RefreshCw, Loader2, CheckCircle2 } from "lucide-react";
+import { ArticleDirectionSelector } from "./ArticleDirectionSelector";
 import { useLocation } from "wouter";
 
 interface KeywordAnalysisFormProps {
@@ -446,12 +447,9 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
                   )}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground mb-3">
-                드래그앤드롭으로 순서를 변경할 수 있습니다
-              </p>
-              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1 mb-2">
+              <p className="text-xs text-muted-foreground flex items-center gap-1 mb-3">
                 <GripVertical className="h-3 w-3" />
-                아이콘을 드래그해 소제목 순서를 바꿀 수 있어요
+                드래그로 소제목 순서를 변경할 수 있습니다
               </p>
               <DragDropContext onDragEnd={handleDragEnd}>
                 <Droppable droppableId="subtitles" type="SUBTITLE">
@@ -553,9 +551,20 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
               </DragDropContext>
             </div>
 
+            {/* Article Direction Selector (선택사항) */}
+            {(project.status === 'keyword_analysis' || project.status === 'data_collection') &&
+              project.keywordAnalysis?.directionSuggestions?.length > 0 && (
+              <div className="mt-4 pt-4 border-t">
+                <ArticleDirectionSelector
+                  project={project}
+                  onDirectionSet={onRefresh}
+                />
+              </div>
+            )}
+
             {/* Research Data Collection Button */}
             {(project.status === 'keyword_analysis' || project.status === 'data_collection') && (
-              <div className="mt-6 pt-4 border-t">
+              <div className="mt-4 pt-4 border-t">
                 <Button
                   onClick={() => researchData.mutate(project.id)}
                   disabled={researchData.isPending}
@@ -564,28 +573,33 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
                 >
                   {researchData.isPending ? (
                     <>
-                      <Search className="h-4 w-4 mr-2 animate-spin" />
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       AI 정보 수집 중...
                     </>
                   ) : (
                     <>
                       <Search className="h-4 w-4 mr-2" />
-                      AI로 관련 정보 자동 수집하기
+                      {project.keywordAnalysis?.articleDirection
+                        ? `'${project.keywordAnalysis.articleDirectionLabel || '선택한 방향'}' 기준으로 자료 수집`
+                        : "AI로 관련 정보 자동 수집하기"}
                     </>
                   )}
                 </Button>
                 <p className="text-xs text-muted-foreground mt-2 text-center">
-                  Perplexity AI로 관련 정보를 수집합니다
+                  {project.keywordAnalysis?.articleDirection
+                    ? `선택한 방향이 자료 수집에 반영됩니다 · Perplexity AI`
+                    : "Perplexity AI로 관련 정보를 수집합니다"}
                 </p>
               </div>
             )}
 
             {project.status === 'business_info' && (
-              <div className="text-center py-4">
+              <div className="flex flex-col items-center gap-1 py-4 text-center">
+                <CheckCircle2 className="h-5 w-5 text-green-600" />
                 <p className="text-sm text-green-600 font-medium">
-                  ✅ 키워드 분석 및 자료 수집이 완료되었습니다.
+                  키워드 분석 및 자료 수집이 완료되었습니다.
                 </p>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-sm text-muted-foreground">
                   이제 업체 정보를 입력해주세요.
                 </p>
               </div>

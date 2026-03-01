@@ -181,7 +181,7 @@ export interface StructuredResearch {
   keyPoints: string[];
 }
 
-export async function searchResearch(keyword: string, subtitles: string[]): Promise<{
+export async function searchResearch(keyword: string, subtitles: string[], direction?: string): Promise<{
   content: string;
   citations: string[];
   citationsWithTitles?: Array<{url: string, title: string}>;
@@ -191,19 +191,23 @@ export async function searchResearch(keyword: string, subtitles: string[]): Prom
   const subtitlesList = Array.isArray(subtitles) ? subtitles : [];
   const searchQuery = `"${keyword}" ${subtitlesList.join(" ")} academic research paper journal study statistics government report news article`;
 
+  const directionInstruction = direction
+    ? `\n\n🎯 글의 방향/관점: ${direction}\n이 방향에 맞는 자료를 우선적으로 찾아주세요. 각 소제목의 내용도 이 방향에 맞게 구성해주세요.`
+    : '';
+
   // 소제목별로 구조화된 연구자료 요청
   const messages = [
     {
       role: "system",
-      content: `You are a research specialist focused on finding academic papers, news articles, and statistical data. 
-Prioritize scholarly publications, government statistics, industry reports, and established news sources. 
+      content: `You are a research specialist focused on finding academic papers, news articles, and statistical data.
+Prioritize scholarly publications, government statistics, industry reports, and established news sources.
 Exclude social media, personal blogs, and unofficial content. Include YouTube only for educational or official channels.
 
 IMPORTANT: You MUST structure your response by the given subtitles. Each subtitle should have its own dedicated research section with UNIQUE information. Do NOT repeat the same information across different subtitles.`
     },
     {
       role: "user",
-      content: `Research "${keyword}" and organize findings by these specific subtitles:
+      content: `Research "${keyword}" and organize findings by these specific subtitles:${directionInstruction}
 
 ${subtitlesList.map((s, i) => `【소제목 ${i + 1}】 ${s}`).join('\n')}
 
