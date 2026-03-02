@@ -540,6 +540,7 @@ export function KeywordAnalysisForm({ onProjectCreated, project, onRefresh }: Ke
                                   <Button
                                     size="sm"
                                     variant="ghost"
+                                    aria-label={`${index + 1}번째 소제목 수정`}
                                     onClick={() => {
                                       setEditingSubtitle(index);
                                       setEditedSubtitles([...(project.subtitles || [])]);

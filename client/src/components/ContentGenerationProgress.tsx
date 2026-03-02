@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Clock, Sparkles } from "lucide-react";
+import { CheckCircle, Clock, Sparkles, Lightbulb } from "lucide-react";
 import { useState, useEffect } from "react";
 
 interface ContentGenerationProgressProps {
@@ -80,8 +80,9 @@ export function ContentGenerationProgress({ project }: ContentGenerationProgress
             <div className="text-sm text-muted-foreground">
               {progress}% 완료 (약 {Math.floor(progress * 1.3)}초 경과)
             </div>
-            <div className="text-xs text-muted-foreground">
-              💡 AI가 3회 시도하며 최적화 중... 최대 2-3분 소요됩니다
+            <div className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+              <Lightbulb className="h-3.5 w-3.5 shrink-0" />
+              AI가 3회 시도하며 최적화 중... 최대 2-3분 소요됩니다
             </div>
           </div>
 
@@ -112,9 +113,9 @@ export function ContentGenerationProgress({ project }: ContentGenerationProgress
             ))}
           </div>
 
-          <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950 p-3 rounded-lg">
-            💡 <strong>참고:</strong> AI가 키워드 빈도, 글자 수, SEO 최적화 등을 자동으로 확인하며 
-            여러 번 검토하여 최고 품질의 콘텐츠를 생성합니다.
+          <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950 p-3 rounded-lg flex items-start gap-2 text-left">
+            <Lightbulb className="h-3.5 w-3.5 shrink-0 mt-0.5 text-blue-500" />
+            <span><strong>참고:</strong> AI가 키워드 빈도, 글자 수, SEO 최적화 등을 자동으로 확인하며 여러 번 검토하여 최고 품질의 콘텐츠를 생성합니다.</span>
           </div>
         </div>
       </CardContent>
