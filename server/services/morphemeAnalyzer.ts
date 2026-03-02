@@ -151,7 +151,7 @@ async function aiBasedKeywordDecomposer(keyword: string): Promise<string[]> {
 JSON 배열로만 응답 (예: ["형태소1", "형태소2", "형태소3"])`;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.5-pro',
       config: {
         responseMimeType: "application/json"
       },
