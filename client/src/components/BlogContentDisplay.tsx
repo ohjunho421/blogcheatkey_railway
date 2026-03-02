@@ -329,100 +329,70 @@ export function BlogContentDisplay({ project, onRefresh }: BlogContentDisplayPro
 
             {/* 복사 및 재생성 버튼들 */}
             <div className="space-y-3">
-              <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2">
-                <Button 
+              {/* 주요 복사 버튼 */}
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
                   onClick={() => handleCopy('normal')}
                   disabled={copyContent.isPending}
-                  variant="outline"
-                  className="flex-1 sm:flex-none"
+                  className="flex-1"
                 >
                   {copyContent.isPending && copyFormat === 'normal' ? (
-                    "복사 중..."
+                    <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />복사 중...</>
                   ) : (
-                    <>
-                      <Copy className="h-4 w-4 mr-2" />
-                      일반 복사 (PC용)
-                    </>
+                    <><Copy className="h-4 w-4 mr-2" />일반 복사 (PC용)</>
                   )}
                 </Button>
-                <Button 
+                <Button
                   onClick={() => handleCopy('mobile')}
                   disabled={copyContent.isPending}
-                  variant="outline"
-                  className="flex-1 sm:flex-none"
+                  variant="secondary"
+                  className="flex-1"
                 >
                   {copyContent.isPending && copyFormat === 'mobile' ? (
-                    "AI 최적화 중..."
+                    <><RefreshCw className="h-4 w-4 mr-2 animate-spin" />AI 최적화 중...</>
                   ) : (
-                    <>
-                      <Smartphone className="h-4 w-4 mr-2" />
-                      모바일 복사 (AI 최적화)
-                    </>
-                  )}
-                </Button>
-                <Button 
-                  onClick={toggleMobilePreview}
-                  variant="ghost"
-                  size="sm"
-                  className="flex-1 sm:flex-none"
-                >
-                  {showMobilePreview ? (
-                    <>
-                      <EyeOff className="h-4 w-4 mr-2" />
-                      미리보기 닫기
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="h-4 w-4 mr-2" />
-                      모바일 미리보기
-                    </>
+                    <><Smartphone className="h-4 w-4 mr-2" />모바일 복사 (AI 최적화)</>
                   )}
                 </Button>
               </div>
-              
-              {/* 최적화/재생성 버튼 */}
-              <div className="flex flex-col sm:flex-row justify-center gap-2 pt-2">
-                {/* 🆕 부분 최적화 버튼 */}
-                <Button 
-                  onClick={handleReoptimize}
-                  disabled={reoptimizeContent.isPending || regenerateContent.isPending}
-                  variant="outline"
+
+              {/* 보조 액션 행 */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-2 border-t border-border/50">
+                <Button
+                  onClick={toggleMobilePreview}
+                  variant="ghost"
                   size="sm"
-                  className="w-full sm:w-auto border-primary text-primary hover:bg-primary/5"
+                  className="justify-start sm:justify-center text-muted-foreground hover:text-foreground"
                 >
-                  {reoptimizeContent.isPending ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      최적화 중...
-                    </>
+                  {showMobilePreview ? (
+                    <><EyeOff className="h-4 w-4 mr-2" />미리보기 닫기</>
                   ) : (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      SEO 재최적화
-                    </>
+                    <><Eye className="h-4 w-4 mr-2" />모바일 미리보기</>
                   )}
                 </Button>
-                
-                {/* 완전 재생성 버튼 */}
-                <Button 
-                  onClick={handleRegenerate}
-                  disabled={regenerateContent.isPending || reoptimizeContent.isPending}
-                  variant="destructive"
-                  size="sm"
-                  className="w-full sm:w-auto"
-                >
-                  {regenerateContent.isPending ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      재생성 중...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      처음부터 다시 생성
-                    </>
-                  )}
-                </Button>
+
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleReoptimize}
+                    disabled={reoptimizeContent.isPending || regenerateContent.isPending}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 sm:flex-none border-primary/40 text-primary hover:bg-primary/5"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${reoptimizeContent.isPending ? 'animate-spin' : ''}`} />
+                    {reoptimizeContent.isPending ? '최적화 중...' : 'SEO 재최적화'}
+                  </Button>
+                  <Button
+                    onClick={handleRegenerate}
+                    disabled={regenerateContent.isPending || reoptimizeContent.isPending}
+                    variant="ghost"
+                    size="sm"
+                    className="flex-1 sm:flex-none text-destructive hover:text-destructive hover:bg-destructive/10"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${regenerateContent.isPending ? 'animate-spin' : ''}`} />
+                    {regenerateContent.isPending ? '재생성 중...' : '처음부터 다시 생성'}
+                  </Button>
+                </div>
               </div>
 
               {/* 모바일 미리보기 */}
