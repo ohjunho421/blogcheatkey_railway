@@ -23,7 +23,7 @@ import { RequiredItemsCheck } from "@/components/RequiredItemsCheck";
 import { ContentGenerationProgress } from "@/components/ContentGenerationProgress";
 import { FreeTrialStatus } from "@/components/FreeTrialStatus";
 import { SavedSessionsList } from "@/components/SavedSessionsList";
-import { MessageSquare, FileText, Search, Building2, Sparkles, RotateCw, LogOut, User, ChevronDown, CreditCard, Shield } from "lucide-react";
+import { MessageSquare, FileText, Search, Building2, Sparkles, RotateCw, LogOut, User, ChevronDown, CreditCard, Shield, CheckCircle2 } from "lucide-react";
 import blogCheatKeyLogo from "@assets/Gemini_Generated_Image_4aroxj4aroxj4aro_1757661484778.png";
 import PaymentModal from "@/components/PaymentModal";
 import Footer from "@/components/Footer";
@@ -214,22 +214,26 @@ export default function Home() {
         {/* 현재 단계 안내 */}
         {getCurrentStepIndex() === 0 && (
           <div className="mx-4 mb-4 p-3 rounded-xl bg-primary/5 border border-primary/20 text-sm text-primary flex items-center gap-2">
-            <span className="font-semibold">✦</span> 키워드를 입력하고 AI 분석을 시작하세요
+            <Search className="h-4 w-4 shrink-0" />
+            키워드를 입력하고 AI 분석을 시작하세요
           </div>
         )}
         {getCurrentStepIndex() === 1 && (
           <div className="mx-4 mb-4 p-3 rounded-xl bg-primary/5 border border-primary/20 text-sm text-primary flex items-center gap-2">
-            <span className="font-semibold">✦</span> AI가 관련 정보를 수집합니다. 잠시 기다려 주세요
+            <Sparkles className="h-4 w-4 shrink-0" />
+            AI가 관련 정보를 수집합니다. 잠시 기다려 주세요
           </div>
         )}
         {getCurrentStepIndex() === 2 && (
           <div className="mx-4 mb-4 p-3 rounded-xl bg-primary/5 border border-primary/20 text-sm text-primary flex items-center gap-2">
-            <span className="font-semibold">✦</span> 비즈니스 정보를 입력하고 콘텐츠를 생성하세요
+            <Building2 className="h-4 w-4 shrink-0" />
+            비즈니스 정보를 입력하고 콘텐츠를 생성하세요
           </div>
         )}
         {getCurrentStepIndex() === 3 && (
           <div className="mx-4 mb-4 p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-sm text-green-700 flex items-center gap-2">
-            <span className="font-semibold">✓</span> 콘텐츠 생성이 완료되었습니다! 아래에서 확인하세요
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            콘텐츠 생성이 완료되었습니다! 아래에서 확인하세요
           </div>
         )}
 

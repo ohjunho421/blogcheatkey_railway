@@ -440,79 +440,80 @@ export function BusinessInfoForm({ project, onRefresh }: BusinessInfoFormProps) 
           </div>
         </div>
         
-        <div className="flex justify-between items-center mt-6">
-          <div className="flex space-x-2">
-            <Button 
-              variant="outline"
-              onClick={handleSaveToProfile}
-              disabled={saveToProfile.isPending || loadingBusinessInfo}
+        <div className="flex justify-end items-center gap-2 mt-6">
+          <Button
+            variant="outline"
+            onClick={handleSaveToProfile}
+            disabled={saveToProfile.isPending || loadingBusinessInfo}
+          >
+            {saveToProfile.isPending ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                저장 중...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                프로필에 저장
+              </>
+            )}
+          </Button>
+
+          {project.status === 'business_info' && !selectedSavedBusiness && (
+            <Button
+              onClick={handleSave}
+              disabled={saveBusinessInfo.isPending || loadingBusinessInfo}
             >
-              {saveToProfile.isPending ? (
+              {saveBusinessInfo.isPending ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                   저장 중...
                 </>
               ) : (
                 <>
-                  <Save className="h-4 w-4 mr-2" />
-                  프로필에 저장
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                  정보 저장
                 </>
               )}
             </Button>
-          </div>
+          )}
 
-          <div className="flex space-x-2">
-            {project.status === 'business_info' && !selectedSavedBusiness && (
-              <Button 
-                onClick={handleSave}
-                disabled={saveBusinessInfo.isPending || loadingBusinessInfo}
-              >
-                {saveBusinessInfo.isPending ? "저장 중..." : "정보 저장"}
-              </Button>
-            )}
-            
-            {project.status === 'business_info' && selectedSavedBusiness && !project.generatedContent && (
-              <Button 
-                onClick={() => {
-                  // Save to project first, then show generate button
-                  const finalBusinessType = businessType || customBusinessType;
-                  const businessData = {
-                    businessName: businessName.trim(),
-                    businessType: finalBusinessType.trim(),
-                    expertise: expertise.trim(),
-                    differentiators: differentiators.trim(),
-                  };
-                  
-                  saveBusinessInfo.mutate(businessData, {
-                    onSuccess: () => {
-                      // Update local state to show generate button
-                      setSelectedSavedBusiness({ ...selectedSavedBusiness, saved: true });
-                      toast({
-                        title: "업체 정보 저장 완료",
-                        description: "이제 블로그 생성 버튼을 눌러주세요.",
-                      });
-                    }
-                  });
-                }}
-                disabled={saveBusinessInfo.isPending}
-              >
-                {saveBusinessInfo.isPending ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    저장 중...
-                  </>
-                ) : (
-                  <>
-                    <ArrowRight className="h-4 w-4 mr-2" />
-                    정보 저장
-                  </>
-                )}
-              </Button>
-            )}
+          {project.status === 'business_info' && selectedSavedBusiness && !project.generatedContent && (
+            <Button
+              onClick={() => {
+                const finalBusinessType = businessType || customBusinessType;
+                const businessData = {
+                  businessName: businessName.trim(),
+                  businessType: finalBusinessType.trim(),
+                  expertise: expertise.trim(),
+                  differentiators: differentiators.trim(),
+                };
 
-
-
-          </div>
+                saveBusinessInfo.mutate(businessData, {
+                  onSuccess: () => {
+                    setSelectedSavedBusiness({ ...selectedSavedBusiness, saved: true });
+                    toast({
+                      title: "업체 정보 저장 완료",
+                      description: "이제 블로그 생성 버튼을 눌러주세요.",
+                    });
+                  }
+                });
+              }}
+              disabled={saveBusinessInfo.isPending}
+            >
+              {saveBusinessInfo.isPending ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  저장 중...
+                </>
+              ) : (
+                <>
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                  정보 저장
+                </>
+              )}
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

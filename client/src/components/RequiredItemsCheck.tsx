@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { CheckCircle, Circle, AlertCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface RequiredItemsCheckProps {
@@ -25,7 +25,7 @@ export function RequiredItemsCheck({ project }: RequiredItemsCheckProps) {
             <h4 className="text-sm font-medium text-foreground">필수 항목</h4>
             <div className="flex items-center justify-between p-2 rounded-lg border border-dashed">
               <div className="flex items-center space-x-2">
-                <XCircle className="h-4 w-4 text-muted-foreground" />
+                <Circle className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">키워드 분석</p>
                   <p className="text-xs text-muted-foreground">키워드를 입력하고 분석을 시작하세요</p>
@@ -34,7 +34,7 @@ export function RequiredItemsCheck({ project }: RequiredItemsCheckProps) {
             </div>
             <div className="flex items-center justify-between p-2 rounded-lg border border-dashed">
               <div className="flex items-center space-x-2">
-                <XCircle className="h-4 w-4 text-muted-foreground" />
+                <Circle className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">자료 수집</p>
                   <p className="text-xs text-muted-foreground">키워드 분석 후 자료를 수집하세요</p>
@@ -43,7 +43,7 @@ export function RequiredItemsCheck({ project }: RequiredItemsCheckProps) {
             </div>
             <div className="flex items-center justify-between p-2 rounded-lg border border-dashed">
               <div className="flex items-center space-x-2">
-                <XCircle className="h-4 w-4 text-muted-foreground" />
+                <Circle className="h-4 w-4 text-muted-foreground" />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">업체 정보</p>
                   <p className="text-xs text-muted-foreground">업체명, 업종, 전문성을 입력하세요</p>
@@ -123,12 +123,12 @@ export function RequiredItemsCheck({ project }: RequiredItemsCheckProps) {
                 {check.completed ? (
                   <CheckCircle className="h-4 w-4 text-green-500" />
                 ) : (
-                  <XCircle className="h-4 w-4 text-red-500" />
+                  <Circle className="h-4 w-4 text-muted-foreground/50" />
                 )}
                 <span className="text-sm font-medium">{check.label}</span>
               </div>
-              <Badge variant={check.completed ? "default" : "destructive"} className="text-xs">
-                {check.completed ? "완료" : "미완료"}
+              <Badge variant={check.completed ? "default" : "secondary"} className="text-xs">
+                {check.completed ? "완료" : "대기 중"}
               </Badge>
             </div>
           ))}
