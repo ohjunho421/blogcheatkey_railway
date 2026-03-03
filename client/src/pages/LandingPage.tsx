@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import blogCheatKeyLogo from "@assets/blogcheatkey-logo.png";
 import { useLocation } from "wouter";
 import { motion, useInView, useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -101,9 +102,11 @@ export default function LandingPage() {
         <div className="container px-4 mx-auto">
           <div className="flex items-center justify-between h-16 md:h-20">
             <a href="/" className="flex items-center gap-2" aria-label="블로그치트키 홈으로 이동">
-              <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-                블로그치트키
-              </span>
+              <img
+                src={blogCheatKeyLogo}
+                alt="블로그치트키 로고"
+                className="h-8 w-auto object-contain"
+              />
             </a>
             
             <nav className="hidden md:flex items-center gap-8" role="navigation" aria-label="메인 네비게이션">
