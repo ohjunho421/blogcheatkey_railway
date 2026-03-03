@@ -95,11 +95,8 @@ export default function Home() {
               <img
                 src={blogCheatKeyLogo}
                 alt="블로그치트키 로고"
-                className="w-9 h-9 object-contain"
+                className="h-8 w-auto object-contain"
               />
-              <span className="text-xl font-bold bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">
-                블로그치트키
-              </span>
             </div>
             <nav className="hidden md:flex items-center space-x-1" aria-label="메인 네비게이션">
               <button
