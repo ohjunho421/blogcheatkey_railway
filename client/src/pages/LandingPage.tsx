@@ -1166,6 +1166,9 @@ export default function LandingPage() {
               <a href="/privacy-policy" className="text-sm text-muted-foreground hover:text-foreground underline transition-colors duration-150">
                 개인정보처리방침
               </a>
+              <a href="/terms-of-service" className="text-sm text-muted-foreground hover:text-foreground underline transition-colors duration-150">
+                운영방침
+              </a>
             </div>
           </div>
         </div>
