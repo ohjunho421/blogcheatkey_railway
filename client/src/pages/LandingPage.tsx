@@ -237,11 +237,13 @@ export default function LandingPage() {
                   <motion.h1
                     id="hero-heading"
                     {...(prefersReducedMotion ? {} : { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { delay: 0.3, duration: 0.8 } })}
-                    className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 leading-[1.1] bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent"
+                    className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-4 text-foreground leading-[1.1]"
                   >
                     AI 블로그 콘텐츠
                     <br />
-                    자동 생성
+                    <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+                      자동 생성
+                    </span>
                   </motion.h1>
 
                   {/* Sub-headline */}
