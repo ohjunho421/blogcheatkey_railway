@@ -88,7 +88,16 @@ export function serveStatic(app: Express) {
     console.error(`[serveStatic] Error reading directory:`, err);
   }
 
-  app.use(express.static(distPath));
+  // 정적 파일 캐시: JS/CSS/이미지는 1년(immutable), HTML은 캐시 없음
+  app.use(express.static(distPath, {
+    maxAge: '1y',
+    immutable: true,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      }
+    }
+  }));
 
   // fall through to index.html if the file doesn't exist
   app.use("*", (req, res) => {

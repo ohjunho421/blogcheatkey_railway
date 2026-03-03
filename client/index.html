@@ -2,7 +2,7 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
     <!-- Primary Meta Tags - 검색량 높은 키워드 반영 -->
     <title>AI 블로그 콘텐츠 자동 생성 | 상품페이지, 브랜드소개, 광고문구 제작 - 블로그치트키</title>
@@ -172,10 +172,12 @@
     <!-- Plus Jakarta Sans (ui-ux-pro-max 디자인 시스템 권고 폰트) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" />
+    <link rel="stylesheet" media="print" onload="this.media='all'" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" /></noscript>
 
     <!-- PortOne V2 SDK -->
-    <script src="https://cdn.portone.io/v2/browser-sdk.js"></script>
+    <script defer src="https://cdn.portone.io/v2/browser-sdk.js"></script>
     <!-- Google AdSense (deferred for performance) -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8101664154721452"
      crossorigin="anonymous"></script>
