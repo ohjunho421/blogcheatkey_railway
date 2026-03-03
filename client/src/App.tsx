@@ -13,6 +13,7 @@ import History from "@/pages/history";
 import NotFound from "@/pages/not-found";
 import PricingPage from "@/pages/PricingPage";
 import PrivacyPolicy from "@/pages/privacy-policy";
+import TermsOfService from "@/pages/terms-of-service";
 import AdminPage from "@/pages/admin-dashboard";
 import Profile from "@/pages/profile";
 import LandingPage from "@/pages/LandingPage";
@@ -40,6 +41,7 @@ function Router() {
         <Route path="/login" component={Login} />
         <Route path="/signup" component={Signup} />
         <Route path="/privacy-policy" component={PrivacyPolicy} />
+        <Route path="/terms-of-service" component={TermsOfService} />
         <Route path="*" component={LandingPage} />
       </Switch>
     );
@@ -52,6 +54,7 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/signup" component={Signup} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/terms-of-service" component={TermsOfService} />
       {isAuthenticated ? (
         <>
           <Route path="/app" component={Home} />

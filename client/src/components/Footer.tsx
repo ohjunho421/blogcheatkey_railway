@@ -92,6 +92,9 @@ export default function Footer() {
               <Link href="/privacy-policy" className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 underline">
                 개인정보처리방침
               </Link>
+              <Link href="/terms-of-service" className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 underline">
+                운영방침
+              </Link>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 sm:mt-0">
               사업자등록번호: 456-05-03530 | 대표: 오준호
