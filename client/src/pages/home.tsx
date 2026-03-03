@@ -24,7 +24,7 @@ import { ContentGenerationProgress } from "@/components/ContentGenerationProgres
 import { FreeTrialStatus } from "@/components/FreeTrialStatus";
 import { SavedSessionsList } from "@/components/SavedSessionsList";
 import { MessageSquare, FileText, Search, Building2, Sparkles, RotateCw, LogOut, User, ChevronDown, CreditCard, Shield, CheckCircle2 } from "lucide-react";
-import blogCheatKeyLogo from "@assets/Gemini_Generated_Image_4aroxj4aroxj4aro_1757661484778.png";
+import blogCheatKeyLogo from "@assets/blogcheatkey-logo.png";
 import PaymentModal from "@/components/PaymentModal";
 import Footer from "@/components/Footer";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
