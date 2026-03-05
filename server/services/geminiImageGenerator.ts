@@ -4,10 +4,10 @@ const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || "",
 });
 
-// 1순위: Gemini 2.5 Flash Image (속도+효율 최적화 이미지 전용 모델, 낮은 지연 시간)
-const FAST_IMAGE_MODEL = "gemini-2.5-flash-image";
-// 2순위: Gemini 3 Pro Image (4K, 텍스트 렌더링, 인포그래픽 전용)
-const PRO_IMAGE_MODEL = "gemini-3-pro-image-preview";
+// 1순위: Gemini 3.1 Flash Image Preview (속도+효율 최적화, 텍스트+이미지 멀티모달 응답 지원)
+const FAST_IMAGE_MODEL = "gemini-3.1-flash-image-preview";
+// 2순위: Gemini 3.1 Pro Image (4K, 텍스트 렌더링, 인포그래픽 전용) - gemini-3-pro-image-preview 대체
+const PRO_IMAGE_MODEL = "gemini-3.1-pro-image-preview";
 
 // ============================================================
 // 1. 이미지 생성 (공식 문서 기반 - Gemini 네이티브 이미지 생성)
@@ -38,7 +38,7 @@ function extractImageFromResponse(response: any): { imageBase64: string; mimeTyp
 
 /**
  * 블로그 이미지 생성 - 스마트 전략
- * quality="high": Nano Banana Pro (gemini-3-pro-image-preview) 1순위 → 4K 고품질
+ * quality="high": Nano Banana Pro (gemini-3.1-pro-image-preview) 1순위 → 4K 고품질
  * quality="fast": Nano Banana (gemini-2.5-flash-image) 1순위 → 빠른 속도
  * - 기본 스타일: photo-realistic (실사)
  */
@@ -97,7 +97,7 @@ export async function generateBlogImage(
         model: FAST_IMAGE_MODEL,
         contents: prompt,
         config: {
-          responseModalities: ["Image"],
+          responseModalities: ["Text", "Image"],
           imageConfig: {
             aspectRatio: aspectRatio,
           },
@@ -123,7 +123,7 @@ export async function generateBlogImage(
         model: FAST_IMAGE_MODEL,
         contents: prompt,
         config: {
-          responseModalities: ["Image"],
+          responseModalities: ["Text", "Image"],
           imageConfig: {
             aspectRatio: aspectRatio,
           },
@@ -406,36 +406,48 @@ function parseImageCount(request: string): number {
 /**
  * 챗봇에서 사용자 요청에 따라 이미지를 생성 (다중 이미지 지원)
  * - "10장 그려줘" → 10장 생성, 각각 다른 variation
+ * - "수정해줘" / "바꿔줘" + referenceImageBase64 → 이미지 편집 모드
  * - 기본: 실사(photo-realistic) 스타일
  * - 인포그래픽/일러스트 명시 요청 시에만 스타일 변경
+ * Gemini 3.1 Flash Image Preview 멀티모달 활용
  */
 export async function generateChatImage(
   userRequest: string,
   keyword: string,
-  content: string
+  content: string,
+  referenceImageBase64?: string,
+  referenceImageMimeType?: string
 ): Promise<ImageGenerationResult[]> {
-  // 빠른 스타일 감지 (AI 분석 없이 키워드 매칭으로 속도 개선)
   const lowerReq = userRequest.toLowerCase();
-  let style: "photo" | "illustration" | "infographic" = "photo"; // 기본: 실사
+
+  // 이미지 편집 요청 감지
+  const isEditRequest = !!referenceImageBase64 && /수정|편집|바꿔|변경|고쳐|edit|modify|change/.test(lowerReq);
+
+  if (isEditRequest && referenceImageBase64) {
+    return generateEditedImages(userRequest, keyword, referenceImageBase64, referenceImageMimeType || "image/jpeg");
+  }
+
+  // 스타일 감지 (키워드 매칭)
+  let style: "photo" | "illustration" | "infographic" = "photo";
   let aspectRatio: "1:1" | "16:9" | "9:16" = "16:9";
 
-  if (/인포그래픽|infographic|도표|차트|시각화|다이어그램|통계/.test(lowerReq)) {
+  if (/인포그래픽|infographic|도표|차트|시각화|다이어그램|통계|데이터/.test(lowerReq)) {
     style = "infographic";
     aspectRatio = "9:16";
-  } else if (/일러스트|illustration|그림|만화|캐릭터|아이콘/.test(lowerReq)) {
+  } else if (/일러스트|illustration|그림|만화|캐릭터|아이콘|벡터|플랫/.test(lowerReq)) {
     style = "illustration";
-  } else if (/세로|portrait|9:16/.test(lowerReq)) {
+  } else if (/세로|portrait|9:16|썸네일|유튜브/.test(lowerReq)) {
     aspectRatio = "9:16";
-  } else if (/정사각|square|1:1/.test(lowerReq)) {
+  } else if (/정사각|square|1:1|프로필|아이콘/.test(lowerReq)) {
     aspectRatio = "1:1";
   }
 
   const count = parseImageCount(userRequest);
   const contentHint = content.substring(0, 300).replace(/\n/g, ' ').trim();
 
-  // 다중 이미지: 각각 다른 variation 프롬프트
+  // 다중 이미지: 각각 다른 시각적 variation
   const variations = [
-    "", // 기본
+    "",
     "Different angle and composition.",
     "Close-up detail shot.",
     "Wide establishing shot.",
@@ -448,7 +460,6 @@ export async function generateChatImage(
   ];
 
   const results: ImageGenerationResult[] = [];
-  // 다중 이미지는 속도를 위해 "fast" 모드, 단일은 "high" 모드
   const quality = count > 1 ? "fast" as const : "high" as const;
 
   console.log(`🎨 챗봇 이미지 생성: "${keyword}" (${style}, ${aspectRatio}, ${count}장, ${quality})`);
@@ -463,7 +474,6 @@ export async function generateChatImage(
       results.push(result);
     } catch (error: any) {
       console.error(`🔴 이미지 ${i + 1}/${count} 생성 실패:`, error?.message || error);
-      // 하나 실패해도 나머지 계속 생성
     }
   }
 
@@ -473,4 +483,52 @@ export async function generateChatImage(
 
   console.log(`✅ 챗봇 이미지 생성 완료: ${results.length}/${count}장 성공`);
   return results;
+}
+
+/**
+ * Gemini 3.1 Flash Image Preview - 이미지 편집
+ * 기존 이미지를 참조하여 사용자 요청에 맞게 수정
+ */
+async function generateEditedImages(
+  editRequest: string,
+  keyword: string,
+  sourceImageBase64: string,
+  sourceMimeType: string
+): Promise<ImageGenerationResult[]> {
+  console.log(`✏️ 이미지 편집 모드: "${editRequest}"`);
+
+  const prompt = `Edit this image based on the following request: ${editRequest}.
+Keep the core subject related to "${keyword}" but apply the requested changes.
+Maintain photo-realistic quality. No text overlay unless specifically requested.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: FAST_IMAGE_MODEL,
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: prompt },
+            { inlineData: { data: sourceImageBase64, mimeType: sourceMimeType } },
+          ],
+        },
+      ],
+      config: {
+        responseModalities: ["Text", "Image"],
+      },
+    });
+
+    const imageData = extractImageFromResponse(response);
+    if (imageData) {
+      console.log(`✅ 이미지 편집 완료`);
+      return [{ imageBase64: imageData.imageBase64, mimeType: imageData.mimeType, prompt }];
+    }
+    throw new Error("편집된 이미지 데이터가 응답에 없습니다");
+  } catch (error: any) {
+    console.error("🔴 이미지 편집 실패:", error?.message || error);
+    // 편집 실패 시 새 이미지 생성으로 fallback
+    console.log("🔄 편집 실패 - 새 이미지 생성으로 대체...");
+    const fallback = await generateBlogImage(keyword, editRequest, "photo", "16:9", "fast");
+    return [fallback];
+  }
 }

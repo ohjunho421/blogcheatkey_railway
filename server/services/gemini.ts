@@ -4,9 +4,9 @@ import { formatForMobileSmartBatch } from './smartMobileFormatter';
 
 // DON'T DELETE THIS COMMENT
 // Follow these instructions when using this blueprint:
-// - Note that the newest Gemini model series is "gemini-3-pro-preview" (Gemini 3, 2025-01 knowledge cutoff)
-//   - all functions use gemini-3-pro-preview as specified
-//   - Gemini 3 is a reasoning model that prefers concise, direct prompts
+// - Note that the newest Gemini model series is "gemini-3.1-pro-preview" (Gemini 3.1, migrated from 3-pro-preview deprecated 2026-03-09)
+//   - all functions use gemini-2.5-pro for text generation (stable, non-deprecated)
+//   - Gemini 3.1 is a reasoning model that prefers concise, direct prompts
 
 const ai = new GoogleGenAI({ 
   apiKey: process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY_ENV_VAR || "default_key"
